@@ -31,12 +31,15 @@ function report(message: string, level: Diagnostic['level'] = 'info') {
 function notify() {
   badge.schedule();
   if (notificationTimer) return;
-  notificationTimer = setTimeout(() => {
-    notificationTimer = undefined;
-    void chrome.runtime.sendMessage({ type: 'database-changed' }).catch(() => {
-      /* No inspector is open. */
-    });
-  }, 200);
+  notificationTimer = setTimeout(
+    () => {
+      notificationTimer = undefined;
+      void chrome.runtime.sendMessage({ type: 'database-changed' }).catch(() => {
+        /* No inspector is open. */
+      });
+    },
+    captureWriter.diagnostics.pendingWrites > 200 ? 1000 : 200,
+  );
 }
 const ready = initialize();
 const captureWriter = new CaptureWriter();
@@ -57,6 +60,13 @@ const context: CaptureContext = {
   accepts: async (tabId) => {
     const s = await settings();
     return tabId >= 0 && s.recording && (s.scope === 'all' || s.activeTabId === tabId);
+  },
+  enqueue: (key, change) => {
+    void context
+      .update(key, change)
+      .catch(() =>
+        report('Capture event could not be stored. Check available local storage.', 'error'),
+      );
   },
   update: async (key, change) => {
     await ready;
@@ -142,7 +152,12 @@ chrome.action.onClicked.addListener((tab) => {
   void (async () => {
     await ready;
     if (tab.id !== undefined && /^https?:/.test(tab.url ?? '')) await activeTab(tab.id);
-    const url = chrome.runtime.getURL('inspector.html');
+    const background = chrome.runtime.getManifest().background;
+    const workerPath =
+      background && 'service_worker' in background
+        ? background.service_worker
+        : 'service-worker.js';
+    const url = chrome.runtime.getURL(workerPath.replace(/[^/]+$/, 'inspector.html'));
     const pages = await chrome.tabs.query({ url });
     if (pages[0]?.id !== undefined) {
       await chrome.tabs.update(pages[0].id, { active: true });
@@ -187,15 +202,22 @@ chrome.runtime.onMessage.addListener((raw: unknown, sender, respond) => {
     await ready;
     if (cmd.type === 'state') {
       const s = await settings();
+      const [count, tabCount, sessionCount, hostsGranted] = await Promise.all([
+        countRows(),
+        s.activeTabId === undefined ? 0 : countRows({ tabId: s.activeTabId }),
+        countRows({ sessionId: s.sessionId }),
+        chrome.permissions.contains({ origins: ['http://*/*', 'https://*/*'] }),
+      ]);
       return {
         buildId: __BUILD_ID__,
+        captureQueue: captureWriter.diagnostics,
         settings: s,
-        count: await countRows(),
-        tabCount: s.activeTabId === undefined ? 0 : await countRows({ tabId: s.activeTabId }),
-        sessionCount: await countRows({ sessionId: s.sessionId }),
+        count,
+        tabCount,
+        sessionCount,
         attachedTabs: [...debuggerProvider.attached],
         diagnostics: [...diagnostics],
-        hostsGranted: await chrome.permissions.contains({ origins: ['http://*/*', 'https://*/*'] }),
+        hostsGranted,
       };
     }
     if (cmd.type === 'settings') {

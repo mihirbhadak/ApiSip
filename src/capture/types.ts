@@ -6,6 +6,8 @@ export interface CaptureContext {
     key: string,
     change: (record?: CapturedRequest) => CapturedRequest | undefined,
   ): Promise<CapturedRequest | undefined>;
+  /** Enqueue ordered mutations when the provider does not need a committed result. */
+  enqueue(key: string, change: (record?: CapturedRequest) => CapturedRequest | undefined): void;
   report(message: string, level?: Diagnostic['level']): void;
   epoch: Promise<string>;
 }

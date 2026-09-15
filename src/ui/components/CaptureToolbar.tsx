@@ -100,7 +100,7 @@ export function CaptureToolbar({ controller }: { controller: InspectorController
           <span className="muted">
             {settings.provider === 'debugger'
               ? 'CDP · ' + state.attachedTabs.length + ' attached'
-              : 'Opt-in ? Chrome debugging banner'}
+              : 'Opt-in: Chrome debugging banner'}
           </span>
         </label>
         <span className="muted small">

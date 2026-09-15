@@ -1,6 +1,12 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { CaptureWriter } from '../src/background/capture-writer';
-import { captureBatch, clearDatabase, countRows, getRecord } from '../src/storage/repository';
+import {
+  captureBatch,
+  clearDatabase,
+  countRows,
+  getRecord,
+  listEntities,
+} from '../src/storage/repository';
 import { fixture } from './fixtures';
 describe('durable capture batching', () => {
   beforeEach(clearDatabase);
@@ -21,6 +27,23 @@ describe('durable capture batching', () => {
     ]);
     expect(await countRows()).toBe(1);
     expect((await getRecord('test-1'))!.notes).toBe('Finished');
+  });
+  it('retains all session tabs and redirect hops when a batch updates shared entities', async () => {
+    await captureBatch([
+      { key: 'hop', change: () => fixture({ id: 'first', tabId: 1 }) },
+      { key: 'hop', change: () => fixture({ id: 'redirect', tabId: 1 }) },
+      { key: 'hop', change: (r) => r && { ...r, notes: 'Final hop' } },
+      { key: 'second', change: () => fixture({ id: 'second', tabId: 2 }) },
+    ]);
+    expect(await countRows()).toBe(3);
+    expect((await getRecord('first'))?.id).toBe('first');
+    expect((await getRecord('redirect'))?.notes).toBe('Final hop');
+    expect((await listEntities()).find((e) => e.id === fixture().sessionId)?.tabIds).toEqual([
+      1, 2,
+    ]);
+    await captureBatch([{ key: 'hop', change: (r) => r && { ...r, notes: 'Later event' } }]);
+    expect((await getRecord('redirect'))?.notes).toBe('Later event');
+    expect((await getRecord('first'))?.notes).not.toBe('Later event');
   });
   it('rolls back the entire batch when a mutation is invalid', async () => {
     await expect(

@@ -121,7 +121,7 @@ export class WebRequestProvider implements CaptureProvider {
           isFavorite: false,
           isPinned: false,
         };
-        await this.context.update(key, () => record);
+        this.context.enqueue(key, () => record);
       });
       return undefined;
     };
@@ -133,7 +133,7 @@ export class WebRequestProvider implements CaptureProvider {
       typeof chrome.webRequest.onBeforeSendHeaders.addListener
     >[0] = (d) => {
       this.event(d.requestId, async (key) => {
-        await this.context.update(key, (r) => {
+        this.context.enqueue(key, (r) => {
           if (!r) return;
           const headers = pairs(d.requestHeaders),
             contentType = header(headers, 'content-type');
@@ -168,7 +168,7 @@ export class WebRequestProvider implements CaptureProvider {
       typeof chrome.webRequest.onHeadersReceived.addListener
     >[0] = (d) => {
       this.event(d.requestId, async (key) => {
-        await this.context.update(
+        this.context.enqueue(
           key,
           (r) =>
             r && {
@@ -200,7 +200,7 @@ export class WebRequestProvider implements CaptureProvider {
     );
     const onCompleted: Parameters<typeof chrome.webRequest.onCompleted.addListener>[0] = (d) => {
       this.event(d.requestId, async (key) => {
-        await this.context.update(
+        this.context.enqueue(
           key,
           (r) =>
             r && {
@@ -223,7 +223,7 @@ export class WebRequestProvider implements CaptureProvider {
       d,
     ) => {
       this.event(d.requestId, async (key) => {
-        await this.context.update(
+        this.context.enqueue(
           key,
           (r) =>
             r && {
@@ -242,7 +242,7 @@ export class WebRequestProvider implements CaptureProvider {
       d,
     ) => {
       this.event(d.requestId, async (key) => {
-        await this.context.update(
+        this.context.enqueue(
           key,
           (r) =>
             r && {

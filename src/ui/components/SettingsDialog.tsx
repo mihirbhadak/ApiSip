@@ -290,7 +290,13 @@ export function SettingsDialog({
         <>
           <div className="notice">
             <strong>Capture capability</strong>
-            <p>Build: {state.buildId ?? 'Connecting?'}</p>
+            <p>Build: {state.buildId ?? 'Connecting...'}</p>
+            {state.captureQueue && (
+              <p>
+                Capture writes pending: {state.captureQueue.pendingWrites}. Peak queue this worker
+                lifetime: {state.captureQueue.largestQueue}.
+              </p>
+            )}
             <p>
               {state.hostsGranted ? 'HTTP(S) site access granted' : 'Site access not granted'} ·{' '}
               {state.attachedTabs.length} debugger target(s) attached.

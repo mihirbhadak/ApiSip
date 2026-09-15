@@ -21,6 +21,7 @@ export const commandSchema = z.discriminatedUnion('type', [
 export type Command = z.infer<typeof commandSchema>;
 export type RuntimeState = {
   buildId?: string;
+  captureQueue?: { pendingWrites: number; largestQueue: number };
   settings: Settings;
   count: number;
   tabCount: number;

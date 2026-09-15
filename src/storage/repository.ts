@@ -1,5 +1,4 @@
-import type { IDBPTransaction } from 'idb';
-import { getDB, type BodyRow, type RequestRow, type InspectorDB } from './database';
+import { getDB, type BodyRow, type RequestRow } from './database';
 import {
   defaultSettings,
   settingsSchema,
@@ -144,28 +143,43 @@ export type CaptureMutation = {
   key: string;
   change: (record?: CapturedRequest) => CapturedRequest | undefined;
 };
-type CaptureTransaction = IDBPTransaction<
-  InspectorDB,
-  ['requests', 'bodies', 'entities'],
-  'readwrite'
->;
-async function changeCapture(tx: CaptureTransaction, { key, change }: CaptureMutation) {
-  const old = await tx.objectStore('requests').index('captureKey').get(key);
-  const full = old && joinRecord(old, await tx.objectStore('bodies').get(old.id));
-  const next = change(full);
-  if (next) {
-    if (!old && !(await tx.objectStore('entities').get(next.sessionId))) {
-      return undefined;
-    }
-    if (old && old.id !== next.id)
-      await tx.objectStore('requests').put({ ...old, captureKey: undefined });
-    const [row, body] = splitRecord(next, key);
-    await tx.objectStore('requests').put(row);
-    await tx.objectStore('bodies').put(body);
-    if (!old) {
-      const session = await tx.objectStore('entities').get(next.sessionId);
-      if (session)
-        await tx.objectStore('entities').put({
+/** Read independent keys concurrently; apply mutations in order and commit final values atomically. */
+export async function captureBatch(changes: CaptureMutation[]) {
+  const db = await getDB();
+  const tx = db.transaction(['requests', 'bodies', 'entities'], 'readwrite');
+  try {
+    const requests = tx.objectStore('requests'),
+      bodies = tx.objectStore('bodies'),
+      entities = tx.objectStore('entities');
+    const keys = [...new Set(changes.map(({ key }) => key))];
+    const current = new Map<string, CapturedRequest | undefined>(
+      await Promise.all(
+        keys.map(async (key) => {
+          const row = await requests.index('captureKey').get(key);
+          return [key, row && joinRecord(row, await bodies.get(row.id))] as const;
+        }),
+      ),
+    );
+    const pending = new Map<string, [RequestRow, BodyRow]>();
+    const sessions = new Map<string, Entity | undefined>();
+    const updatedSessions = new Map<string, Entity>();
+    const results: (CapturedRequest | undefined)[] = [];
+    for (const { key, change } of changes) {
+      const old = current.get(key),
+        next = change(old);
+      if (!next) {
+        results.push(undefined);
+        continue;
+      }
+      if (!old) {
+        if (!sessions.has(next.sessionId))
+          sessions.set(next.sessionId, await entities.get(next.sessionId));
+        const session = sessions.get(next.sessionId);
+        if (!session) {
+          results.push(undefined);
+          continue;
+        }
+        const updated = {
           ...session,
           updatedAt: Date.now(),
           tabIds: [
@@ -174,17 +188,19 @@ async function changeCapture(tx: CaptureTransaction, { key, change }: CaptureMut
               ...(next.tabId === undefined ? [] : [next.tabId]),
             ]),
           ],
-        });
+        };
+        sessions.set(next.sessionId, updated);
+        updatedSessions.set(next.sessionId, updated);
+      }
+      if (old && old.id !== next.id) pending.set(old.id, splitRecord(old));
+      pending.set(next.id, splitRecord(next, key));
+      current.set(key, next);
+      results.push(next);
     }
-  }
-  return next;
-}
-export async function captureBatch(changes: CaptureMutation[]) {
-  const db = await getDB();
-  const tx = db.transaction(['requests', 'bodies', 'entities'], 'readwrite');
-  try {
-    const results = [];
-    for (const change of changes) results.push(await changeCapture(tx, change));
+    await Promise.all([
+      ...[...pending.values()].flatMap(([row, body]) => [requests.put(row), bodies.put(body)]),
+      ...[...updatedSessions.values()].map((session) => entities.put(session)),
+    ]);
     await tx.done;
     return results;
   } catch (error) {

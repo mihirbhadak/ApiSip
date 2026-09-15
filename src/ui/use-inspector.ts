@@ -1,3 +1,4 @@
+import { CoalescedTask } from '../shared/coalesced-task';
 import { SearchScheduler } from './search-scheduler';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { defaultSettings, type CapturedRequest, type Entity } from '../shared/model';
@@ -20,7 +21,8 @@ export function useInspector(search: string, expression: string, session: string
   const [revision, setRevision] = useState(0);
   const worker = useRef<Worker | null>(null),
     scheduler = useRef<SearchScheduler | null>(null);
-  const refresh = useCallback(async () => {
+  const refreshTask = useRef<CoalescedTask | null>(null);
+  refreshTask.current ??= new CoalescedTask(async () => {
     try {
       const [next, items] = await Promise.all([sendCommand({ type: 'state' }), listEntities()]);
       setState(next);
@@ -30,7 +32,8 @@ export function useInspector(search: string, expression: string, session: string
       setError(e instanceof Error ? e.message : 'Could not connect to the inspector.');
       setLoading(false);
     }
-  }, []);
+  });
+  const refresh = useCallback(() => refreshTask.current!.run(), []);
   useEffect(() => {
     void refresh();
     const onMessage = (message: { type?: string }) => {

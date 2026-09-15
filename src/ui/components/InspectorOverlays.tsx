@@ -166,7 +166,7 @@ export function InspectorOverlays({ controller }: { controller: InspectorControl
           }}
         />
       )}
-      {context && record && (
+      {context && record && record.id === recordId && (
         <RequestMenu
           position={context}
           actions={contextActions}

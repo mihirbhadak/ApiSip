@@ -1,9 +1,13 @@
+import { CoalescedTask } from '../shared/coalesced-task';
 import { countRows, listRows } from '../storage/repository';
 import { compileFilter, needsBody } from '../filters/engine';
 import { parseFilter } from '../filters/parser';
 import type { Settings } from '../shared/model';
 export const badgeText = (count: number) => (count > 999 ? '999+' : String(count));
 export class Badge {
+  private refresh = new CoalescedTask(() =>
+    this.update().catch(() => this.report('Could not update the extension badge.')),
+  );
   private timer?: ReturnType<typeof setTimeout>;
   constructor(
     private settings: () => Promise<Settings>,
@@ -13,7 +17,7 @@ export class Badge {
     if (this.timer) return;
     this.timer = setTimeout(() => {
       this.timer = undefined;
-      void this.update().catch(() => this.report('Could not update the extension badge.'));
+      void this.refresh.run();
     }, 150);
   }
   async update() {
