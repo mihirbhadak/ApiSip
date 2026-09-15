@@ -29,7 +29,7 @@ export function statistics(records: CapturedRequest[]) {
     p50: percentile(times, 0.5),
     p95: times.length >= 20 ? percentile(times, 0.95) : undefined,
     p99: times.length >= 100 ? percentile(times, 0.99) : undefined,
-    transfer: sizes.reduce((a, b) => a + b, 0),
+    transfer: sizes.length ? sizes.reduce((a, b) => a + b, 0) : undefined,
     averageSize: sizes.length ? sizes.reduce((a, b) => a + b, 0) / sizes.length : undefined,
     status: distribution(errorCategory),
     domains: distribution((r) => new URL(r.request.url).host),

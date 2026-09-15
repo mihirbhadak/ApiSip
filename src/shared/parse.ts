@@ -97,6 +97,12 @@ export function normalizeEndpoint(url: string): string {
 export function prettyJson(text: string): string {
   return JSON.stringify(JSON.parse(text), null, 2);
 }
+/** A URL scheme is not a captured HTTP wire version. */
+export function httpVersion(protocol?: string): string {
+  if (protocol === 'h2') return 'HTTP/2';
+  if (protocol === 'h3') return 'HTTP/3';
+  return protocol && /^HTTP\/\d(?:\.\d)?$/i.test(protocol) ? protocol.toUpperCase() : '';
+}
 export function rawRequest(request: RequestData): string {
   const u = new URL(request.url);
   return (
@@ -105,7 +111,7 @@ export function rawRequest(request: RequestData): string {
     u.pathname +
     u.search +
     ' ' +
-    (request.protocol || 'HTTP') +
+    (httpVersion(request.protocol) || '[HTTP version unavailable]') +
     '\r\nHost: ' +
     u.host +
     '\r\n' +

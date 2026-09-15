@@ -140,7 +140,18 @@ export const entitySchema = z.object({
   tabIds: z.array(z.number()).optional(),
 });
 export type Entity = z.infer<typeof entitySchema>;
+export const exportPreferencesSchema = z.object({
+  requestHeaders: z.boolean().default(true),
+  requestBody: z.boolean().default(true),
+  responseHeaders: z.boolean().default(true),
+  responseBody: z.boolean().default(true),
+  cookies: z.boolean().default(false),
+  timing: z.boolean().default(true),
+  metadata: z.boolean().default(true),
+});
+export const defaultExportPreferences = exportPreferencesSchema.parse({});
 export const settingsSchema = z.object({
+  exportDefaults: exportPreferencesSchema.default(defaultExportPreferences),
   recording: z.boolean().default(false),
   scope: z.enum(['current', 'all']).default('current'),
   provider: z.enum(['webRequest', 'debugger']).default('webRequest'),

@@ -26,7 +26,11 @@ export function ExportDialog({
 }) {
   const [format, setFormat] = useState<ExportFormat>('JSON'),
     [scope, setScope] = useState(selected.size ? 'Selected requests' : 'Filtered requests');
-  const [options, setOptions] = useState(defaultExportOptions),
+  const [options, setOptions] = useState({
+      ...defaultExportOptions,
+      ...settings.exportDefaults,
+      secrets: false,
+    }),
     [busy, setBusy] = useState(false),
     [error, setError] = useState('');
   const run = async () => {

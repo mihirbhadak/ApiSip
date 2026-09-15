@@ -73,6 +73,14 @@ export const redactPairs = (pairs: Pair[]) =>
     value: sensitiveName(p.name) ? MASK : redactText(p.value),
   }));
 function redactBodyData(body?: Body): Body | undefined {
+  if (body?.type === 'binary' || body?.encoding === 'base64')
+    return {
+      ...body,
+      text: undefined,
+      fields: undefined,
+      available: false,
+      reason: 'Binary content is hidden or was omitted by sensitive-data masking.',
+    };
   return (
     body && {
       ...body,

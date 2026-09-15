@@ -20,6 +20,14 @@ describe('trust-boundary regressions', () => {
     expect(manifest.optional_host_permissions).toContain('https://*/*');
     expect(manifest.content_security_policy.extension_pages).not.toContain('unsafe-eval');
   });
+  it('omits masked binary data without presenting a redaction label as base64 content', () => {
+    const record = fixture();
+    record.response!.body = makeBody('c2VjcmV0', 'application/octet-stream', 1024, true);
+    const masked = redactRecord(record).response!.body!;
+    expect(masked.available).toBe(false);
+    expect(masked.text).toBeUndefined();
+    expect(masked.reason).toContain('hidden');
+  });
   it('does not alter nonsecret URL encoding or JSON formatting when masking', () => {
     const url = 'https://example.test/?name=a%20b&x=%2F&name=c';
     expect(redactUrl(url)).toBe(url);

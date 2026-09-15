@@ -1,10 +1,10 @@
+import { CaptureWriter } from './capture-writer';
 import { DebuggerProvider } from '../capture/providers/debugger';
 import { WebRequestProvider } from '../capture/providers/web-request';
 import type { CaptureContext } from '../capture/types';
 import { uid, type Diagnostic, type Settings } from '../shared/model';
 import { commandSchema, type Envelope, type Replies } from '../shared/messages';
 import {
-  captureUpdate,
   countRows,
   deleteRecords,
   getRecord,
@@ -39,6 +39,7 @@ function notify() {
   }, 200);
 }
 const ready = initialize();
+const captureWriter = new CaptureWriter();
 const epoch = chrome.storage.session.get('epoch').then(async (result) => {
   if (typeof result.epoch === 'string') return result.epoch;
   const value = uid();
@@ -59,7 +60,7 @@ const context: CaptureContext = {
   },
   update: async (key, change) => {
     await ready;
-    const record = await captureUpdate(key, change);
+    const record = await captureWriter.update(key, change);
     if (record) notify();
     return record;
   },
@@ -95,10 +96,21 @@ chrome.tabs.onActivated.addListener(({ tabId }) => {
     .then(() => activeTab(tabId))
     .catch(() => report('Could not restore the current tab.', 'error'));
 });
-chrome.tabs.onUpdated.addListener((id, change) => {
+chrome.windows.onFocusChanged.addListener((windowId) => {
+  if (windowId === chrome.windows.WINDOW_ID_NONE) return;
+  void ready
+    .then(async () => {
+      const [tab] = await chrome.tabs.query({ active: true, windowId });
+      if (tab?.id !== undefined) await activeTab(tab.id);
+    })
+    .catch(() => report('Could not follow the focused browser window.'));
+});
+chrome.tabs.onUpdated.addListener((id, change, tab) => {
   if (!change.url && change.status !== 'loading') return;
   void (async () => {
     const s = await settings();
+    if (tab.active && s.activeTabId !== id && /^https?:/.test(change.url ?? tab.url ?? ''))
+      await activeTab(id);
     if (change.url && s.activeTabId === id) await updateSettings({ activePageUrl: change.url });
     if (change.status === 'loading' && s.resetOnNavigation) {
       const rows = await listRows({ tabId: id });
@@ -146,6 +158,12 @@ chrome.alarms.onAlarm.addListener((alarm) => {
     .then(notify)
     .catch(() => report('Retention cleanup could not finish. Check available storage.', 'error'));
 });
+chrome.permissions.onAdded.addListener(() => {
+  webRequestProvider.register();
+  void reconcile().catch(() =>
+    report('Could not refresh capture after granting site access.', 'error'),
+  );
+});
 chrome.permissions.onRemoved.addListener(() => {
   void (async () => {
     if (!(await chrome.permissions.contains({ origins: ['http://*/*', 'https://*/*'] }))) {
@@ -170,6 +188,7 @@ chrome.runtime.onMessage.addListener((raw: unknown, sender, respond) => {
     if (cmd.type === 'state') {
       const s = await settings();
       return {
+        buildId: __BUILD_ID__,
         settings: s,
         count: await countRows(),
         tabCount: s.activeTabId === undefined ? 0 : await countRows({ tabId: s.activeTabId }),
@@ -190,6 +209,7 @@ chrome.runtime.onMessage.addListener((raw: unknown, sender, respond) => {
         !(await chrome.permissions.contains({ origins: ['http://*/*', 'https://*/*'] }))
       )
         throw new Error('Grant site access before starting capture.');
+      if (cmd.patch.recording) webRequestProvider.register();
       let s = await updateSettings(cmd.patch);
       if (s.recording && s.activeTabId === undefined) {
         const tabs = (await chrome.tabs.query({})).filter(

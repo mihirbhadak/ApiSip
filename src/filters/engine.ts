@@ -185,6 +185,31 @@ export function compileFilter(node: FilterNode): (record: CapturedRequest) => bo
     return ['!=', '!contains', '!exists'].includes(operator) ? !found : found;
   };
 }
+/** Three-valued metadata evaluation: undefined means a body is needed to decide. */
+export function compileMetadataFilter(
+  node: FilterNode,
+): (record: CapturedRequest) => boolean | undefined {
+  if (!needsBody(node)) return compileFilter(node);
+  if (node.type === 'predicate') return () => undefined;
+  if (node.type === 'not') {
+    const child = compileMetadataFilter(node.child);
+    return (record) => {
+      const value = child(record);
+      return value === undefined ? undefined : !value;
+    };
+  }
+  const children = node.children.map(compileMetadataFilter);
+  return (record) => {
+    let unknown = false;
+    for (const child of children) {
+      const result = child(record);
+      if (node.type === 'and' && result === false) return false;
+      if (node.type === 'or' && result === true) return true;
+      unknown ||= result === undefined;
+    }
+    return unknown ? undefined : node.type === 'and';
+  };
+}
 export function globalSearch(r: CapturedRequest, search: string): boolean {
   if (!search.trim()) return true;
   const q = search.toLowerCase();

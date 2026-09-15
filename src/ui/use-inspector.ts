@@ -1,3 +1,4 @@
+import { SearchScheduler } from './search-scheduler';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { defaultSettings, type CapturedRequest, type Entity } from '../shared/model';
 import { sendCommand, type RuntimeState } from '../shared/messages';
@@ -18,7 +19,7 @@ export function useInspector(search: string, expression: string, session: string
   const [loading, setLoading] = useState(true);
   const [revision, setRevision] = useState(0);
   const worker = useRef<Worker | null>(null),
-    searchId = useRef(0);
+    scheduler = useRef<SearchScheduler | null>(null);
   const refresh = useCallback(async () => {
     try {
       const [next, items] = await Promise.all([sendCommand({ type: 'state' }), listEntities()]);
@@ -41,13 +42,18 @@ export function useInspector(search: string, expression: string, session: string
   useEffect(() => {
     const instance = new Worker(new URL('./search.worker.ts', import.meta.url), { type: 'module' });
     worker.current = instance;
+    scheduler.current = new SearchScheduler((job) => {
+      setLoading(true);
+      instance.postMessage(job);
+    });
     instance.onmessage = (
       e: MessageEvent<{ revision: number; rows?: CapturedRequest[]; error?: string }>,
     ) => {
-      if (e.data.revision !== searchId.current) return;
-      setLoading(false);
-      setError(e.data.error ?? '');
-      if (e.data.rows) setRows(e.data.rows);
+      scheduler.current?.complete(e.data.revision, () => {
+        setLoading(false);
+        setError(e.data.error ?? '');
+        if (e.data.rows) setRows(e.data.rows);
+      });
     };
     instance.onerror = () => {
       setError('Search worker failed. Reload the inspector.');
@@ -56,16 +62,14 @@ export function useInspector(search: string, expression: string, session: string
     return () => {
       instance.terminate();
       worker.current = null;
+      scheduler.current = null;
     };
   }, []);
   useEffect(() => {
     const timer = setTimeout(
       () => {
         if (!globalThis.chrome?.runtime?.id) return;
-        setLoading(true);
-        searchId.current++;
-        worker.current?.postMessage({
-          revision: searchId.current,
+        scheduler.current?.request({
           scope:
             session === 'all'
               ? { workspaceId: state.settings.workspaceId }

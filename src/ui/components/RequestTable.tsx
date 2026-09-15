@@ -95,6 +95,14 @@ function cell(r: CapturedRequest, c: Column, mask: boolean) {
         {r.metadata.error ? 'Error' : (r.response?.status ?? '…')}
       </span>
     );
+  if (c === 'Type')
+    return (
+      new Map([
+        ['xmlhttprequest', 'XHR'],
+        ['main_frame', 'document'],
+        ['sub_frame', 'frame'],
+      ]).get(r.metadata.resourceType) ?? r.metadata.resourceType
+    );
   if (c === 'Time') return formatTime(r.timing?.total);
   if (c === 'Size') return formatBytes(r.response?.size);
   if (c === 'Timestamp') return new Date(r.timestamp).toLocaleTimeString();
@@ -324,7 +332,18 @@ export function RequestTable({
                 </button>
               </span>
               {columns.map((c) => (
-                <span role="cell" className={c.name === 'URL' ? 'url-cell' : 'mono'} key={c.name}>
+                <span
+                  role="cell"
+                  title={
+                    mask
+                      ? c.name === 'URL' || c.name === 'Initiator'
+                        ? redactUrl(String(columnValue(r, c.name)))
+                        : redactText(String(columnValue(r, c.name)))
+                      : String(columnValue(r, c.name))
+                  }
+                  className={c.name === 'URL' ? 'url-cell' : 'mono'}
+                  key={c.name}
+                >
                   {cell(r, c.name, mask)}
                 </span>
               ))}

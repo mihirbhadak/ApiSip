@@ -1,13 +1,13 @@
-import { useEffect, useState } from 'react';
-import { Copy, Eye, Pin, Star, X } from 'lucide-react';
+import { useState } from 'react';
+import { Copy, Eye, X } from 'lucide-react';
 import type { CapturedRequest, ReplayResult, RequestData, Settings } from '../../shared/model';
 import { formatBytes, formatTime, rawRequest, rawResponse } from '../../shared/parse';
-import { redactRecord, redactText } from '../../shared/security';
-import { compareReplay } from '../../shared/diff';
+import { redactRecord } from '../../shared/security';
 import { generateCode, languages, type Language } from '../../export/generators';
 import { Headers } from './Headers';
 import { BodyViewer } from './BodyViewer';
-import { RequestEditor } from './RequestEditor';
+import { RequestOverview } from './RequestOverview';
+import { ReplayPanel } from './ReplayPanel';
 export function RequestDetails({
   record,
   settings,
@@ -30,14 +30,7 @@ export function RequestDetails({
   onSave: (r: RequestData) => void;
 }) {
   const [reveal, setReveal] = useState(false),
-    [language, setLanguage] = useState<Language>('cURL'),
-    [history, setHistory] = useState(-1);
-  const [tagText, setTagText] = useState(record.tags.join(', ')),
-    [notes, setNotes] = useState(record.notes ?? '');
-  useEffect(() => {
-    setTagText(record.tags.join(', '));
-    setNotes(record.notes ?? '');
-  }, [record.tags, record.notes]);
+    [language, setLanguage] = useState<Language>('cURL');
   const r = settings.maskSecrets && !reveal ? redactRecord(record) : record;
   const tabs = [
     'Overview',
@@ -65,7 +58,6 @@ export function RequestDetails({
       code = e instanceof Error ? e.message : 'Code generation failed.';
     }
   }
-  const replay = r.replayHistory?.[history < 0 ? (r.replayHistory?.length ?? 1) - 1 : history];
   return (
     <aside className="details" aria-label="Request details">
       <div className="detail-heading">
@@ -115,106 +107,14 @@ export function RequestDetails({
       </div>
       <div className="detail-content" role="tabpanel" aria-label={tab}>
         {tab === 'Overview' && (
-          <>
-            <div className="section-heading">
-              <h3>General</h3>
-              <div className="button-row">
-                <button
-                  className="icon-button"
-                  aria-label={r.isFavorite ? 'Unsave selected request' : 'Save selected request'}
-                  onClick={() => onUpdate({ isFavorite: !r.isFavorite })}
-                >
-                  <Star size={15} fill={r.isFavorite ? 'currentColor' : 'none'} />
-                </button>
-                <button
-                  className="icon-button"
-                  aria-label="Pin request"
-                  aria-pressed={r.isPinned}
-                  onClick={() => onUpdate({ isPinned: !r.isPinned })}
-                >
-                  <Pin size={15} />
-                </button>
-              </div>
-            </div>
-            <table className="kv-table">
-              <tbody>
-                {Object.entries({
-                  URL: r.request.url,
-                  Method: r.request.method,
-                  Status: r.response
-                    ? r.response.status + ' ' + r.response.statusText
-                    : 'Unavailable',
-                  Protocol: r.request.protocol ?? 'Unavailable',
-                  'Resource type': r.metadata.resourceType,
-                  'Captured at': new Date(r.timestamp).toLocaleString(),
-                  'Source page': r.pageUrl ?? 'Unavailable',
-                  Initiator: r.initiator ?? 'Unavailable',
-                  Tab: r.tabId ?? 'Imported / unavailable',
-                  Frame: r.frameId ?? 'Unavailable',
-                  Cache:
-                    r.metadata.fromCache === undefined
-                      ? 'Unavailable'
-                      : r.metadata.fromCache
-                        ? 'Served from cache'
-                        : 'Network',
-                  'Service worker':
-                    r.metadata.fromServiceWorker === undefined
-                      ? 'Unavailable'
-                      : String(r.metadata.fromServiceWorker),
-                }).map(([key, value]) => (
-                  <tr key={key}>
-                    <th scope="row">{key}</th>
-                    <td className="mono">{value}</td>
-                    <td>
-                      <button
-                        className="icon-button"
-                        aria-label={'Copy ' + key}
-                        onClick={() => copy(String(value))}
-                      >
-                        <Copy size={12} />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            {r.metadata.error && (
-              <p role="alert" className="notice warning">
-                {r.metadata.error}
-              </p>
-            )}
-            <h3>Organize</h3>
-            <label className="field">
-              Tags{' '}
-              <input
-                aria-label="Request tags"
-                value={settings.maskSecrets && !reveal ? redactText(tagText) : tagText}
-                readOnly={settings.maskSecrets && !reveal && redactText(tagText) !== tagText}
-                onChange={(e) => setTagText(e.target.value)}
-                onBlur={() =>
-                  onUpdate({
-                    tags: tagText
-                      .split(',')
-                      .map((t) => t.trim().replace(/^#/, ''))
-                      .filter(Boolean)
-                      .slice(0, 100),
-                  })
-                }
-                placeholder="auth, slow, production"
-              />
-            </label>
-            <label className="field">
-              Notes
-              <textarea
-                aria-label="Request notes"
-                value={settings.maskSecrets && !reveal ? redactText(notes) : notes}
-                readOnly={settings.maskSecrets && !reveal && redactText(notes) !== notes}
-                onChange={(e) => setNotes(e.target.value)}
-                onBlur={() => onUpdate({ notes })}
-                placeholder="Add debugging notes…"
-              />
-            </label>
-          </>
+          <RequestOverview
+            record={record}
+            r={r}
+            settings={settings}
+            reveal={reveal}
+            copy={copy}
+            onUpdate={onUpdate}
+          />
         )}
         {tab === 'Headers' && (
           <>
@@ -421,71 +321,14 @@ export function RequestDetails({
           </>
         )}
         {tab === 'Replay' && (
-          <>
-            <RequestEditor
-              key={record.id}
-              record={record}
-              context={settings.replayContext}
-              onSend={onSend}
-              onSave={onSave}
-            />
-            <hr />
-            <div className="section-heading">
-              <h3>
-                Replay history <span className="muted">{r.replayHistory?.length ?? 0}</span>
-              </h3>
-              {!!r.replayHistory?.length && (
-                <select
-                  aria-label="Replay history"
-                  value={history}
-                  onChange={(e) => setHistory(Number(e.target.value))}
-                >
-                  <option value={-1}>Latest replay</option>
-                  {r.replayHistory.map((h, i) => (
-                    <option key={h.id} value={i}>
-                      Replay #{i + 1} · {new Date(h.timestamp).toLocaleTimeString()}
-                    </option>
-                  ))}
-                </select>
-              )}
-            </div>
-            {replay ? (
-              <>
-                <p className="mono">
-                  {replay.context} · {replay.response?.status ?? 'Error'} ·{' '}
-                  {formatTime(replay.duration)}
-                </p>
-                {replay.error && (
-                  <p className="error-text" role="alert">
-                    {replay.error}
-                  </p>
-                )}
-                {replay.warnings.map((w, i) => (
-                  <p className="notice small" key={i}>
-                    {w}
-                  </p>
-                ))}
-                <BodyViewer body={replay.response?.body} title="Replay response body" copy={copy} />
-                <h3>Original → replay diff</h3>
-                <div className="diff-list">
-                  {compareReplay(r, replay)
-                    .slice(0, 500)
-                    .map((d, i) => (
-                      <div key={i} className={'diff-line ' + d.kind}>
-                        <span className="mono">
-                          {d.kind === 'added' ? '+' : d.kind === 'removed' ? '−' : '~'} {d.path}
-                        </span>
-                        <pre>
-                          {JSON.stringify(d.before)} → {JSON.stringify(d.after)}
-                        </pre>
-                      </div>
-                    ))}
-                </div>
-              </>
-            ) : (
-              <div className="empty-small">No replays yet. Edit the request above and send it.</div>
-            )}
-          </>
+          <ReplayPanel
+            record={record}
+            r={r}
+            settings={settings}
+            copy={copy}
+            onSend={onSend}
+            onSave={onSave}
+          />
         )}
         {tab === 'Messages' && (
           <>

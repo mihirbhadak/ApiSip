@@ -1,12 +1,20 @@
 import { z } from 'zod';
 import {
   capturedSchema,
+  defaultExportPreferences,
   entitySchema,
   uid,
   type CapturedRequest,
   type Entity,
 } from '../shared/model';
-import { makeBody, parseUrl, rawRequest, rawResponse, unavailable } from '../shared/parse';
+import {
+  httpVersion,
+  makeBody,
+  parseUrl,
+  rawRequest,
+  rawResponse,
+  unavailable,
+} from '../shared/parse';
 import { redactRecord, redactText } from '../shared/security';
 export type ExportFormat = 'JSON' | 'CSV' | 'Markdown' | 'HAR' | 'TXT';
 export type ExportOptions = {
@@ -20,13 +28,7 @@ export type ExportOptions = {
   secrets: boolean;
 };
 export const defaultExportOptions: ExportOptions = {
-  requestHeaders: true,
-  requestBody: true,
-  responseHeaders: true,
-  responseBody: true,
-  cookies: false,
-  timing: true,
-  metadata: true,
+  ...defaultExportPreferences,
   secrets: false,
 };
 export const backupSchema = z.object({
@@ -164,7 +166,7 @@ export function exportRecords(
             request: {
               method: r.request.method,
               url: r.request.url,
-              httpVersion: r.request.protocol ?? '',
+              httpVersion: httpVersion(r.request.protocol),
               headers: r.request.headers,
               queryString: r.request.query,
               cookies: r.request.cookies ?? [],
@@ -181,7 +183,7 @@ export function exportRecords(
             response: {
               status: r.response?.status ?? 0,
               statusText: r.response?.statusText ?? '',
-              httpVersion: r.request.protocol ?? '',
+              httpVersion: httpVersion(r.request.protocol),
               headers: r.response?.headers ?? [],
               cookies: r.response?.cookies ?? [],
               content: {
@@ -376,6 +378,9 @@ export function downloadFile(name: string, content: string, type = 'text/plain')
   const anchor = document.createElement('a');
   anchor.href = url;
   anchor.download = name;
+  anchor.hidden = true;
+  document.body.append(anchor);
   anchor.click();
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  anchor.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 60_000);
 }

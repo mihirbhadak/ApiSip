@@ -44,11 +44,13 @@ export function SettingsDialog({
   return (
     <Dialog title="Settings" wide onClose={onClose}>
       <div className="tabs">
-        {['Capture', 'Privacy & storage', 'Appearance', 'Shortcuts', 'Diagnostics'].map((t) => (
-          <button key={t} className={tab === t ? 'active' : ''} onClick={() => setTab(t)}>
-            {t}
-          </button>
-        ))}
+        {['Capture', 'Privacy & storage', 'Export', 'Appearance', 'Shortcuts', 'Diagnostics'].map(
+          (t) => (
+            <button key={t} className={tab === t ? 'active' : ''} onClick={() => setTab(t)}>
+              {t}
+            </button>
+          ),
+        )}
       </div>
       {tab === 'Capture' && (
         <>
@@ -127,6 +129,38 @@ export function SettingsDialog({
             Current-tab capture follows the last active HTTP(S) tab; the inspector does not become
             the capture target.
           </p>
+        </>
+      )}
+      {tab === 'Export' && (
+        <>
+          <h3>Default export content</h3>
+          <p className="small muted">
+            These options apply when opening the export dialog. Including secrets always requires a
+            separate choice for each export.
+          </p>
+          {Object.entries({
+            requestHeaders: 'Request headers',
+            requestBody: 'Request body',
+            responseHeaders: 'Response headers',
+            responseBody: 'Response body',
+            cookies: 'Cookies',
+            timing: 'Timing',
+            metadata: 'Metadata',
+          }).map(([key, label]) => (
+            <label className="checkbox-label" key={key}>
+              <input
+                type="checkbox"
+                checked={settings.exportDefaults[key as keyof Settings['exportDefaults']]}
+                onChange={(e) =>
+                  setPatch({
+                    ...patch,
+                    exportDefaults: { ...settings.exportDefaults, [key]: e.target.checked },
+                  })
+                }
+              />
+              {label}
+            </label>
+          ))}
         </>
       )}
       {tab === 'Privacy & storage' && (
@@ -256,6 +290,7 @@ export function SettingsDialog({
         <>
           <div className="notice">
             <strong>Capture capability</strong>
+            <p>Build: {state.buildId ?? 'Connecting?'}</p>
             <p>
               {state.hostsGranted ? 'HTTP(S) site access granted' : 'Site access not granted'} ·{' '}
               {state.attachedTabs.length} debugger target(s) attached.

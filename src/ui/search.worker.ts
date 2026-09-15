@@ -1,4 +1,4 @@
-import { compileFilter, globalSearch, needsBody } from '../filters/engine';
+import { compileFilter, compileMetadataFilter, globalSearch, needsBody } from '../filters/engine';
 import { parseFilter } from '../filters/parser';
 import { getRecord, listRows, type Scope } from '../storage/repository';
 let revision = 0;
@@ -10,15 +10,20 @@ self.onmessage = async (
   try {
     const ast = parseFilter(message.expression),
       filter = compileFilter(ast),
+      metadataFilter = compileMetadataFilter(ast),
       body = needsBody(ast);
     const rows = await listRows(message.scope),
       result = [];
     for (let i = 0; i < rows.length; i++) {
       if (revision !== message.revision) return;
       const row = rows[i]!;
-      if (!body && !filter(row)) continue;
+      if (metadataFilter(row) === false) continue;
+      const canHaveBody = row.request.body?.available || row.response?.body?.available;
       if (message.search || body) {
-        const complete = !body && globalSearch(row, message.search) ? row : await getRecord(row.id);
+        const complete =
+          !canHaveBody || (!body && globalSearch(row, message.search))
+            ? row
+            : await getRecord(row.id);
         if (!complete || !filter(complete) || !globalSearch(complete, message.search)) continue;
       }
       result.push(row);

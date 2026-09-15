@@ -1,6 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { fixture } from './fixtures';
-import { bodyType, makeBody, normalizeEndpoint, parseUrl, prettyJson } from '../src/shared/parse';
+import {
+  httpVersion,
+  rawRequest,
+  bodyType,
+  makeBody,
+  normalizeEndpoint,
+  parseUrl,
+  prettyJson,
+} from '../src/shared/parse';
 import { compileFilter, globalSearch, safeRegex } from '../src/filters/engine';
 import { parseFilter, printFilter } from '../src/filters/parser';
 import { structuralDiff } from '../src/shared/diff';
@@ -199,4 +207,17 @@ it('computes meaningful analytics and bounds badge text', () => {
   });
   expect(badgeText(0)).toBe('0');
   expect(badgeText(1000)).toBe('999+');
+});
+
+it('does not invent a wire protocol from the captured URL scheme', () => {
+  expect(httpVersion('https')).toBe('');
+  expect(httpVersion('http')).toBe('');
+  expect(httpVersion('h2')).toBe('HTTP/2');
+  expect(httpVersion('http/1.1')).toBe('HTTP/1.1');
+  const record = fixture();
+  record.request.protocol = 'https';
+  expect(rawRequest(record.request)).toContain('[HTTP version unavailable]');
+  const har = JSON.parse(exportRecords('HAR', [record]));
+  expect(har.log.entries[0].request.httpVersion).toBe('');
+  expect(har.log.entries[0].response.httpVersion).toBe('');
 });

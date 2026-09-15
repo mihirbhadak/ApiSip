@@ -196,7 +196,9 @@ export function useInspectorController() {
     const measured = visible.filter((r) => r.timing?.total !== undefined);
     return {
       errors: visible.filter((r) => r.metadata.error || (r.response?.status ?? 0) >= 400).length,
-      bytes: visible.reduce((n, r) => n + (r.response?.size ?? 0), 0),
+      bytes: visible.some((r) => r.response?.size !== undefined)
+        ? visible.reduce((n, r) => n + (r.response?.size ?? 0), 0)
+        : undefined,
       average: measured.length
         ? measured.reduce((n, r) => n + r.timing!.total!, 0) / measured.length
         : undefined,

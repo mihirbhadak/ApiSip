@@ -1,4 +1,5 @@
-import { getDB, type BodyRow, type RequestRow } from './database';
+import type { IDBPTransaction } from 'idb';
+import { getDB, type BodyRow, type RequestRow, type InspectorDB } from './database';
 import {
   defaultSettings,
   settingsSchema,
@@ -139,18 +140,21 @@ export async function mutateRecord(
   }
   await tx.done;
 }
-export async function captureUpdate(
-  key: string,
-  change: (record?: CapturedRequest) => CapturedRequest | undefined,
-) {
-  const db = await getDB(),
-    tx = db.transaction(['requests', 'bodies', 'entities'], 'readwrite');
+export type CaptureMutation = {
+  key: string;
+  change: (record?: CapturedRequest) => CapturedRequest | undefined;
+};
+type CaptureTransaction = IDBPTransaction<
+  InspectorDB,
+  ['requests', 'bodies', 'entities'],
+  'readwrite'
+>;
+async function changeCapture(tx: CaptureTransaction, { key, change }: CaptureMutation) {
   const old = await tx.objectStore('requests').index('captureKey').get(key);
   const full = old && joinRecord(old, await tx.objectStore('bodies').get(old.id));
   const next = change(full);
   if (next) {
     if (!old && !(await tx.objectStore('entities').get(next.sessionId))) {
-      await tx.done;
       return undefined;
     }
     if (old && old.id !== next.id)
@@ -173,8 +177,28 @@ export async function captureUpdate(
         });
     }
   }
-  await tx.done;
   return next;
+}
+export async function captureBatch(changes: CaptureMutation[]) {
+  const db = await getDB();
+  const tx = db.transaction(['requests', 'bodies', 'entities'], 'readwrite');
+  try {
+    const results = [];
+    for (const change of changes) results.push(await changeCapture(tx, change));
+    await tx.done;
+    return results;
+  } catch (error) {
+    try {
+      tx.abort();
+    } catch {
+      /* already aborted */
+    }
+    await tx.done.catch(() => undefined);
+    throw error;
+  }
+}
+export async function captureUpdate(key: string, change: CaptureMutation['change']) {
+  return (await captureBatch([{ key, change }]))[0];
 }
 export async function interruptTab(tabId: number, reason: string, provider?: 'debugger') {
   const db = await getDB();

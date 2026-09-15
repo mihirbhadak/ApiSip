@@ -9,7 +9,11 @@ export function InspectorStatus({ controller }: { controller: InspectorControlle
         <span className={'session-dot ' + (settings.recording ? 'live' : '')} />
         <strong>{visible.length.toLocaleString()} requests</strong>
         <span>{summary.errors} errors</span>
-        <span>{formatBytes(summary.bytes)} transferred</span>
+        <span>
+          {summary.bytes === undefined
+            ? 'Transfer unavailable'
+            : formatBytes(summary.bytes) + ' known transfer'}
+        </span>
         <span>{formatTime(summary.average)} average</span>
         <span className="toolbar-spacer" />
         {loading && <span role="status">Updating…</span>}

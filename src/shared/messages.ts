@@ -20,6 +20,7 @@ export const commandSchema = z.discriminatedUnion('type', [
 ]);
 export type Command = z.infer<typeof commandSchema>;
 export type RuntimeState = {
+  buildId?: string;
   settings: Settings;
   count: number;
   tabCount: number;
@@ -44,5 +45,13 @@ export async function sendCommand<T extends Command['type']>(
   const response = (await chrome.runtime.sendMessage(command)) as Envelope<Replies[T]> | undefined;
   if (!response) throw new Error('The background worker did not respond. Reload the extension.');
   if (!response.ok) throw new Error(response.error);
+  if (
+    command.type === 'state' &&
+    typeof __BUILD_ID__ !== 'undefined' &&
+    (response.data as RuntimeState).buildId !== __BUILD_ID__
+  )
+    throw new Error(
+      'The extension worker is from an older build. Reload API Catcher in chrome://extensions, then reload this inspector.',
+    );
   return response.data;
 }
