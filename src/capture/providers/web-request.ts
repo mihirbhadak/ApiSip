@@ -1,0 +1,207 @@
+import { uid, type CapturedRequest, type Pair } from '../../shared/model';
+import { header, makeBody, parseUrl, unavailable } from '../../shared/parse';
+import { type CaptureContext, type CaptureProvider, serialQueue } from '../types';
+
+const pairs = (headers?: chrome.webRequest.HttpHeader[]): Pair[] =>
+  (headers ?? []).map((h) => ({
+    name: h.name,
+    value:
+      h.value ?? (h.binaryValue ? '[Binary header: ' + h.binaryValue.byteLength + ' bytes]' : ''),
+  }));
+export class WebRequestProvider implements CaptureProvider {
+  readonly name = 'webRequest';
+  private queue;
+  constructor(
+    private context: CaptureContext,
+    private isDebugged: (tabId: number) => boolean,
+  ) {
+    this.queue = serialQueue((message) => context.report(message, 'error'));
+  }
+  async reconcile() {
+    /* Synchronous listeners stay registered throughout the worker lifecycle. */
+  }
+  private event(id: string, fn: (key: string) => Promise<void>) {
+    this.queue(id, async () => fn((await this.context.epoch) + ':wr:' + id));
+  }
+  register() {
+    const filter = { urls: ['http://*/*', 'https://*/*'] };
+    chrome.webRequest.onBeforeRequest.addListener(
+      (d) => {
+        if (d.tabId < 0) return;
+        this.event(d.requestId, async (key) => {
+          if (this.isDebugged(d.tabId) || !(await this.context.accepts(d.tabId))) return;
+          const settings = await this.context.settings();
+          const parsed = parseUrl(d.url);
+          let body = undefined;
+          if (d.requestBody?.formData) {
+            const fields = Object.entries(d.requestBody.formData).flatMap(([name, values]) =>
+              values.map((value) => ({
+                name,
+                value: typeof value === 'string' ? value : '[Binary form field]',
+                file: typeof value !== 'string',
+              })),
+            );
+            body = {
+              ...makeBody(
+                new URLSearchParams(fields.map((p) => [p.name, p.value])).toString(),
+                'application/x-www-form-urlencoded',
+                settings.maxBodyBytes,
+              ),
+              fields,
+            };
+          } else if (d.requestBody?.raw) {
+            const chunks = d.requestBody.raw.flatMap((p) =>
+              p.bytes ? [new Uint8Array(p.bytes)] : [],
+            );
+            if (chunks.length) {
+              const size = chunks.reduce((n, p) => n + p.length, 0),
+                bytes = new Uint8Array(Math.min(size, settings.maxBodyBytes));
+              let offset = 0;
+              for (const chunk of chunks) {
+                const part = chunk.subarray(0, bytes.length - offset);
+                bytes.set(part, offset);
+                offset += part.length;
+              }
+              body = makeBody(new TextDecoder().decode(bytes), '', settings.maxBodyBytes);
+              body.originalBytes = size;
+              body.truncated = size > settings.maxBodyBytes;
+            } else
+              body = unavailable(
+                'Chrome exposed a file upload reference, but not its file content.',
+              );
+          } else if (d.requestBody?.error)
+            body = unavailable('Chrome could not expose the upload body.');
+          const record: CapturedRequest = {
+            id: uid(),
+            timestamp: d.timeStamp,
+            tabId: d.tabId,
+            frameId: d.frameId,
+            initiator: d.initiator,
+            pageUrl: d.type === 'main_frame' ? d.url : d.initiator,
+            request: {
+              url: d.url,
+              method: d.method,
+              protocol: parsed.protocol,
+              query: parsed.query,
+              headers: [],
+              body,
+            },
+            metadata: { provider: 'webRequest', resourceType: d.type, state: 'pending' },
+            workspaceId: settings.workspaceId,
+            sessionId: settings.sessionId,
+            tags: [],
+            isFavorite: false,
+            isPinned: false,
+          };
+          await this.context.update(key, () => record);
+        });
+        return undefined;
+      },
+      filter,
+      ['requestBody'],
+    );
+    chrome.webRequest.onBeforeSendHeaders.addListener(
+      (d) => {
+        this.event(d.requestId, async (key) => {
+          await this.context.update(key, (r) => {
+            if (!r) return;
+            const headers = pairs(d.requestHeaders),
+              contentType = header(headers, 'content-type');
+            const body =
+              r.request.body?.text !== undefined
+                ? {
+                    ...makeBody(r.request.body.text, contentType),
+                    truncated: r.request.body.truncated,
+                    originalBytes: r.request.body.originalBytes,
+                  }
+                : r.request.body;
+            if (body && contentType?.includes('multipart')) {
+              body.type = 'multipart';
+              body.fields = r.request.body?.fields;
+              body.reason =
+                'Chrome may omit uploaded file content. Captured fields cannot reproduce the original multipart boundaries.';
+            }
+            return { ...r, request: { ...r.request, headers, contentType, body } };
+          });
+        });
+        return undefined;
+      },
+      filter,
+      ['requestHeaders', 'extraHeaders'],
+    );
+    chrome.webRequest.onHeadersReceived.addListener(
+      (d) => {
+        this.event(d.requestId, async (key) => {
+          await this.context.update(
+            key,
+            (r) =>
+              r && {
+                ...r,
+                response: {
+                  status: d.statusCode,
+                  statusText: d.statusLine.replace(/^\S+\s+\d+\s*/, ''),
+                  headers: pairs(d.responseHeaders),
+                  contentType: header(pairs(d.responseHeaders), 'content-type'),
+                  body: unavailable(
+                    'Passive capture cannot read response bodies. Enable response capture, then repeat the request.',
+                  ),
+                },
+                metadata: {
+                  ...r.metadata,
+                  mimeType: header(pairs(d.responseHeaders), 'content-type'),
+                },
+              },
+          );
+        });
+        return undefined;
+      },
+      filter,
+      ['responseHeaders', 'extraHeaders'],
+    );
+    chrome.webRequest.onCompleted.addListener((d) => {
+      this.event(d.requestId, async (key) => {
+        await this.context.update(
+          key,
+          (r) =>
+            r && {
+              ...r,
+              timing: { total: Math.max(0, d.timeStamp - r.timestamp) },
+              metadata: {
+                ...r.metadata,
+                state: 'complete',
+                fromCache: d.fromCache,
+                remoteAddress: d.ip,
+              },
+              response: r.response && { ...r.response, status: d.statusCode },
+            },
+        );
+      });
+    }, filter);
+    chrome.webRequest.onBeforeRedirect.addListener((d) => {
+      this.event(d.requestId, async (key) => {
+        await this.context.update(
+          key,
+          (r) =>
+            r && {
+              ...r,
+              timing: { total: Math.max(0, d.timeStamp - r.timestamp) },
+              metadata: { ...r.metadata, state: 'complete', redirectUrl: d.redirectUrl },
+            },
+        );
+      });
+    }, filter);
+    chrome.webRequest.onErrorOccurred.addListener((d) => {
+      this.event(d.requestId, async (key) => {
+        await this.context.update(
+          key,
+          (r) =>
+            r && {
+              ...r,
+              timing: { total: Math.max(0, d.timeStamp - r.timestamp) },
+              metadata: { ...r.metadata, state: 'error', error: d.error },
+            },
+        );
+      });
+    }, filter);
+  }
+}
