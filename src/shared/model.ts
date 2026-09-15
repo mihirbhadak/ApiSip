@@ -102,6 +102,7 @@ export const capturedSchema = z.object({
     operationName: z.string().optional(),
     connectionId: z.string().optional(),
     monotonicStart: z.number().optional(),
+    responseHeadersComplete: z.boolean().optional(),
     messages: z
       .array(
         z.object({

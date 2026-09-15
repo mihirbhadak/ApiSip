@@ -1,4 +1,4 @@
-import type { CapturedRequest, Pair, RequestData } from './model';
+import type { Body, CapturedRequest, Pair, RequestData } from './model';
 
 export const MASK = '[REDACTED]';
 export const sensitiveName = (name: string) =>
@@ -25,7 +25,11 @@ function scrub(value: unknown, depth = 0): unknown {
 }
 export function redactBody(text: string, type?: string): string {
   try {
-    return JSON.stringify(scrub(JSON.parse(text)), null, 2);
+    const parsed: unknown = JSON.parse(text);
+    const redacted = scrub(parsed);
+    return JSON.stringify(parsed) === JSON.stringify(redacted)
+      ? text
+      : JSON.stringify(redacted, null, 2);
   } catch {
     if (type === 'form')
       return new URLSearchParams(
@@ -42,14 +46,23 @@ export function redactBody(text: string, type?: string): string {
 export function redactUrl(value: string): string {
   try {
     const u = new URL(value);
+    let changed = !!u.username || !!u.password;
     if (u.username) u.username = MASK;
     if (u.password) u.password = MASK;
     const pairs = [...u.searchParams].map(
       ([k, v]) => [k, sensitiveName(k) ? MASK : redactText(v)] as [string, string],
     );
-    u.search = new URLSearchParams(pairs).toString();
-    u.hash = redactText(u.hash);
-    return u.href;
+    const original = [...u.searchParams];
+    if (pairs.some((pair, i) => pair[1] !== original[i]?.[1])) {
+      u.search = new URLSearchParams(pairs).toString();
+      changed = true;
+    }
+    const hash = redactText(u.hash);
+    if (hash !== u.hash) {
+      u.hash = hash;
+      changed = true;
+    }
+    return changed ? u.href : value;
   } catch {
     return redactText(value);
   }
@@ -59,6 +72,19 @@ export const redactPairs = (pairs: Pair[]) =>
     name: p.name,
     value: sensitiveName(p.name) ? MASK : redactText(p.value),
   }));
+function redactBodyData(body?: Body): Body | undefined {
+  return (
+    body && {
+      ...body,
+      text: body.text === undefined ? undefined : redactBody(body.text, body.type),
+      fields: body.fields?.map((p) => ({
+        ...p,
+        value: sensitiveName(p.name) ? MASK : redactText(p.value),
+      })),
+      reason: body.reason && redactText(body.reason),
+    }
+  );
+}
 export function redactRequest(r: RequestData): RequestData {
   return {
     ...r,
@@ -66,14 +92,7 @@ export function redactRequest(r: RequestData): RequestData {
     headers: redactPairs(r.headers),
     query: redactPairs(r.query),
     cookies: r.cookies?.map((p) => ({ ...p, value: MASK })),
-    body: r.body && {
-      ...r.body,
-      text: r.body.text === undefined ? undefined : redactBody(r.body.text, r.body.type),
-      fields: r.body.fields?.map((p) => ({
-        ...p,
-        value: sensitiveName(p.name) ? MASK : redactText(p.value),
-      })),
-    },
+    body: redactBodyData(r.body),
   };
 }
 export function redactRecord(record: CapturedRequest): CapturedRequest {
@@ -94,27 +113,18 @@ export function redactRecord(record: CapturedRequest): CapturedRequest {
       ...record.response,
       headers: redactPairs(record.response.headers),
       cookies: record.response.cookies?.map((p) => ({ ...p, value: MASK })),
-      body: record.response.body && {
-        ...record.response.body,
-        text:
-          record.response.body.text === undefined
-            ? undefined
-            : redactBody(record.response.body.text, record.response.body.type),
-      },
+      body: redactBodyData(record.response.body),
     },
     replayHistory: record.replayHistory?.map((replay) => ({
       ...replay,
       request: redactRequest(replay.request),
+      error: replay.error && redactText(replay.error),
+      warnings: replay.warnings.map(redactText),
       response: replay.response && {
         ...replay.response,
         headers: redactPairs(replay.response.headers),
-        body: replay.response.body && {
-          ...replay.response.body,
-          text:
-            replay.response.body.text === undefined
-              ? undefined
-              : redactBody(replay.response.body.text, replay.response.body.type),
-        },
+        cookies: replay.response.cookies?.map((p) => ({ ...p, value: MASK })),
+        body: redactBodyData(replay.response.body),
       },
     })),
   };
@@ -132,7 +142,7 @@ export function prepareHeaders(headers: Pair[]) {
     /^(accept-charset|accept-encoding|access-control-request-.*|connection|content-length|cookie2?|date|dnt|expect|host|keep-alive|origin|referer|set-cookie|te|trailer|transfer-encoding|upgrade|via|proxy-.*|sec-.*)$/i;
   const omitted: string[] = [];
   const permitted = headers.filter((h) => {
-    if (/\r|\n/.test(h.name + h.value))
+    if (/\r|\n|\0/.test(h.name + h.value))
       throw new Error('Header names and values cannot contain line breaks.');
     if (!/^[!#$%&'*+.^_`|~0-9A-Za-z-]+$/.test(h.name))
       throw new Error('Invalid header name: ' + h.name);

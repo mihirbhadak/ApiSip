@@ -60,37 +60,31 @@ export async function initialize() {
     settings = { ...defaultSettings };
     await tx.objectStore('state').put(settings, 'settings');
     const now = Date.now();
-    await tx
-      .objectStore('entities')
-      .put({
-        id: 'default',
-        kind: 'workspace',
-        name: 'My workspace',
-        workspaceId: 'default',
-        createdAt: now,
-        updatedAt: now,
-      });
-    await tx
-      .objectStore('entities')
-      .put({
-        id: 'initial',
-        kind: 'session',
-        name: 'First session',
-        workspaceId: 'default',
-        createdAt: now,
-        updatedAt: now,
-      });
+    await tx.objectStore('entities').put({
+      id: 'default',
+      kind: 'workspace',
+      name: 'My workspace',
+      workspaceId: 'default',
+      createdAt: now,
+      updatedAt: now,
+    });
+    await tx.objectStore('entities').put({
+      id: 'initial',
+      kind: 'session',
+      name: 'First session',
+      workspaceId: 'default',
+      createdAt: now,
+      updatedAt: now,
+    });
     for (const preset of presets)
-      await tx
-        .objectStore('entities')
-        .put({
-          id: uid(),
-          kind: 'filter',
-          workspaceId: 'default',
-          createdAt: now,
-          updatedAt: now,
-          ...preset,
-        });
+      await tx.objectStore('entities').put({
+        id: uid(),
+        kind: 'filter',
+        workspaceId: 'default',
+        createdAt: now,
+        updatedAt: now,
+        ...preset,
+      });
   }
   await tx.done;
   return settingsSchema.parse(settings);
@@ -155,6 +149,10 @@ export async function captureUpdate(
   const full = old && joinRecord(old, await tx.objectStore('bodies').get(old.id));
   const next = change(full);
   if (next) {
+    if (!old && !(await tx.objectStore('entities').get(next.sessionId))) {
+      await tx.done;
+      return undefined;
+    }
     if (old && old.id !== next.id)
       await tx.objectStore('requests').put({ ...old, captureKey: undefined });
     const [row, body] = splitRecord(next, key);
@@ -163,22 +161,30 @@ export async function captureUpdate(
     if (!old) {
       const session = await tx.objectStore('entities').get(next.sessionId);
       if (session)
-        await tx
-          .objectStore('entities')
-          .put({
-            ...session,
-            updatedAt: Date.now(),
-            tabIds: [
-              ...new Set([
-                ...(session.tabIds ?? []),
-                ...(next.tabId === undefined ? [] : [next.tabId]),
-              ]),
-            ],
-          });
+        await tx.objectStore('entities').put({
+          ...session,
+          updatedAt: Date.now(),
+          tabIds: [
+            ...new Set([
+              ...(session.tabIds ?? []),
+              ...(next.tabId === undefined ? [] : [next.tabId]),
+            ]),
+          ],
+        });
     }
   }
   await tx.done;
   return next;
+}
+export async function interruptTab(tabId: number, reason: string, provider?: 'debugger') {
+  const db = await getDB();
+  const tx = db.transaction('requests', 'readwrite');
+  const rows = await tx.store.index('tabId').getAll(tabId);
+  for (const row of rows) {
+    if (row.metadata.state === 'pending' && (!provider || row.metadata.provider === provider))
+      void tx.store.put({ ...row, metadata: { ...row.metadata, state: 'error', error: reason } });
+  }
+  await tx.done;
 }
 export type Scope = { workspaceId?: string; sessionId?: string; tabId?: number };
 export async function listRows(scope: Scope = {}): Promise<RequestRow[]> {

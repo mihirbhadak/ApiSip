@@ -7,7 +7,7 @@ import {
   type Entity,
 } from '../shared/model';
 import { makeBody, parseUrl, rawRequest, rawResponse, unavailable } from '../shared/parse';
-import { redactRecord } from '../shared/security';
+import { redactRecord, redactText } from '../shared/security';
 export type ExportFormat = 'JSON' | 'CSV' | 'Markdown' | 'HAR' | 'TXT';
 export type ExportOptions = {
   requestHeaders: boolean;
@@ -97,7 +97,18 @@ export function exportRecords(
   const rows = records.map((r) => project(r, options));
   if (format === 'JSON')
     return JSON.stringify(
-      { schemaVersion: 1, exportedAt: Date.now(), entities, requests: rows },
+      {
+        schemaVersion: 1,
+        exportedAt: Date.now(),
+        entities: options.secrets
+          ? entities
+          : entities.map((e) => ({
+              ...e,
+              name: redactText(e.name),
+              expression: e.expression && redactText(e.expression),
+            })),
+        requests: rows,
+      },
       null,
       2,
     );
@@ -230,7 +241,11 @@ const harSchema = z.object({
             httpVersion: z.string().optional(),
             headers: z.array(harPair),
             postData: z
-              .object({ mimeType: z.string().optional(), text: z.string().optional() })
+              .object({
+                mimeType: z.string().optional(),
+                text: z.string().optional(),
+                _truncated: z.boolean().optional(),
+              })
               .optional(),
           }),
           response: z.object({
@@ -266,6 +281,8 @@ export function importRecords(text: string, workspaceId: string, sessionId: stri
         'Invalid backup or unsupported schema version. Expected API Catcher schema version 1.',
       );
     // New IDs prevent imports from overwriting existing local records.
+    if (new Set(parsed.data.entities.map((e) => e.id)).size !== parsed.data.entities.length)
+      throw new Error('Backup contains duplicate entity identifiers.');
     const map = new Map(parsed.data.entities.map((e) => [e.id, uid()]));
     return {
       ...parsed.data,
@@ -282,6 +299,17 @@ export function importRecords(text: string, workspaceId: string, sessionId: stri
         workspaceId: map.get(r.workspaceId) ?? workspaceId,
         sessionId: map.get(r.sessionId) ?? sessionId,
         collectionId: r.collectionId ? map.get(r.collectionId) : undefined,
+        metadata: {
+          ...r.metadata,
+          provider: 'import',
+          monotonicStart: undefined,
+          responseHeadersComplete: undefined,
+          state: r.metadata.state === 'pending' ? 'error' : r.metadata.state,
+          error:
+            r.metadata.state === 'pending'
+              ? 'Capture was incomplete when exported.'
+              : r.metadata.error,
+        },
       })),
     };
   }
@@ -292,6 +320,10 @@ export function importRecords(text: string, workspaceId: string, sessionId: stri
     const parsed = parseUrl(entry.request.url),
       timestamp = Date.parse(entry.startedDateTime);
     if (!Number.isFinite(timestamp)) throw new Error('HAR contains an invalid timestamp.');
+    const importedBody = (text: string, mime?: string, base64 = false, markedTruncated = false) => {
+      const body = makeBody(text, mime, 1048576, base64);
+      return { ...body, truncated: body.truncated || markedTruncated };
+    };
     return capturedSchema.parse({
       id: uid(),
       timestamp,
@@ -310,7 +342,12 @@ export function importRecords(text: string, workspaceId: string, sessionId: stri
         body:
           entry.request.postData?.text === undefined
             ? undefined
-            : makeBody(entry.request.postData.text, entry.request.postData.mimeType),
+            : importedBody(
+                entry.request.postData.text,
+                entry.request.postData.mimeType,
+                false,
+                entry.request.postData._truncated,
+              ),
       },
       response: {
         status: entry.response.status,
@@ -321,15 +358,12 @@ export function importRecords(text: string, workspaceId: string, sessionId: stri
         body:
           entry.response.content.text === undefined
             ? unavailable('This HAR does not include response content.')
-            : {
-                ...makeBody(
-                  entry.response.content.text,
-                  entry.response.content.mimeType,
-                  1048576,
-                  entry.response.content.encoding === 'base64',
-                ),
-                truncated: entry.response.content._truncated ?? false,
-              },
+            : importedBody(
+                entry.response.content.text,
+                entry.response.content.mimeType,
+                entry.response.content.encoding === 'base64',
+                entry.response.content._truncated,
+              ),
       },
       timing: entry.time !== undefined && entry.time >= 0 ? { total: entry.time } : undefined,
       metadata: { provider: 'import', resourceType: 'Other', state: 'complete' },

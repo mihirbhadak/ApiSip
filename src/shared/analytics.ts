@@ -10,11 +10,14 @@ export function statistics(records: CapturedRequest[]) {
   const sizes = records.flatMap((r) => (r.response?.size === undefined ? [] : [r.response.size]));
   const distribution = (key: (r: CapturedRequest) => string) =>
     Object.entries(
-      records.reduce<Record<string, number>>((acc, r) => {
-        const k = key(r);
-        acc[k] = (acc[k] ?? 0) + 1;
-        return acc;
-      }, {}),
+      records.reduce<Record<string, number>>(
+        (acc, r) => {
+          const k = key(r);
+          acc[k] = (acc[k] ?? 0) + 1;
+          return acc;
+        },
+        Object.create(null) as Record<string, number>,
+      ),
     ).sort((a, b) => b[1] - a[1]);
   return {
     total: records.length,

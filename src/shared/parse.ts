@@ -56,7 +56,9 @@ export function makeBody(
   if (truncated)
     captured = base64
       ? text.slice(0, Math.floor(maxBytes / 3) * 4)
-      : new TextDecoder().decode(new TextEncoder().encode(text).slice(0, maxBytes));
+      : new TextDecoder().decode(new TextEncoder().encode(text).slice(0, maxBytes), {
+          stream: true,
+        });
   const type = base64 ? 'binary' : bodyType(contentType, captured);
   return {
     type,
@@ -65,7 +67,8 @@ export function makeBody(
     available: true,
     truncated,
     bytes: base64
-      ? Math.floor((captured.length * 3) / 4)
+      ? Math.floor((captured.length * 3) / 4) -
+        (captured.endsWith('==') ? 2 : captured.endsWith('=') ? 1 : 0)
       : new TextEncoder().encode(captured).length,
     originalBytes: bytes,
     fields:

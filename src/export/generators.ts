@@ -1,5 +1,5 @@
 import type { RequestData } from '../shared/model';
-import { redactRequest, safeHttpUrl } from '../shared/security';
+import { redactRequest, safeHttpUrl, prepareHeaders } from '../shared/security';
 export const languages = [
   'cURL',
   'Bash cURL',
@@ -26,13 +26,30 @@ export interface CodeGenerator {
 const json = (s: unknown) => JSON.stringify(s, null, 2);
 const shell = (s: string) => "'" + s.replace(/'/g, "'\\''") + "'";
 const single = (s: string) => "'" + s.replace(/\\/g, '\\\\').replace(/'/g, "\\'") + "'";
+const rust = (s: string) =>
+  '"' +
+  Array.from(s)
+    .map((c) => {
+      if (c === '"') return '\\"';
+      if (c === '\\') return '\\\\';
+      const code = c.codePointAt(0)!;
+      return code < 32 || (code >= 0xd800 && code <= 0xdfff)
+        ? '\\u{' + (code >= 0xd800 ? 'fffd' : code.toString(16)) + '}'
+        : c;
+    })
+    .join('') +
+  '"';
 const ps = (s: string) => "'" + s.replace(/'/g, "''") + "'";
 const flatHeaders = (r: RequestData) =>
-  r.headers.reduce<Record<string, string>>((result, h) => {
-    const key = Object.keys(result).find((k) => k.toLowerCase() === h.name.toLowerCase()) ?? h.name;
-    result[key] = result[key] ? result[key] + ', ' + h.value : h.value;
-    return result;
-  }, {});
+  r.headers.reduce<Record<string, string>>(
+    (result, h) => {
+      const key =
+        Object.keys(result).find((k) => k.toLowerCase() === h.name.toLowerCase()) ?? h.name;
+      result[key] = result[key] ? result[key] + ', ' + h.value : h.value;
+      return result;
+    },
+    Object.create(null) as Record<string, string>,
+  );
 function curl(r: RequestData) {
   return [
     'curl',
@@ -49,9 +66,9 @@ const generators: Record<Language, (r: RequestData) => string> = {
   'Bash cURL': curl,
   'Windows CMD cURL': (r) => {
     const quote = (s: string) => {
-      if (/[\r\n\0]/.test(s))
+      if (/[\r\n\0]/.test(s) || (s.includes('"') && /[&|<>^]/.test(s)))
         throw new Error(
-          'CMD cannot safely inline multiline arguments. Use PowerShell or Bash cURL for this request.',
+          'CMD cannot safely inline these control characters or combined quotes and shell operators. Use PowerShell or Bash cURL for this request.',
         );
       return (
         '"' +
@@ -182,7 +199,10 @@ const generators: Record<Language, (r: RequestData) => string> = {
     '    var request = HttpRequest.newBuilder(URI.create(' +
     json(r.url) +
     ')).timeout(Duration.ofSeconds(25))\n' +
-    r.headers.map((h) => '      .header(' + json(h.name) + ', ' + json(h.value) + ')').join('\n') +
+    r.headers
+      .filter((h) => !/^(host|expect|upgrade)$/i.test(h.name))
+      .map((h) => '      .header(' + json(h.name) + ', ' + json(h.value) + ')')
+      .join('\n') +
     '\n      .method(' +
     json(r.method) +
     ', HttpRequest.BodyPublishers.ofString(' +
@@ -245,12 +265,12 @@ const generators: Record<Language, (r: RequestData) => string> = {
     '#[tokio::main]\nasync fn main() -> Result<(), Box<dyn std::error::Error>> {\n' +
     '  let client = reqwest::Client::builder().timeout(std::time::Duration::from_secs(25)).build()?;\n' +
     '  let response = client.request(reqwest::Method::from_bytes(' +
-    json(r.method) +
+    rust(r.method) +
     '.as_bytes())?, ' +
-    json(r.url) +
+    rust(r.url) +
     ')\n' +
-    r.headers.map((h) => '    .header(' + json(h.name) + ', ' + json(h.value) + ')').join('\n') +
-    (r.body?.text !== undefined ? '\n    .body(' + json(r.body.text) + ')' : '') +
+    r.headers.map((h) => '    .header(' + rust(h.name) + ', ' + rust(h.value) + ')').join('\n') +
+    (r.body?.text !== undefined ? '\n    .body(' + rust(r.body.text) + ')' : '') +
     '\n    .send().await?;\n  println!("{}", response.text().await?);\n  Ok(())\n}',
   HTTPie: (r) =>
     (r.body?.text !== undefined ? "printf '%s' " + shell(r.body.text) + ' | ' : '') +
@@ -267,6 +287,7 @@ export function generateCode(
   includeSecrets = false,
 ): string {
   safeHttpUrl(request.url);
+  prepareHeaders(request.headers); // Validate names and control characters for every target.
   if (
     request.body?.encoding === 'base64' ||
     request.body?.truncated ||
@@ -276,7 +297,15 @@ export function generateCode(
     throw new Error(
       'Replace the unavailable, binary, multipart or truncated body before generating a reproducible command.',
     );
-  const r = includeSecrets ? request : redactRequest(request);
+  const source = includeSecrets ? request : redactRequest(request);
+  const r = {
+    ...source,
+    method: source.method.toUpperCase(),
+    headers: source.headers.filter(
+      (h) => !/^(content-length|transfer-encoding|connection)$/i.test(h.name),
+    ),
+  };
+  if (['GET', 'HEAD'].includes(r.method)) r.body = undefined;
   // HTTPie consumes piped data only when --ignore-stdin is absent.
   const output = generators[language](r);
   return language === 'HTTPie' && r.body?.text !== undefined

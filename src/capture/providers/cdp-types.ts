@@ -31,6 +31,9 @@ export interface CdpResponse {
   };
 }
 export interface CdpEvent {
+  headers?: Record<string, string>;
+  headersText?: string;
+  statusCode?: number;
   requestId?: string;
   request?: CdpRequest;
   response?: CdpResponse;

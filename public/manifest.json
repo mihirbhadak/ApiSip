@@ -1,0 +1,31 @@
+{
+  "manifest_version": 3,
+  "name": "API Catcher \u00e2\u20ac\u201d Network Inspector",
+  "version": "0.1.0",
+  "description": "Inspect, organize, compare and replay network requests. Local-first, with optional response capture.",
+  "minimum_chrome_version": "125",
+  "permissions": ["storage", "webRequest", "activeTab", "scripting", "alarms", "debugger"],
+  "optional_host_permissions": ["http://*/*", "https://*/*"],
+  "background": {
+    "service_worker": "service-worker.js",
+    "type": "module"
+  },
+  "action": {
+    "default_title": "Open API Catcher",
+    "default_icon": {
+      "16": "icons/16.png",
+      "32": "icons/32.png",
+      "48": "icons/48.png",
+      "128": "icons/128.png"
+    }
+  },
+  "icons": {
+    "16": "icons/16.png",
+    "32": "icons/32.png",
+    "48": "icons/48.png",
+    "128": "icons/128.png"
+  },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'none'; base-uri 'none'; frame-src 'none'"
+  }
+}

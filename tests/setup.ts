@@ -19,11 +19,9 @@ globalThis.ResizeObserver = class {
   disconnect() {}
 };
 Object.defineProperty(window, 'matchMedia', {
-  value: vi
-    .fn()
-    .mockImplementation(() => ({
-      matches: false,
-      addEventListener() {},
-      removeEventListener() {},
-    })),
+  value: vi.fn().mockImplementation(() => ({
+    matches: false,
+    addEventListener() {},
+    removeEventListener() {},
+  })),
 });

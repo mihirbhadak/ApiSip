@@ -9,6 +9,11 @@ export class DebuggerProvider implements CaptureProvider {
   readonly attached = new Set<number>();
   private suppressed = new Set<number>();
   private queue;
+  private earlyHeaders = new Map<
+    string,
+    { request?: Record<string, string>; response?: Record<string, string> }
+  >();
+  private redirectKeys = new Set<string>();
   private reconcileTask = Promise.resolve();
   constructor(private context: CaptureContext) {
     this.queue = serialQueue((message) => context.report(message, 'error'));
@@ -42,6 +47,7 @@ export class DebuggerProvider implements CaptureProvider {
         const allowed =
           settings.recording &&
           settings.provider === 'debugger' &&
+          (await chrome.permissions.contains({ origins: ['http://*/*', 'https://*/*'] })) &&
           (await chrome.permissions.contains({ permissions: ['debugger'] }));
         const tabs = allowed ? await chrome.tabs.query({}) : [];
         const desired = new Set(
@@ -133,8 +139,48 @@ export class DebuggerProvider implements CaptureProvider {
       this.queue(key, async () => {
         const scopedKey = (await this.context.epoch) + ':' + key;
         const settings = await this.context.settings();
+        if (
+          (method === 'Network.requestWillBeSentExtraInfo' ||
+            method === 'Network.responseReceivedExtraInfo') &&
+          p.headers
+        ) {
+          // Extra-info ordering across redirect hops is ambiguous; retain the primary event headers there.
+          if (this.redirectKeys.has(scopedKey)) return;
+          const isRequest = method === 'Network.requestWillBeSentExtraInfo';
+          const headers = headersFromObject(p.headers);
+          const updated = await this.context.update(scopedKey, (r) => {
+            if (!r) return;
+            return isRequest
+              ? { ...r, request: { ...r.request, headers } }
+              : {
+                  ...r,
+                  response: {
+                    status: p.statusCode ?? r.response?.status ?? 0,
+                    statusText: r.response?.statusText ?? '',
+                    ...r.response,
+                    headers,
+                  },
+                  metadata: { ...r.metadata, responseHeadersComplete: true },
+                };
+          });
+          if (!updated && (await this.context.accepts(source.tabId!))) {
+            if (this.earlyHeaders.size >= 500)
+              this.earlyHeaders.delete(this.earlyHeaders.keys().next().value!);
+            this.earlyHeaders.set(scopedKey, {
+              ...this.earlyHeaders.get(scopedKey),
+              [isRequest ? 'request' : 'response']: p.headers,
+            });
+          }
+          return;
+        }
         if (method === 'Network.requestWillBeSent' && p.request && /^https?:/.test(p.request.url)) {
           if (!(await this.context.accepts(source.tabId!))) return;
+          if (p.redirectResponse) {
+            if (this.redirectKeys.size >= 500)
+              this.redirectKeys.delete(this.redirectKeys.values().next().value!);
+            this.redirectKeys.add(scopedKey);
+            this.earlyHeaders.delete(scopedKey);
+          }
           if (p.redirectResponse)
             await this.context.update(
               scopedKey,
@@ -159,7 +205,9 @@ export class DebuggerProvider implements CaptureProvider {
               /* request body unavailable is represented below */
             }
           }
-          const headers = headersFromObject(p.request.headers);
+          const headers = headersFromObject(
+            this.earlyHeaders.get(scopedKey)?.request ?? p.request.headers,
+          );
           const contentType = header(headers, 'content-type'),
             parsed = parseUrl(p.request.url);
           const body =
@@ -209,8 +257,29 @@ export class DebuggerProvider implements CaptureProvider {
             isPinned: false,
           }));
         } else if (method === 'Network.responseReceived' && p.response) {
-          await this.context.update(scopedKey, (r) => r && this.withResponse(r, p.response!));
+          const early = this.earlyHeaders.get(scopedKey)?.response;
+          await this.context.update(
+            scopedKey,
+            (r) =>
+              r &&
+              this.withResponse(
+                early
+                  ? {
+                      ...r,
+                      response: {
+                        status: p.response!.status,
+                        statusText: p.response!.statusText,
+                        headers: headersFromObject(early),
+                      },
+                      metadata: { ...r.metadata, responseHeadersComplete: true },
+                    }
+                  : r,
+                p.response!,
+              ),
+          );
         } else if (method === 'Network.loadingFinished') {
+          this.earlyHeaders.delete(scopedKey);
+          this.redirectKeys.delete(scopedKey);
           let body = unavailable(
             'Chrome did not expose this response body. It may be evicted, redirected, streamed or unavailable for this resource.',
           );
@@ -262,6 +331,8 @@ export class DebuggerProvider implements CaptureProvider {
             };
           });
         } else if (method === 'Network.loadingFailed') {
+          this.earlyHeaders.delete(scopedKey);
+          this.redirectKeys.delete(scopedKey);
           await this.context.update(
             scopedKey,
             (r) =>
@@ -358,7 +429,10 @@ export class DebuggerProvider implements CaptureProvider {
       response: {
         status: response.status,
         statusText: response.statusText,
-        headers: headersFromObject(response.headers),
+        headers:
+          r.metadata.responseHeadersComplete && r.response
+            ? r.response.headers
+            : headersFromObject(response.headers),
         contentType: response.mimeType,
         body: unavailable('Waiting for the response to finish.'),
       },

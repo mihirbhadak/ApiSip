@@ -28,12 +28,17 @@ export async function executeReplay(
       'This body is incomplete or cannot be reproduced as text. Replace it in the editor before sending.',
     );
   const prepared = prepareHeaders(draft.headers);
+  const omitBody = ['GET', 'HEAD'].includes(draft.method.toUpperCase());
+  if (omitBody && draft.body?.text)
+    prepared.warnings.push('Chrome fetch omits bodies for GET and HEAD requests.');
   const selected =
     context === 'auto' ? (original.tabId !== undefined ? 'browser' : 'extension') : context;
   const request = {
     ...draft,
     method: draft.method.toUpperCase(),
     headers: prepared.headers,
+    body: omitBody ? undefined : draft.body,
+    cookies: undefined,
     query: parseUrl(draft.url).query,
   };
   const result: ReplayResult = {

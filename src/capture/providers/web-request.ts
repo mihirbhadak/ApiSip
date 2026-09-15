@@ -1,5 +1,5 @@
 import { uid, type CapturedRequest, type Pair } from '../../shared/model';
-import { header, makeBody, parseUrl, unavailable } from '../../shared/parse';
+import { header, makeBody, parseUrl, unavailable, bodyType } from '../../shared/parse';
 import { type CaptureContext, type CaptureProvider, serialQueue } from '../types';
 
 const pairs = (headers?: chrome.webRequest.HttpHeader[]): Pair[] =>
@@ -47,8 +47,17 @@ export class WebRequestProvider implements CaptureProvider {
                 'application/x-www-form-urlencoded',
                 settings.maxBodyBytes,
               ),
-              fields,
+              fields:
+                new TextEncoder().encode(
+                  new URLSearchParams(fields.map((p) => [p.name, p.value])).toString(),
+                ).length <= settings.maxBodyBytes
+                  ? fields
+                  : undefined,
             };
+          } else if (d.requestBody?.raw?.some((part) => part.file)) {
+            body = unavailable(
+              'Chrome exposed a file upload reference; the complete upload content is unavailable.',
+            );
           } else if (d.requestBody?.raw) {
             const chunks = d.requestBody.raw.flatMap((p) =>
               p.bytes ? [new Uint8Array(p.bytes)] : [],
@@ -62,7 +71,24 @@ export class WebRequestProvider implements CaptureProvider {
                 bytes.set(part, offset);
                 offset += part.length;
               }
-              body = makeBody(new TextDecoder().decode(bytes), '', settings.maxBodyBytes);
+              try {
+                body = makeBody(
+                  new TextDecoder('utf-8', { fatal: true }).decode(bytes, {
+                    stream: size > settings.maxBodyBytes,
+                  }),
+                  '',
+                  settings.maxBodyBytes,
+                );
+              } catch {
+                let binary = '';
+                for (const value of bytes) binary += String.fromCharCode(value);
+                body = makeBody(
+                  btoa(binary),
+                  'application/octet-stream',
+                  settings.maxBodyBytes,
+                  true,
+                );
+              }
               body.originalBytes = size;
               body.truncated = size > settings.maxBodyBytes;
             } else
@@ -110,7 +136,8 @@ export class WebRequestProvider implements CaptureProvider {
             const body =
               r.request.body?.text !== undefined
                 ? {
-                    ...makeBody(r.request.body.text, contentType),
+                    ...r.request.body,
+                    type: bodyType(contentType, r.request.body.text),
                     truncated: r.request.body.truncated,
                     originalBytes: r.request.body.originalBytes,
                   }

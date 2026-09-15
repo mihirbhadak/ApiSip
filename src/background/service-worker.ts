@@ -10,6 +10,7 @@ import {
   getRecord,
   getSettings,
   initialize,
+  interruptTab,
   listRows,
   mutateRecord,
   prune,
@@ -115,6 +116,7 @@ chrome.tabs.onUpdated.addListener((id, change) => {
 });
 chrome.tabs.onRemoved.addListener((id) => {
   void (async () => {
+    await interruptTab(id, 'Source tab closed before Chrome exposed a completion event.');
     const s = await settings();
     if (s.activeTabId === id) {
       await updateSettings({ activeTabId: undefined, activePageUrl: undefined });
@@ -145,7 +147,13 @@ chrome.alarms.onAlarm.addListener((alarm) => {
     .catch(() => report('Retention cleanup could not finish. Check available storage.', 'error'));
 });
 chrome.permissions.onRemoved.addListener(() => {
-  void reconcile().catch(() => report('Could not refresh permission state.', 'error'));
+  void (async () => {
+    if (!(await chrome.permissions.contains({ origins: ['http://*/*', 'https://*/*'] }))) {
+      await updateSettings({ recording: false });
+      report('Site access was removed. Capture is paused.', 'error');
+    }
+    await reconcile();
+  })().catch(() => report('Could not refresh permission state.', 'error'));
 });
 chrome.runtime.onStartup.addListener(() => {
   void reconcile().catch(() => report('Could not restore capture on startup.', 'error'));
@@ -182,7 +190,18 @@ chrome.runtime.onMessage.addListener((raw: unknown, sender, respond) => {
         !(await chrome.permissions.contains({ origins: ['http://*/*', 'https://*/*'] }))
       )
         throw new Error('Grant site access before starting capture.');
-      const s = await updateSettings(cmd.patch);
+      let s = await updateSettings(cmd.patch);
+      if (s.recording && s.activeTabId === undefined) {
+        const tabs = (await chrome.tabs.query({})).filter(
+          (tab) => tab.id !== undefined && /^https?:/.test(tab.url ?? ''),
+        );
+        const target =
+          tabs.find((tab) => tab.active) ??
+          tabs.sort((a, b) => (b.lastAccessed ?? 0) - (a.lastAccessed ?? 0))[0];
+        if (target?.id !== undefined)
+          s = await updateSettings({ activeTabId: target.id, activePageUrl: target.url });
+        else report('No supported web tab is available. Open a web page to begin capturing.');
+      }
       await reconcile(s);
       return s;
     }
