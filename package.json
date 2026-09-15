@@ -15,7 +15,8 @@
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "test:server": "node tests/server.mjs",
-    "check": "npm run lint && npm run typecheck && npm test && npm run build"
+    "check": "npm run lint && npm run typecheck && npm test && npm run build",
+    "test:authorize": "node tests/authorize.mjs"
   },
   "dependencies": {
     "idb": "^8.0.3",

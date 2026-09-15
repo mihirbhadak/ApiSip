@@ -12,11 +12,11 @@ Two adapters implement the same capture-provider contract. The inspector only re
 - **DebuggerProvider** optionally attaches through `chrome.debugger`, uses CDP Network events and `Network.getResponseBody`, and records available timings, cache information and WebSocket frames. Metadata observation is suppressed per attached tab to avoid double counting. Child iframe/worker targets use flat CDP sessions.
 - No page fetch monkey patches, interception, proxy server or remote collection service.
 
-Capture starts only after the user grants optional HTTP(S) host access. Debugger permission and attachment are separately opt-in. Current tab means the most recently active supported web tab; opening the inspector does not change that target. All tabs means permitted web tabs, never internal browser pages or other extensions. The observer remains available when debugger attachment fails.
+Capture starts only after the user grants optional HTTP(S) host access. Chrome forbids optional debugger permission, so it is declared at install time; actual debugger attachment remains opt-in and off by default. Current tab means the most recently active supported web tab; opening the inspector does not change that target. All tabs means permitted web tabs, never internal browser pages or other extensions. The observer remains available when debugger attachment fails.
 
 ## Persistence and lifecycle
 
-IndexedDB stores indexed request summaries separately from bodies and replay results. Atomic transactions preserve summary/body consistency. Workspace, session, collection, saved-filter and settings records also live in IndexedDB. Durable capture records allow subsequent events to resume after worker restart. Listeners register synchronously at worker evaluation, before asynchronous initialization. Counts come from stored records; notification and badge writes are throttled. The UI reconnects through request/response messaging and database change notifications.
+IndexedDB stores indexed request summaries separately from bodies and replay results. Atomic transactions preserve summary/body consistency. Workspace, session, collection, saved-filter and settings records also live in IndexedDB. Durable capture records allow subsequent events to resume after worker restart. Listeners register synchronously at worker evaluation, before asynchronous initialization. Counts come from stored records; notification and badge writes are throttled. Display refreshes slow from 200 ms to 1 second while more than 200 capture writes are queued. UI state reads and badge updates each allow only one active operation plus one coalesced trailing refresh, preventing concurrent refresh backlogs from competing with capture. The UI reconnects through request/response messaging and database change notifications.
 
 ## Trust boundaries
 
@@ -25,6 +25,7 @@ Network and imported content is untrusted text. No captured HTML rendering, scri
 ## Sources checked September 15, 2026
 
 - [Chrome webRequest API](https://developer.chrome.com/docs/extensions/reference/api/webRequest)
+- [Chrome permission API and non-optional permissions](https://developer.chrome.com/docs/extensions/reference/api/permissions)
 - [Chrome debugger API and child targets](https://developer.chrome.com/docs/extensions/reference/api/debugger)
 - [Extension worker lifecycle](https://developer.chrome.com/docs/extensions/develop/concepts/service-workers/lifecycle)
 - [CDP Network](https://chromedevtools.github.io/devtools-protocol/tot/Network/)
@@ -32,3 +33,41 @@ Network and imported content is untrusted text. No captured HTML rendering, scri
 - [Playwright extension testing](https://playwright.dev/docs/chrome-extensions)
 
 See README and TESTING for implemented behavior, limitations and verification evidence.
+
+## Request pipeline
+
+```text
+Chrome observer/CDP events
+  -> provider-specific normalization and per-request sequencing
+  -> transactional request summary + body writes
+  -> throttled database-changed message and persisted-count badge
+  -> inspector search worker reads indexed summaries
+  -> filtered summaries enter the virtualized table
+  -> selected body/replay history loads on demand
+```
+
+Redirect hops receive separate stable record IDs. An indexed provider key binds later events to the current hop. A browser-lifetime epoch separates Chrome request identifiers across browser restarts. Closed tabs mark pending records interrupted; unavailable data is represented explicitly rather than filled with invented values.
+
+CDP extra-info headers supplement primary events when ordering can be attributed reliably. Redirect chains retain primary-event headers because extra-info order is not sufficient to promise exact attribution. Header pairs preserve duplicate values exposed by Chrome. Body buffers are bounded. WebSocket message count and payload length are separately bounded.
+
+## Storage and concurrency
+
+`requests` indexes workspace, session, timestamp, tab, method, status, domain and capture key. `bodies` holds upload/download payloads, replay results and WebSocket messages. Entity indexes support workspace and entity-kind queries. Capture and request mutations read and write both stores in one transaction. Import includes entities in that transaction; a failed import does not leave half a workspace behind. Bulk save operations use chunks of 200.
+
+Capture callbacks serialize preparation per request, preserving event order without serializing all network traffic. Passive events enqueue their ordered mutations without waiting for the previous durable commit; this lets a fast request's start, headers and completion share a transaction. Debugger operations that need a committed result retain the awaitable update API. A write buffer batches independent mutations for up to 8 milliseconds and 100 independent request keys per transaction. All queued events for those keys are grouped together, preserving their per-request order. Independent keyed reads run concurrently, ordered mutations produce a final value per record, and all writes commit together. Callers resolve only after the atomic commit. This avoids serial IndexedDB round trips creating a large response-update backlog during bursts. The IndexedDB transaction is the consistency boundary across the worker and multiple inspector pages. Four replays can execute globally, and only one replay per original request executes at a time. Replay history is bounded to 30 results.
+
+Settings and counts are reconstructed from IndexedDB after worker restart. Event listeners register at top level. The background worker uses a Chrome session-storage epoch, not a permanent in-memory identity. Debugger reconciliation attempts to reuse an owned active session before attaching anew. UI errors and diagnostics are bounded, and diagnostic text avoids payloads.
+
+## Filtering and rendering
+
+The expression parser produces an AND/OR/NOT tree. Compilation orders inexpensive metadata predicates before body predicates where boolean semantics permit. Regex syntax is deliberately restricted to avoid catastrophic backtracking. Body-dependent filtering hydrates records only after metadata preconditions pass. Debounced search runs outside React in a worker; revision IDs suppress obsolete results. A scheduler coalesces data refreshes without cancelling every in-flight query during sustained traffic. A changed user query preempts older work.
+
+The table renders the visible range plus overscan, with fixed-height rows. React retains summary data and the selected full record, not every response body. Sorting and analytics operate on available metadata. Percentile thresholds avoid presenting P95/P99 from tiny samples. Endpoint grouping is a view; original URLs remain intact.
+
+## Extension boundaries
+
+A content-script capture provider is intentionally absent: monkey-patching fetch/XHR misses traffic and changes page behavior. The provider interface permits another officially supported mechanism in the future without coupling React to it. Interception, response overrides, secrets vaults, cloud sync, remote collaboration, OpenAPI/Postman conversion and unlimited capture are outside the implemented scope.
+
+## Unpacked installation layouts
+
+`public/manifest.json` is the canonical source manifest. Vite copies it to `dist` and also generates a root `manifest.json` whose worker and icon paths point into `dist`. The worker resolves the inspector beside its own manifest entry. Both repository-root and standalone-dist installations therefore use the same compiled code, CSP and permissions. A real-Chrome regression test loads the repository root and invokes the toolbar action to check this path.

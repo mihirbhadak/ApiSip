@@ -5,3 +5,5 @@ playwright-report
 package-lock.json
 .browser-profile
 .tmp
+artifacts/
+/manifest.json

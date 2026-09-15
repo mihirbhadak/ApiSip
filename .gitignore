@@ -6,3 +6,5 @@ playwright-report/
 coverage/
 *.log
 .tmp/
+artifacts/
+/manifest.json
