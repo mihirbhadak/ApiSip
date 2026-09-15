@@ -1,3 +1,5 @@
+import { openHelp } from './components/HelpButton';
+import { shortcuts } from './shortcuts';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { uid, type CapturedRequest, type RequestData, type Settings } from '../shared/model';
 import { sendCommand } from '../shared/messages';
@@ -278,19 +280,54 @@ export function useInspectorController() {
     setModal('');
     management.clear(scope);
   };
+  const keyFor = (action: (typeof shortcuts)[number]['action']) =>
+    shortcuts.find((shortcut) => shortcut.action === action)?.keys;
   const commands: PaletteCommand[] = [
-    { name: 'Search requests', shortcut: 'Ctrl / ⌘ K', run: () => searchInput.current?.focus() },
-    { name: settings.recording ? 'Pause capture' : 'Start capture', run: () => task(capture) },
-    { name: 'Create session', run: () => management.create('session') },
-    { name: 'Create workspace', run: () => management.create('workspace') },
-    { name: 'Export requests', shortcut: 'Ctrl / ⌘ E', run: () => setModal('export') },
-    { name: 'Copy cURL', run: copyCurl },
+    {
+      name: 'Search requests',
+      shortcut: keyFor('search'),
+      run: () => searchInput.current?.focus(),
+    },
+    {
+      name: settings.recording ? 'Pause capture' : 'Start capture',
+      shortcut: keyFor('capture'),
+      run: () => task(capture),
+    },
+    { name: 'New session', shortcut: keyFor('session'), run: () => management.create('session') },
+    {
+      name: 'New workspace',
+      shortcut: keyFor('workspace'),
+      run: () => management.create('workspace'),
+    },
+    {
+      name: 'New collection',
+      shortcut: keyFor('collection'),
+      run: () => management.create('collection'),
+    },
+    { name: 'Open filters', shortcut: keyFor('filters'), run: () => setModal('filters') },
+    { name: 'Export requests', shortcut: keyFor('export'), run: () => setModal('export') },
+    { name: 'Copy cURL', shortcut: keyFor('copy'), run: copyCurl },
     { name: 'Replay selected request', run: () => setDetailTab('Replay') },
     { name: 'Save selected request', run: () => updateRecord({ isFavorite: true }) },
     { name: 'Clear current session', run: () => clear('Current session') },
-    { name: 'Open settings', run: () => setModal('settings') },
+    { name: 'Open settings', shortcut: keyFor('settings'), run: () => setModal('settings') },
+    {
+      name: 'Focus request list',
+      shortcut: keyFor('list'),
+      run: () => document.querySelector<HTMLElement>('[aria-label="Request list"]')?.focus(),
+    },
+    { name: 'Help and guide', shortcut: keyFor('help'), run: () => openHelp() },
+    { name: 'About Mihir Bhadak', run: () => openHelp('about') },
   ];
   useShortcuts({
+    capture: () => task(capture),
+    session: () => management.create('session'),
+    workspace: () => management.create('workspace'),
+    collection: () => management.create('collection'),
+    filters: () => setModal('filters'),
+    settings: () => setModal('settings'),
+    help: () => openHelp(),
+    list: () => document.querySelector<HTMLElement>('[aria-label="Request list"]')?.focus(),
     search: () => searchInput.current?.focus(),
     commands: () => setModal('commands'),
     export: () => setModal('export'),

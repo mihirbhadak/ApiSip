@@ -24,6 +24,7 @@ describe('request table', () => {
         selected={new Set()}
         onSelect={onSelect}
         onToggle={onToggle}
+        onToggleAll={vi.fn()}
         onContext={vi.fn()}
         columns={defaultColumns}
         onColumns={vi.fn()}
@@ -36,7 +37,7 @@ describe('request table', () => {
     expect(screen.getAllByTestId('request-row').length).toBeLessThan(40);
     fireEvent.keyDown(screen.getByLabelText('Request list'), { key: 'ArrowDown' });
     expect(onSelect).toHaveBeenCalledWith(expect.objectContaining({ id: '0' }));
-    fireEvent.click(screen.getAllByRole('checkbox')[0]!);
+    fireEvent.click(screen.getAllByRole('checkbox')[1]!);
     expect(onToggle).toHaveBeenCalledWith('0');
   });
 });
@@ -49,7 +50,7 @@ it('builds nested filters and reports malformed expressions', async () => {
   expect(screen.getAllByLabelText('Filter field')).toHaveLength(2);
   await user.click(screen.getByRole('button', { name: 'Apply filter' }));
   expect(onApply).toHaveBeenCalledWith(expect.stringContaining('url contains'));
-  await user.click(screen.getByRole('button', { name: 'Expression' }));
+  await user.click(screen.getByRole('tab', { name: 'Expression' }));
   await user.clear(screen.getByLabelText('Filter expression'));
   await user.type(screen.getByLabelText('Filter expression'), 'status > nope');
   await user.click(screen.getByRole('button', { name: 'Apply filter' }));
@@ -171,8 +172,10 @@ it('saves theme settings and presents storage diagnostics', async () => {
       onClose={vi.fn()}
     />,
   );
-  await user.click(screen.getByRole('button', { name: 'Appearance' }));
-  await user.selectOptions(screen.getByLabelText('Theme'), 'dark');
+  await user.click(screen.getByRole('tab', { name: 'Appearance' }));
+  await user.click(screen.getByRole('combobox', { name: 'Theme' }));
+  await user.type(screen.getByRole('combobox', { name: 'Theme' }), 'dark');
+  await user.keyboard('{Enter}');
   await user.click(screen.getByText('Save settings'));
   expect(save).toHaveBeenCalledWith({ theme: 'dark' });
 });

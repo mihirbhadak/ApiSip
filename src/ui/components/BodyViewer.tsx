@@ -1,3 +1,4 @@
+import { TabBar } from './TabBar';
 import { useMemo, useState } from 'react';
 import { Copy, Expand, Search } from 'lucide-react';
 import type { Body } from '../../shared/model';
@@ -114,7 +115,7 @@ export function BodyViewer({
   const content = (
     <div className="body-view">
       <div className="body-toolbar">
-        <div className="segmented">
+        <TabBar className="segmented" label={title + ' views'}>
           {['Pretty', 'Raw', ...(parsed.valid ? ['Tree'] : [])].map((item) => (
             <button
               key={item}
@@ -124,7 +125,7 @@ export function BodyViewer({
               {item}
             </button>
           ))}
-        </div>
+        </TabBar>
         <span className="muted mono">
           {body.type} · {formatBytes(body.bytes)}
         </span>

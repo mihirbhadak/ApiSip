@@ -1,3 +1,6 @@
+import { TabBar } from './TabBar';
+import { HelpButton } from './HelpButton';
+import { SearchSelect } from './SearchSelect';
 import { useState } from 'react';
 import { Copy, Eye, X } from 'lucide-react';
 import type { CapturedRequest, ReplayResult, RequestData, Settings } from '../../shared/model';
@@ -70,6 +73,10 @@ export function RequestDetails({
         <button className="icon-button" aria-label="Copy URL" onClick={() => copy(r.request.url)}>
           <Copy size={14} />
         </button>
+        <HelpButton
+          topic={tab === 'Replay' ? 'replay' : tab === 'Code' ? 'export' : 'details'}
+          label="Help with request details"
+        />
         <button className="icon-button" aria-label="Close details" onClick={onClose}>
           <X size={16} />
         </button>
@@ -92,7 +99,7 @@ export function RequestDetails({
           {r.metadata.provider === 'debugger' ? 'CDP' : r.metadata.provider}
         </span>
       </div>
-      <div className="tabs detail-tabs" role="tablist" aria-label="Request sections">
+      <TabBar className="tabs detail-tabs" label="Request sections">
         {tabs.map((t) => (
           <button
             role="tab"
@@ -104,7 +111,7 @@ export function RequestDetails({
             {t}
           </button>
         ))}
-      </div>
+      </TabBar>
       <div className="detail-content" role="tabpanel" aria-label={tab}>
         {tab === 'Overview' && (
           <RequestOverview
@@ -291,15 +298,15 @@ export function RequestDetails({
         {tab === 'Code' && (
           <>
             <div className="section-heading">
-              <select
+              <SearchSelect
                 aria-label="Code language"
                 value={language}
-                onChange={(e) => setLanguage(e.target.value as Language)}
+                onValueChange={(value) => setLanguage(value as Language)}
               >
                 {languages.map((l) => (
                   <option key={l}>{l}</option>
                 ))}
-              </select>
+              </SearchSelect>
               <button onClick={() => copy(code)}>
                 <Copy size={13} />
                 Copy code

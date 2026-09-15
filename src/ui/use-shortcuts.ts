@@ -1,34 +1,37 @@
-import { useEffect } from 'react';
-export function useShortcuts(actions: {
-  search: () => void;
-  commands: () => void;
-  export: () => void;
-  copy: () => void;
-  delete: () => void;
-  close: () => void;
-}) {
+import { useEffect, useRef } from 'react';
+import { shortcuts, type ShortcutAction } from './shortcuts';
+export function useShortcuts(actions: Record<ShortcutAction | 'delete' | 'close', () => void>) {
+  const current = useRef(actions);
+  current.current = actions;
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      const editable = /INPUT|TEXTAREA|SELECT/.test((e.target as HTMLElement)?.tagName ?? '');
+      if (e.defaultPrevented || e.repeat) return;
+      const target = e.target;
+      const editable =
+        target instanceof Element &&
+        !!target.closest('input, textarea, select, [contenteditable="true"]');
       const dialog = !!document.querySelector('dialog[open]');
-      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'p') {
+      if (dialog) return;
+      const shortcut = shortcuts.find(
+        (s) =>
+          s.key === e.key.toLowerCase() &&
+          !!s.shift === e.shiftKey &&
+          (s.modifier === 'primary'
+            ? (e.ctrlKey || e.metaKey) && !e.altKey
+            : e.altKey && !e.ctrlKey && !e.metaKey),
+      );
+      if (shortcut) {
         e.preventDefault();
-        actions.commands();
-      } else if (!dialog && (e.ctrlKey || e.metaKey) && ['k', 'f'].includes(e.key.toLowerCase())) {
+        current.current[shortcut.action]();
+      } else if (e.key === '?' && !editable) {
         e.preventDefault();
-        actions.search();
-      } else if (!dialog && (e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'e') {
+        current.current.help();
+      } else if (e.key === 'Delete' && !editable) {
         e.preventDefault();
-        actions.export();
-      } else if (!dialog && (e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'c') {
-        e.preventDefault();
-        actions.copy();
-      } else if (!dialog && e.key === 'Delete' && !editable) {
-        e.preventDefault();
-        actions.delete();
-      } else if (!dialog && e.key === 'Escape') actions.close();
+        current.current.delete();
+      } else if (e.key === 'Escape') current.current.close();
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [actions]);
+  }, []);
 }

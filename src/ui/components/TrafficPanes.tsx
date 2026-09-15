@@ -54,6 +54,16 @@ export function TrafficPanes({ controller }: { controller: InspectorController }
                 rows={visible}
                 selected={selected}
                 focused={recordId}
+                onToggleAll={(checked) =>
+                  setSelected((old) => {
+                    const next = new Set(old);
+                    for (const row of visible) {
+                      if (checked) next.add(row.id);
+                      else next.delete(row.id);
+                    }
+                    return next;
+                  })
+                }
                 onSelect={select}
                 onToggle={(id) =>
                   setSelected((old) => {

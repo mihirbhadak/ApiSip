@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { Folder, Plus } from 'lucide-react';
 import type { Entity } from '../../shared/model';
 import { allColumns, defaultColumns, type ColumnConfig } from './RequestTable';
@@ -83,17 +84,28 @@ export function CollectionDialog({
   onCreate: () => void;
   onClose: () => void;
 }) {
+  const [search, setSearch] = useState('');
+  const matches = entities.filter(
+    (e) => e.kind === 'collection' && e.name.toLowerCase().includes(search.toLowerCase()),
+  );
   return (
     <Dialog title="Add to collection" onClose={onClose}>
       <p className="muted">Save {count} request(s) to a collection.</p>
-      {entities
-        .filter((e) => e.kind === 'collection')
-        .map((e) => (
-          <button className="collection-choice" key={e.id} onClick={() => onSelect(e.id)}>
-            <Folder size={15} />
-            {e.name}
-          </button>
-        ))}
+      <input
+        autoFocus
+        className="collection-search"
+        aria-label="Search collections"
+        placeholder="Search collections..."
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+      />
+      {matches.map((e) => (
+        <button className="collection-choice" key={e.id} onClick={() => onSelect(e.id)}>
+          <Folder size={15} />
+          {e.name}
+        </button>
+      ))}
+      {!matches.length && <p className="muted">No matching collections.</p>}
       <button onClick={onCreate}>
         <Plus size={13} />
         New collection
@@ -110,6 +122,10 @@ export function RequestMenu({
   actions: { name: string; run: () => void }[];
   onClose: () => void;
 }) {
+  useEffect(() => {
+    const previous = document.activeElement as HTMLElement | null;
+    return () => previous?.focus();
+  }, []);
   return (
     <div
       className="menu-backdrop"
@@ -128,13 +144,22 @@ export function RequestMenu({
           top: Math.max(0, Math.min(position.y, window.innerHeight - 380)),
         }}
         onKeyDown={(e) => {
-          if (e.key === 'Escape') onClose();
-          if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+          if (e.key === 'Escape') {
+            e.preventDefault();
+            e.stopPropagation();
+            onClose();
+          }
+          if (e.key === 'Tab') onClose();
+          if (['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(e.key)) {
             e.preventDefault();
             const items = [...e.currentTarget.querySelectorAll('button')];
             const index = items.indexOf(document.activeElement as HTMLButtonElement);
             items[
-              (index + (e.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length
+              e.key === 'Home'
+                ? 0
+                : e.key === 'End'
+                  ? items.length - 1
+                  : (index + (e.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length
             ]?.focus();
           }
         }}
@@ -143,6 +168,7 @@ export function RequestMenu({
           <button
             autoFocus={i === 0}
             role="menuitem"
+            className={action.name.startsWith('Delete') ? 'danger-text' : ''}
             key={action.name}
             onClick={() => {
               action.run();

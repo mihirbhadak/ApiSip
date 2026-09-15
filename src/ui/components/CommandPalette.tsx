@@ -1,3 +1,4 @@
+import { flushSync } from 'react-dom';
 import { useState } from 'react';
 import { Search } from 'lucide-react';
 import { Dialog } from './Dialog';
@@ -35,7 +36,7 @@ export function CommandPalette({
               setIndex(Math.max(0, index - 1));
             }
             if (e.key === 'Enter' && matches[index]) {
-              onClose();
+              flushSync(onClose);
               matches[index].run();
             }
           }}
@@ -49,7 +50,7 @@ export function CommandPalette({
             key={c.name}
             className={index === i ? 'active' : ''}
             onClick={() => {
-              onClose();
+              flushSync(onClose);
               c.run();
             }}
           >

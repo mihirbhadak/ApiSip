@@ -1,3 +1,5 @@
+import { TabBar } from './TabBar';
+import { SearchSelect } from './SearchSelect';
 import { useState } from 'react';
 import { Plus, Trash2 } from 'lucide-react';
 import { fields, operators, type FilterNode } from '../../filters/engine';
@@ -21,21 +23,25 @@ export function FilterGroup({
   if (node.type === 'predicate')
     return (
       <div className="filter-rule">
-        <input
+        <SearchSelect
           aria-label="Filter field"
-          list="filter-fields"
+          allowCustom
           value={node.field}
-          onChange={(e) => onChange({ ...node, field: e.target.value })}
-        />
-        <select
+          onValueChange={(value) => onChange({ ...node, field: value })}
+        >
+          {fields.map((field) => (
+            <option key={field}>{field}</option>
+          ))}
+        </SearchSelect>
+        <SearchSelect
           aria-label="Filter operator"
           value={node.operator}
-          onChange={(e) => onChange({ ...node, operator: e.target.value as typeof node.operator })}
+          onValueChange={(value) => onChange({ ...node, operator: value as typeof node.operator })}
         >
           {operators.map((op) => (
             <option key={op}>{op}</option>
           ))}
-        </select>
+        </SearchSelect>
         {!node.operator.includes('exists') && (
           <input
             aria-label="Filter value"
@@ -51,7 +57,7 @@ export function FilterGroup({
       <div className="filter-group">
         <div className="section-heading">
           <strong>NOT</strong>
-          <button className="text-button" onClick={() => onChange(node.child)}>
+          <button className="text-button danger-text" onClick={() => onChange(node.child)}>
             Remove NOT
           </button>
         </div>
@@ -65,14 +71,14 @@ export function FilterGroup({
   return (
     <div className="filter-group">
       <div className="section-heading">
-        <select
+        <SearchSelect
           aria-label="Group operator"
           value={node.type}
-          onChange={(e) => onChange({ ...node, type: e.target.value as 'and' | 'or' })}
+          onValueChange={(value) => onChange({ ...node, type: value as 'and' | 'or' })}
         >
           <option value="and">Match ALL · AND</option>
           <option value="or">Match ANY · OR</option>
-        </select>
+        </SearchSelect>
         <span className="muted">Group {depth + 1}</span>
       </div>
       {node.children.map((child, i) => (
@@ -88,7 +94,7 @@ export function FilterGroup({
             }
           />
           <button
-            className="icon-button"
+            className="icon-button danger-text"
             aria-label="Remove filter rule"
             onClick={() =>
               onChange({ ...node, children: node.children.filter((_, index) => index !== i) })
@@ -178,12 +184,7 @@ export function FilterBuilder({
   return (
     <Dialog title="Advanced filters" wide onClose={onClose}>
       <p className="muted">Combine rules to find exactly the requests you need.</p>
-      <datalist id="filter-fields">
-        {fields.map((f) => (
-          <option key={f} value={f} />
-        ))}
-      </datalist>
-      <div className="tabs">
+      <TabBar className="tabs" label="Filter modes">
         {['Visual', 'Expression'].map((t) => (
           <button
             key={t}
@@ -204,7 +205,7 @@ export function FilterBuilder({
             {t}
           </button>
         ))}
-      </div>
+      </TabBar>
       {tab === 'Visual' ? (
         <FilterGroup node={node} onChange={setNode} />
       ) : (

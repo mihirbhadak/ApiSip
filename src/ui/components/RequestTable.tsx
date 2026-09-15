@@ -116,6 +116,7 @@ export function RequestTable({
   focused,
   onSelect,
   onToggle,
+  onToggleAll,
   onContext,
   columns,
   onColumns,
@@ -129,6 +130,7 @@ export function RequestTable({
   focused?: string;
   onSelect: (r: CapturedRequest) => void;
   onToggle: (id: string) => void;
+  onToggleAll: (checked: boolean) => void;
   onContext: (r: CapturedRequest, x: number, y: number) => void;
   columns: ColumnConfig[];
   onColumns: (columns: ColumnConfig[]) => void;
@@ -155,6 +157,8 @@ export function RequestTable({
       setUnseen((n) => n + rows.length - previous.current);
     previous.current = rows.length;
   }, [rows.length, scroll]);
+  const selectedCount = rows.reduce((count, row) => count + Number(selected.has(row.id)), 0);
+  const allSelected = rows.length > 0 && selectedCount === rows.length;
   const rowHeight = 36,
     start = Math.max(0, Math.floor(scroll / rowHeight) - 5),
     end = Math.min(rows.length, start + Math.ceil(height / rowHeight) + 12);
@@ -195,6 +199,29 @@ export function RequestTable({
           if (e.currentTarget.scrollTop < 50) setUnseen(0);
         }}
         onKeyDown={(e) => {
+          const target = e.target as HTMLElement;
+          if (target !== e.currentTarget && target.matches('input, button, [role="separator"]'))
+            return;
+          if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'a') {
+            e.preventDefault();
+            e.stopPropagation();
+            onToggleAll(true);
+            return;
+          }
+          if (e.key === ' ' && focused) {
+            e.preventDefault();
+            onToggle(focused);
+            return;
+          }
+          if ((e.shiftKey && e.key === 'F10') || e.key === 'ContextMenu') {
+            const row = rows.find((item) => item.id === focused);
+            if (row) {
+              e.preventDefault();
+              const rect = e.currentTarget.getBoundingClientRect();
+              onContext(row, rect.left + 80, rect.top + 75);
+            }
+            return;
+          }
           if (!['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(e.key)) return;
           e.preventDefault();
           const current = rows.findIndex((r) => r.id === focused);
@@ -223,7 +250,19 @@ export function RequestTable({
           role="row"
           style={{ gridTemplateColumns: grid, minWidth: width }}
         >
-          <span role="columnheader" aria-label="Select" />
+          <span role="columnheader" aria-label="Select">
+            <input
+              type="checkbox"
+              aria-label="Select all matching requests"
+              title="Select all matching requests (Ctrl / Cmd + A in the request list)"
+              checked={allSelected}
+              disabled={!rows.length}
+              ref={(element) => {
+                if (element) element.indeterminate = selectedCount > 0 && !allSelected;
+              }}
+              onChange={(e) => onToggleAll(e.target.checked)}
+            />
+          </span>
           <span role="columnheader" aria-label="Favorite" />
           {columns.map((c, i) => (
             <div

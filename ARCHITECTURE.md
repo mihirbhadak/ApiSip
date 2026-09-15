@@ -71,3 +71,9 @@ A content-script capture provider is intentionally absent: monkey-patching fetch
 ## Unpacked installation layouts
 
 `public/manifest.json` is the canonical source manifest. Vite copies it to `dist` and also generates a root `manifest.json` whose worker and icon paths point into `dist`. The worker resolves the inspector beside its own manifest entry. Both repository-root and standalone-dist installations therefore use the same compiled code, CSP and permissions. A real-Chrome regression test loads the repository root and invokes the toolbar action to check this path.
+
+## UI interaction primitives
+
+Searchable comboboxes keep focus on the input and identify the active option through ARIA. Menus use roving focus and dismiss on outside interaction, Escape or selection. Both use a shared native top-layer popover that works inside clipped panes and modal dialogs. Resizing and scrolling cannot leave a detached menu behind.
+
+Section tabs support arrow navigation. Global shortcuts, the help reference and modifier-hold hints share one registry. Text editing and dialogs retain their own keys. A cancellable one-second timer reveals hints without moving focus. Help content and creator details are bundled locally without remote widgets. Bulk selection uses filtered record IDs independently of rendered table rows.

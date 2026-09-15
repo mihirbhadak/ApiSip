@@ -1,3 +1,5 @@
+import { HelpButton } from './HelpButton';
+import { SearchSelect } from './SearchSelect';
 import {
   ArrowDownToLine,
   ListFilter,
@@ -63,6 +65,7 @@ export function CaptureToolbar({ controller }: { controller: InspectorController
           </span>
         </div>
         <div className="capture-controls">
+          <HelpButton topic="capture" label="Help with capture" />
           <div className="segmented" aria-label="Capture scope">
             <button
               className={settings.scope === 'current' ? 'active' : ''}
@@ -184,13 +187,14 @@ export function CaptureToolbar({ controller }: { controller: InspectorController
           </button>
         ))}
         <span className="toolbar-spacer" />
+        <HelpButton topic="requests" label="Help with request selection and columns" />
         <label className="group-select">
           Group
-          <select
+          <SearchSelect
             aria-label="Group requests"
             value={group}
-            onChange={(e) => {
-              setGroup(e.target.value);
+            onValueChange={(value) => {
+              setGroup(value);
               setGroupValue('');
             }}
           >
@@ -199,10 +203,10 @@ export function CaptureToolbar({ controller }: { controller: InspectorController
                 {g === 'none' ? 'None' : g}
               </option>
             ))}
-          </select>
+          </SearchSelect>
         </label>
         <button
-          className="icon-button"
+          className="icon-button danger-text"
           aria-label="Clear current session"
           onClick={() => clear('Current session')}
         >
@@ -243,7 +247,9 @@ export function CaptureToolbar({ controller }: { controller: InspectorController
           <span>{selected.size} selected</span>
           <button onClick={() => setModal('export')}>Export selected</button>
           <button onClick={() => setModal('collection')}>Add to collection</button>
-          <button onClick={deleteSelection}>Delete</button>
+          <button className="danger-text" onClick={deleteSelection}>
+            Delete
+          </button>
           <button onClick={() => setSelected(new Set())}>Deselect</button>
         </div>
       )}

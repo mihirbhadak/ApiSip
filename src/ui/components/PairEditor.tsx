@@ -42,7 +42,7 @@ export function PairEditor({
             spellCheck={false}
           />
           <button
-            className="icon-button"
+            className="icon-button danger-text"
             aria-label={'Delete ' + label + ' row ' + (i + 1)}
             onClick={() => onChange(pairs.filter((_, index) => index !== i))}
           >

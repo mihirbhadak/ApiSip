@@ -1,3 +1,4 @@
+import { SearchSelect } from './SearchSelect';
 import { useState } from 'react';
 import { Download } from 'lucide-react';
 import {
@@ -102,7 +103,11 @@ export function ExportDialog({
       <p className="muted">Take your debugging context with you.</p>
       <label className="field">
         Scope
-        <select aria-label="Export scope" value={scope} onChange={(e) => setScope(e.target.value)}>
+        <SearchSelect
+          aria-label="Export scope"
+          value={scope}
+          onValueChange={(value) => setScope(value)}
+        >
           {[
             'Selected requests',
             'Filtered requests',
@@ -114,19 +119,19 @@ export function ExportDialog({
               {s}
             </option>
           ))}
-        </select>
+        </SearchSelect>
       </label>
       <label className="field">
         Format
-        <select
+        <SearchSelect
           aria-label="Export format"
           value={format}
-          onChange={(e) => setFormat(e.target.value as ExportFormat)}
+          onValueChange={(value) => setFormat(value as ExportFormat)}
         >
           {['JSON', 'CSV', 'Markdown', 'HAR', 'TXT'].map((f) => (
             <option key={f}>{f}</option>
           ))}
-        </select>
+        </SearchSelect>
       </label>
       <fieldset className="export-options">
         <legend>Include in export</legend>

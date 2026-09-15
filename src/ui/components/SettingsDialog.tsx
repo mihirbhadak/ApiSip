@@ -1,3 +1,6 @@
+import { ShortcutList } from './KeyboardHints';
+import { TabBar } from './TabBar';
+import { SearchSelect } from './SearchSelect';
 import { useEffect, useState } from 'react';
 import type { Settings } from '../../shared/model';
 import type { RuntimeState } from '../../shared/messages';
@@ -43,7 +46,7 @@ export function SettingsDialog({
   };
   return (
     <Dialog title="Settings" wide onClose={onClose}>
-      <div className="tabs">
+      <TabBar className="tabs" label="Settings sections">
         {['Capture', 'Privacy & storage', 'Export', 'Appearance', 'Shortcuts', 'Diagnostics'].map(
           (t) => (
             <button key={t} className={tab === t ? 'active' : ''} onClick={() => setTab(t)}>
@@ -51,32 +54,32 @@ export function SettingsDialog({
             </button>
           ),
         )}
-      </div>
+      </TabBar>
       {tab === 'Capture' && (
         <>
           <label className="field">
             Default capture scope
-            <select
+            <SearchSelect
               aria-label="Capture mode"
               value={settings.scope}
-              onChange={(e) => setPatch({ ...patch, scope: e.target.value as Settings['scope'] })}
+              onValueChange={(value) => setPatch({ ...patch, scope: value as Settings['scope'] })}
             >
               <option value="current">Current tab</option>
               <option value="all">All tabs</option>
-            </select>
+            </SearchSelect>
           </label>
           <label className="field">
             Badge count
-            <select
+            <SearchSelect
               aria-label="Badge behavior"
               value={settings.badge}
-              onChange={(e) => setPatch({ ...patch, badge: e.target.value as Settings['badge'] })}
+              onValueChange={(value) => setPatch({ ...patch, badge: value as Settings['badge'] })}
             >
               <option value="tab">Current tab</option>
               <option value="all">All stored requests</option>
               <option value="session">Current session</option>
               <option value="filter">Matching metadata filter (current session)</option>
-            </select>
+            </SearchSelect>
           </label>
           {settings.badge === 'filter' && (
             <label className="field">
@@ -90,31 +93,31 @@ export function SettingsDialog({
           )}
           <label className="field">
             Maximum body size
-            <select
+            <SearchSelect
               aria-label="Maximum body size"
               value={settings.maxBodyBytes}
-              onChange={(e) => setPatch({ ...patch, maxBodyBytes: Number(e.target.value) })}
+              onValueChange={(value) => setPatch({ ...patch, maxBodyBytes: Number(value) })}
             >
               {[1, 5, 10, 25].map((n) => (
                 <option key={n} value={n * 1048576}>
                   {n} MB
                 </option>
               ))}
-            </select>
+            </SearchSelect>
           </label>
           <label className="field">
             Default replay context
-            <select
+            <SearchSelect
               aria-label="Default replay context"
               value={settings.replayContext}
-              onChange={(e) =>
-                setPatch({ ...patch, replayContext: e.target.value as Settings['replayContext'] })
+              onValueChange={(value) =>
+                setPatch({ ...patch, replayContext: value as Settings['replayContext'] })
               }
             >
               <option value="auto">Automatic</option>
               <option value="browser">Browser</option>
               <option value="extension">Extension</option>
-            </select>
+            </SearchSelect>
           </label>
           <label className="checkbox-label">
             <input
@@ -189,13 +192,13 @@ export function SettingsDialog({
           </label>
           <label className="field">
             Retention
-            <select
+            <SearchSelect
               aria-label="Retention"
               value={settings.retentionDays}
-              onChange={(e) =>
+              onValueChange={(value) =>
                 setPatch({
                   ...patch,
-                  retentionDays: Number(e.target.value) as Settings['retentionDays'],
+                  retentionDays: Number(value) as Settings['retentionDays'],
                 })
               }
             >
@@ -205,7 +208,7 @@ export function SettingsDialog({
                   {n} days
                 </option>
               ))}
-            </select>
+            </SearchSelect>
           </label>
           <label className="field">
             Maximum request count
@@ -251,40 +254,24 @@ export function SettingsDialog({
       {tab === 'Appearance' && (
         <label className="field">
           Theme
-          <select
+          <SearchSelect
             aria-label="Theme"
             value={settings.theme}
-            onChange={(e) => setPatch({ ...patch, theme: e.target.value as Settings['theme'] })}
+            onValueChange={(value) => setPatch({ ...patch, theme: value as Settings['theme'] })}
           >
             <option value="system">System</option>
             <option value="light">Light</option>
             <option value="dark">Dark</option>
-          </select>
+          </SearchSelect>
         </label>
       )}
       {tab === 'Shortcuts' && (
-        <table className="kv-table">
-          <tbody>
-            {[
-              ['Ctrl / ⌘ + K', 'Focus search'],
-              ['Ctrl / ⌘ + F', 'Focus search'],
-              ['Ctrl / ⌘ + Shift + P', 'Command palette'],
-              ['Ctrl / ⌘ + Enter', 'Send from request editor'],
-              ['Ctrl / ⌘ + Shift + C', 'Copy cURL'],
-              ['Ctrl / ⌘ + E', 'Export'],
-              ['↑ / ↓ · Home / End', 'Navigate focused request list'],
-              ['Delete', 'Delete selected requests (confirmation)'],
-              ['Escape', 'Close dialog or details'],
-            ].map(([key, action]) => (
-              <tr key={key}>
-                <th>
-                  <kbd>{key}</kbd>
-                </th>
-                <td>{action}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <>
+          <p className="muted">
+            Hold Ctrl / Cmd or Alt alone for one second to reveal shortcuts. Release to dismiss.
+          </p>
+          <ShortcutList />
+        </>
       )}
       {tab === 'Diagnostics' && (
         <>

@@ -1,3 +1,7 @@
+import { HelpButton, openHelp } from './HelpButton';
+import { CreatorLinks } from './CreatorLinks';
+import { ActionMenu } from './ActionMenu';
+import { SearchSelect } from './SearchSelect';
 import {
   Activity,
   Bookmark,
@@ -6,7 +10,6 @@ import {
   Globe,
   Layers,
   ListFilter,
-  MoreHorizontal,
   Plus,
   ShieldCheck,
 } from 'lucide-react';
@@ -40,31 +43,27 @@ export function Sidebar({
   const scoped = entities.filter((e) => e.workspaceId === settings.workspaceId),
     workspace = entities.find((e) => e.id === settings.workspaceId);
   const menu = (e: Entity) => (
-    <details className="entity-menu">
-      <summary aria-label={'Manage ' + e.name}>
-        <MoreHorizontal size={14} />
-      </summary>
-      <div className="entity-popover">
-        <button onClick={() => m.rename(e)}>Rename</button>
-        {e.kind === 'workspace' && (
-          <button onClick={() => task(() => m.duplicate(e))}>Duplicate</button>
-        )}
-        {e.kind === 'session' && (
-          <button onClick={() => task(() => m.archive(e))}>
-            {e.archived ? 'Unarchive' : 'Archive'}
-          </button>
-        )}
-        <button onClick={() => m.remove(e)}>Delete</button>
-      </div>
-    </details>
+    <ActionMenu
+      label={'Manage ' + e.name}
+      actions={[
+        { name: 'Rename', run: () => m.rename(e) },
+        ...(e.kind === 'workspace'
+          ? [{ name: 'Duplicate', run: () => task(() => m.duplicate(e)) }]
+          : []),
+        ...(e.kind === 'session'
+          ? [{ name: e.archived ? 'Unarchive' : 'Archive', run: () => task(() => m.archive(e)) }]
+          : []),
+        { name: 'Delete', danger: true, run: () => m.remove(e) },
+      ]}
+    />
   );
   return (
     <aside className="sidebar">
       <div className="workspace-control">
-        <select
+        <SearchSelect
           aria-label="Workspace"
           value={settings.workspaceId}
-          onChange={(e) => task(() => m.switchWorkspace(e.target.value))}
+          onValueChange={(value) => task(() => m.switchWorkspace(value))}
         >
           {entities
             .filter((e) => e.kind === 'workspace')
@@ -74,7 +73,7 @@ export function Sidebar({
               </option>
             ))}
           {!entities.length && <option value="default">My workspace</option>}
-        </select>
+        </SearchSelect>
         {workspace && menu(workspace)}
       </div>
       <button className="sidebar-create" onClick={() => m.create('workspace')}>
@@ -113,6 +112,7 @@ export function Sidebar({
       <div className="sidebar-section">
         <div className="sidebar-label">
           <span>SESSIONS</span>
+          <HelpButton topic="workspaces" label="Help with workspaces and sessions" />
           <button
             className="icon-button"
             aria-label="New session"
@@ -159,6 +159,7 @@ export function Sidebar({
       <div className="sidebar-section">
         <div className="sidebar-label">
           <span>COLLECTIONS</span>
+          <HelpButton topic="collections" label="Help with collections" />
           <button
             className="icon-button"
             aria-label="New collection"
@@ -198,6 +199,7 @@ export function Sidebar({
       <div className="sidebar-section">
         <div className="sidebar-label">
           <span>SAVED FILTERS</span>
+          <HelpButton topic="filters" label="Help with saved filters" />
         </div>
         {scoped
           .filter((e) => e.kind === 'filter')
@@ -215,12 +217,20 @@ export function Sidebar({
           ))}
       </div>
       <div className="sidebar-bottom">
-        <ShieldCheck size={15} />
-        <span>
-          On your device.
-          <br />
-          <strong>Always local.</strong>
-        </span>
+        <div className="creator-credit">
+          <button onClick={() => openHelp('about')} title="About Mihir Bhadak">
+            <span className="creator-avatar">MB</span>
+            <span>
+              <small>CREATED BY</small>
+              <strong>Mihir Bhadak</strong>
+            </span>
+          </button>
+          <CreatorLinks compact />
+        </div>
+        <div className="local-note">
+          <ShieldCheck size={14} />
+          <span>On your device. Always local.</span>
+        </div>
       </div>
     </aside>
   );

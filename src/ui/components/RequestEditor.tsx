@@ -1,3 +1,5 @@
+import { TabBar } from './TabBar';
+import { SearchSelect } from './SearchSelect';
 import { useState } from 'react';
 import { Play, RotateCcw, Save } from 'lucide-react';
 import type { CapturedRequest, ReplayResult, RequestData, Settings } from '../../shared/model';
@@ -70,15 +72,15 @@ export function RequestEditor({
         <h3>Request editor</h3>
         <label className="context-label">
           Context
-          <select
+          <SearchSelect
             aria-label="Replay context"
             value={context}
-            onChange={(e) => setContext(e.target.value as typeof context)}
+            onValueChange={(value) => setContext(value as typeof context)}
           >
             <option value="auto">Automatic</option>
             <option value="browser">Browser</option>
             <option value="extension">Extension</option>
-          </select>
+          </SearchSelect>
         </label>
       </div>
       {protectedUrl && (
@@ -87,18 +89,17 @@ export function RequestEditor({
         </button>
       )}
       <div className="request-line">
-        <input
+        <SearchSelect
           className="method-input"
           aria-label="Request method"
-          list="http-methods"
+          allowCustom
           value={draft.method}
-          onChange={(e) => setDraft({ ...draft, method: e.target.value.toUpperCase() })}
-        />
-        <datalist id="http-methods">
-          {['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS'].map((m) => (
-            <option key={m}>{m}</option>
+          onValueChange={(method) => setDraft({ ...draft, method: method.toUpperCase() })}
+        >
+          {['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS'].map((method) => (
+            <option key={method}>{method}</option>
           ))}
-        </datalist>
+        </SearchSelect>
         <input
           aria-label="Request URL"
           value={protectedUrl ? maskedUrl : draft.url}
@@ -115,7 +116,7 @@ export function RequestEditor({
         Browser uses the source tab’s cookies and CORS rules. Extension omits ambient cookies.
         Chrome controls Cookie, Origin, Host and other restricted headers.
       </p>
-      <div className="tabs">
+      <TabBar className="tabs" label="Editor sections">
         {['Headers', 'Query', 'Body'].map((t) => (
           <button key={t} className={tab === t ? 'active' : ''} onClick={() => setTab(t)}>
             {t}
@@ -126,7 +127,7 @@ export function RequestEditor({
                 : ''}
           </button>
         ))}
-      </div>
+      </TabBar>
       {tab === 'Headers' && (
         <PairEditor
           label="Request headers"

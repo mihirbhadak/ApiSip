@@ -20,20 +20,20 @@ Verified September 15, 2026 on Windows with Chrome for Testing 153.0.8010.12 and
 
 - ESLint: passed with zero warnings.
 - Strict TypeScript: passed.
-- Vitest: 100 tests passed across 10 files, including components, repositories and executable snippets.
-- Production Vite build: passed; build identifier `2026-09-15T12:41:17.762Z`.
+- Vitest: 112 tests passed across 11 files, including components, repositories and executable snippets.
+- Production Vite build: passed; build identifier `2026-09-15T14:06:08.843Z`.
 - Dependency audit: zero known vulnerabilities reported by npm.
-- Real Chrome E2E: all 15 scenarios passed in 1.7 minutes, with no retries or skips. This includes exact repository-root installation, proven worker termination/recovery, both replay contexts and 10,000 completed requests.
+- Real Chrome E2E: all 17 scenarios passed in 1.7 minutes, with no retries or skips. This includes the new dashboard controls/help, exact repository-root installation, proven worker termination/recovery, both replay contexts and 10,000 completed requests.
 - Automated accessibility checks and visual review: passed for the documented screens.
-- ZIP package: verified manifest, script/style/icon paths and archive integrity (16 entries, 626,119 bytes).
+- ZIP package: verified manifest, script/style/icon paths, archive integrity and exact equality with the built files (16 entries, 656,615 bytes).
 
 ## Real Chrome burst measurements
 
 | Persisted test requests | Requests added in this stage | Stage duration | Targeted search |
 | ----------------------- | ---------------------------- | -------------- | --------------- |
-| 1,000                   | 1,000                        | 3.30 s         | 328 ms          |
-| 5,000                   | 4,000                        | 13.98 s        | 825 ms          |
-| 10,000                  | 5,000                        | 42.08 s        | 813 ms          |
+| 1,000                   | 1,000                        | 2.76 s         | 339 ms          |
+| 5,000                   | 4,000                        | 10.46 s        | 857 ms          |
+| 10,000                  | 5,000                        | 32.56 s        | 855 ms          |
 
 Stages send genuine HTTP requests in concurrent groups of 50. Stage duration includes generation, waiting for every completed HTTP 200 response to persist, displaying the matching set, and targeted search. Durations are incremental, not cumulative. The test raises the request retention cap to 20,000 to keep earlier fixture records while measuring 10,000 additional requests. Fewer than 50 request rows are rendered at each size. These measurements describe this machine and fixture, not a throughput or latency guarantee for arbitrary sites or bodies.
 
@@ -67,16 +67,20 @@ The serial E2E suite uses the loopback HTTP/WebSocket laboratory in `tests/serve
 9. Capture across tabs; terminate/restart the service worker; verify new passive captures and a recorded closed-source replay error.
 10. Terminate the worker with debugger capture enabled; verify the recovered provider captures a new response body.
 11. Exercise themes, filter/settings dialogs and a narrow viewport; run axe checks on the table and key dialogs.
-12. Generate 1,000, then 5,000, then 10,000 real requests; verify exact persisted counts, completed HTTP 200 responses for every generated request, a bounded rendered row count and responsive targeted search.
-13. Close and relaunch Chrome with the same run profile; verify entities, records, capture settings and new capture survive.
-14. Revoke optional host access; assert capture cannot claim success, replay records a permission error and diagnostics explain the failure.
-15. Load the exact repository root as a fresh unpacked extension; verify Chrome enables it, the toolbar opens `dist/inspector.html`, and the worker reports the current build. Close the exact worker target, verify it disappears, and confirm another toolbar click wakes it and opens the inspector again.
+12. Close three-dot menus by outside click and Escape; verify persistent red delete styling, searchable dropdowns, nested settings help, keyboard tabs, select-all/partial selection and the keyboard request menu. Run axe on open menus and pickers.
+13. Search contextual help and verify the exact creator links; check the long shortcut reference scrolls inside its panel without overlapping the footer, hold Ctrl/Alt for timed hints without losing focus, use the command palette to focus search, and inspect help in light/dark/narrow layouts with axe checks.
+14. Generate 1,000, then 5,000, then 10,000 real requests; verify exact persisted counts, completed HTTP 200 responses for every generated request, a bounded rendered row count and responsive targeted search.
+15. Close and relaunch Chrome with the same run profile; verify entities, records, capture settings and new capture survive.
+16. Revoke optional host access; assert capture cannot claim success, replay records a permission error and diagnostics explain the failure.
+17. Load the exact repository root as a fresh unpacked extension; verify Chrome enables it, the toolbar opens `dist/inspector.html`, and the worker reports the current build. Close the exact worker target, verify it disappears, and confirm another toolbar click wakes it and opens the inspector again.
 
 The action test uses the browser's supported extension-testing switch and local debugging pipe. This is test infrastructure; the shipped extension has no test-only event injection or alternate capture behavior. Native OS keyboard accelerator dispatch is outside Playwright's page-input checks. The action handler itself is exercised by Chrome.
 
 ## Visual and accessibility QA
 
-Actual extension screenshots cover the empty/light inspector, captured traffic, response details, replay editor, dark table, filter dialog, settings, 640-pixel layout, 10k session, permission error, export dialog and fresh root-folder installation. Generated files are under `test-results/visual`. There is no popup by design.
+Actual extension screenshots cover the empty/light inspector, captured traffic, response details, replay editor, dark table, filter dialog, settings, 640-pixel layout, 10k session, permission error, export dialog and fresh root-folder installation. Additional UI coverage includes three-dot menus, searchable dropdowns inside modal dialogs, the creator profile, the full keyboard reference, timed shortcut hints and light/mobile help. Generated files are under `test-results/visual`. The toolbar opens the full-page inspector directly.
+
+Interaction regression tests cover outside-click/one-menu-at-a-time dismissal, focus restoration, disabled/custom/empty picker options, typing after keyboard focus, label activation after choosing an option, tab navigation, selection across virtualized rows, modifier timing, exact creator URLs, help search and editing-safe shortcut dispatch. Chrome testing caught and fixed a label click that reopened a picker after selection; visual review caught and fixed long help content overflowing into the footer.
 
 Automated accessibility checks use axe with WCAG 2 A/AA rules. Component tests cover keyboard selection and dialog interactions. Automated rules do not replace manual screen-reader testing; a full assistive-technology/platform matrix has not been performed.
 

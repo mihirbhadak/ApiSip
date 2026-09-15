@@ -1,3 +1,4 @@
+import { HelpButton } from './HelpButton';
 import { Activity, Command, Settings2 } from 'lucide-react';
 import type { InspectorController } from '../use-inspector-controller';
 export function InspectorHeader({ controller }: { controller: InspectorController }) {
@@ -19,9 +20,11 @@ export function InspectorHeader({ controller }: { controller: InspectorControlle
           <strong>{session?.name ?? (viewSession === 'all' ? 'All sessions' : 'Session')}</strong>
         </div>
         <div className="header-actions">
+          <span className="shortcut-prompt">Hold Ctrl / Alt for shortcuts</span>
+          <HelpButton topic="start" label="Open help and guide" />
           <button
             className="icon-button"
-            title="Command palette"
+            title="Command palette (Ctrl / Cmd + Shift + P)"
             aria-label="Open command palette"
             onClick={() => setModal('commands')}
           >

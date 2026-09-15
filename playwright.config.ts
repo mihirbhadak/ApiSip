@@ -4,6 +4,7 @@ export default defineConfig({
   timeout: 90_000,
   expect: { timeout: 15_000 },
   workers: 1,
+  use: { actionTimeout: 15000 },
   reporter: [['list'], ['html', { open: 'never' }]],
   webServer: { command: 'node tests/server.mjs', port: 4177, reuseExistingServer: false },
 });

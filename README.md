@@ -40,6 +40,19 @@ After source changes, build again and click **Reload** on the extension card. `n
 - Local statistics, status/type/domain/latency distributions, endpoint grouping and slow/large-request lists.
 - System/light/dark themes, keyboard shortcuts, command palette, diagnostics, retention controls and destructive-action confirmations.
 
+## Dashboard controls and help
+
+- Three-dot menus close on outside click, Escape, Tab or after an action. Use arrows and Home/End to navigate; Enter activates an action. Delete and clear actions stay red.
+- The header checkbox selects all matching requests, including rows off screen. A dash means partial selection. Ctrl/Cmd + A selects all when the request list has focus. Deselect clears the entire selection, including requests outside the current filters.
+- Dropdowns support typing to search, arrows to navigate and Enter to choose. Escape cancels; Tab moves on. Field and method pickers accept custom values with Enter.
+- The ? buttons open a searchable guide covering capture, filters, organization, details, replay, exports, analytics, privacy and settings.
+- Hold Ctrl, Cmd or Alt alone for one second to reveal shortcuts without moving focus. Release the key, press another key or leave the window to dismiss the hints.
+- Section tabs support Left/Right and Home/End. The command palette displays its shortcuts.
+
+### Creator
+
+Built by **Mihir Bhadak**. [GitHub](https://github.com/mihirbhadak), [LinkedIn](https://www.linkedin.com/in/mihirbhadak/), [Instagram](https://www.instagram.com/mihir_bhadak/). Links open only when clicked; no remote social widgets are loaded.
+
 ## Capture modes and limitations
 
 **Passive capture** uses Chrome's `webRequest` observer. It does not modify traffic and cannot read response bodies. Response size and detailed timing are unavailable when the provider does not expose them.
@@ -89,17 +102,28 @@ Retention defaults to 30 days, 10,000 requests and an approximate 500 MB budget.
 
 ## Shortcuts
 
-| Shortcut              | Action                                |
-| --------------------- | ------------------------------------- |
-| Alt + Shift + A       | Open or focus the inspector           |
-| Ctrl/Cmd + K or F     | Search requests                       |
-| Ctrl/Cmd + Shift + P  | Command palette                       |
-| Ctrl/Cmd + Enter      | Send from request editor              |
-| Ctrl/Cmd + Shift + C  | Copy cURL                             |
-| Ctrl/Cmd + E          | Export                                |
-| Arrow keys, Home, End | Navigate the focused request list     |
-| Delete                | Confirm deletion of selected requests |
-| Escape                | Close a dialog or details             |
+| Shortcut                          | Action                                      |
+| --------------------------------- | ------------------------------------------- |
+| Alt + Shift + A                   | Open or focus the inspector                 |
+| Ctrl/Cmd + K or F                 | Search requests                             |
+| Ctrl/Cmd + Shift + P              | Command palette                             |
+| Ctrl/Cmd + Enter                  | Send from request editor                    |
+| Ctrl/Cmd + Shift + C              | Copy cURL                                   |
+| Ctrl/Cmd + E                      | Export                                      |
+| Alt + Shift + C                   | Start or pause capture                      |
+| Alt + Shift + N / W / L           | New session / workspace / collection        |
+| Alt + Shift + F / S / H           | Open filters / settings / help              |
+| Alt + Shift + R                   | Focus the request list                      |
+| Ctrl/Cmd + A                      | Select all matching requests (focused list) |
+| Space                             | Toggle focused request selection            |
+| Shift + F10                       | Open the focused request menu               |
+| Arrow keys, Home, End             | Navigate the focused request list           |
+| Left / Right, Home / End          | Navigate section tabs                       |
+| Type, Up / Down, Enter            | Search dropdowns and choose an option       |
+| Delete                            | Confirm deletion of selected requests       |
+| ?                                 | Open help (outside text fields)             |
+| Hold Ctrl/Cmd or Alt for 1 second | Reveal shortcuts                            |
+| Escape                            | Close a menu, dropdown, dialog or details   |
 
 Alt + Shift + A is a Chrome extension command; configure it at `chrome://extensions/shortcuts` if Chrome preserves an unassigned or conflicting shortcut. The remaining shortcuts apply while the inspector has focus. Normal editing keys are preserved in form controls.
 

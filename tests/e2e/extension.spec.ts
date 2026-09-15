@@ -16,6 +16,15 @@ let profile: string;
 const base = 'http://127.0.0.1:4177';
 const errors: string[] = [];
 test.describe.configure({ mode: 'serial' });
+async function choose(label: string, option: string) {
+  const input = inspector.getByRole('combobox', { name: label, exact: true });
+  await input.click();
+  await input.fill(option);
+  await inspector
+    .getByRole('listbox', { name: label + ' options', exact: true })
+    .getByRole('option', { name: new RegExp('^' + option + '$', 'i') })
+    .click();
+}
 async function state() {
   return inspector.evaluate(async () => {
     const response = await chrome.runtime.sendMessage({ type: 'state' });
@@ -137,7 +146,7 @@ test.beforeAll(async () => {
   expect((await state()).buildId).toBe(build.buildId);
   console.log('Verified extension build', build.buildId);
   await inspector.getByLabel('Open settings').click();
-  await inspector.getByRole('button', { name: 'Privacy & storage', exact: true }).click();
+  await inspector.getByRole('tab', { name: 'Privacy & storage', exact: true }).click();
   await inspector.getByRole('button', { name: 'Clear all stored data', exact: true }).click();
   await inspector.getByRole('dialog').getByRole('button', { name: 'Delete', exact: true }).click();
   await expect.poll(async () => (await state()).count).toBe(0);
@@ -286,7 +295,7 @@ test('searches, filters, selects details, and safely renders untrusted responses
     .click();
   await expect(inspector.getByTestId('request-row')).toHaveCount(2);
   await inspector.getByRole('button', { name: 'Filters', exact: true }).click();
-  await inspector.getByRole('button', { name: 'Expression', exact: true }).click();
+  await inspector.getByRole('tab', { name: 'Expression', exact: true }).click();
   await inspector
     .getByLabel('Filter expression')
     .fill('status >= 500 OR (method = POST AND url contains "json")');
@@ -296,7 +305,7 @@ test('searches, filters, selects details, and safely renders untrusted responses
   await inspector.getByLabel('Search APIs').fill('/api/json?original');
   await expect(inspector.getByTestId('request-row')).toHaveCount(1);
   await inspector.getByTestId('request-row').click();
-  await expect(inspector.getByLabel('Request details')).toBeVisible();
+  await expect(inspector.getByLabel('Request details', { exact: true })).toBeVisible();
   await inspector.getByRole('tab', { name: 'Response', exact: true }).click();
   await expect(inspector.getByRole('tabpanel')).toContainText('Mihir');
   await expect(inspector.getByRole('tabpanel')).not.toContainText('"private"');
@@ -309,13 +318,16 @@ test('searches, filters, selects details, and safely renders untrusted responses
 test('edits URL, headers, query and body, replays in both contexts, and compares results', async () => {
   await inspector.getByRole('tab', { name: 'Replay', exact: true }).click();
   await inspector.getByLabel('Request URL', { exact: true }).fill(base + '/api/json?edited=2');
-  await inspector.getByLabel('Replay context', { exact: true }).selectOption('extension');
-  await inspector.getByRole('button', { name: 'Body', exact: true }).click();
+  await choose('Replay context', 'Extension');
+  await inspector
+    .locator('.request-editor')
+    .getByRole('tab', { name: 'Body', exact: true })
+    .click();
   await inspector.getByRole('button', { name: 'Reveal secrets', exact: true }).click();
   await inspector
     .getByLabel('Request body', { exact: true })
     .fill('{"name":"Updated","nested":{"id":2}}');
-  await inspector.getByRole('button', { name: 'Headers ·', exact: false }).click();
+  await inspector.getByRole('tab', { name: 'Headers ·', exact: false }).click();
   await inspector.getByRole('button', { name: 'Add row', exact: true }).click();
   await inspector
     .getByLabel(/Request headers key/)
@@ -335,7 +347,7 @@ test('edits URL, headers, query and body, replays in both contexts, and compares
   expect(echo.url).toBe('/api/json?edited=2');
   expect(echo.headers['x-replayed']).toBe('verified');
   expect(echo.body.name).toBe('Updated');
-  await inspector.getByLabel('Replay context', { exact: true }).selectOption('browser');
+  await choose('Replay context', 'Browser');
   await inspector.getByLabel('Request URL', { exact: true }).press('Control+Enter');
   await expect
     .poll(async () => (await records()).find((r) => r.id === original.id)?.replayHistory?.length)
@@ -365,7 +377,7 @@ test('copies cURL and structured data, exports JSON/CSV/Markdown/HAR, and import
   for (const format of ['JSON', 'CSV', 'Markdown', 'HAR']) {
     console.log('Exporting', format);
     await inspector.locator('.toolbar').getByRole('button', { name: 'Export' }).click();
-    await inspector.getByLabel('Export format').selectOption(format);
+    await choose('Export format', format);
     if (format === 'JSON') {
       expect(
         (
@@ -423,7 +435,9 @@ test('persists favorites, collections, workspaces and sessions across inspector 
   await inspector.getByLabel('Name', { exact: true }).fill('Integration session');
   await inspector.getByRole('dialog').getByRole('button', { name: 'Save', exact: true }).click();
   await inspector.reload();
-  await expect(inspector.getByLabel('Workspace')).toContainText('Project A');
+  await expect(inspector.getByRole('combobox', { name: 'Workspace', exact: true })).toHaveValue(
+    'Project A',
+  );
   await expect(
     inspector.getByRole('button', { name: 'Integration session', exact: true }),
   ).toBeVisible();
@@ -514,8 +528,8 @@ test('restores debugger body capture after worker termination', async () => {
 test('renders light/dark/mobile layouts and passes automated accessibility checks', async () => {
   await inspector.getByLabel('Search APIs').fill('');
   await inspector.getByLabel('Open settings').click();
-  await inspector.getByRole('button', { name: 'Appearance', exact: true }).click();
-  await inspector.getByLabel('Theme', { exact: true }).selectOption('dark');
+  await inspector.getByRole('tab', { name: 'Appearance', exact: true }).click();
+  await choose('Theme', 'Dark');
   await inspector.getByRole('button', { name: 'Save settings' }).click();
   await expect(inspector.locator('html')).toHaveAttribute('data-theme', 'dark');
   await inspector.screenshot({ path: 'test-results/visual/05-dark.png' });
@@ -551,6 +565,175 @@ test('renders light/dark/mobile layouts and passes automated accessibility check
   await inspector.setViewportSize({ width: 1512, height: 982 });
   expect(errors).toEqual([]);
 });
+test('dismisses entity menus, supports searchable pickers and bulk selection from the keyboard', async () => {
+  const manage = inspector.getByRole('button', { name: 'Manage Project A', exact: true });
+  await manage.click();
+  const menu = inspector.getByRole('menu', { name: 'Manage Project A', exact: true });
+  await expect(menu).toBeVisible();
+  const danger = menu.getByRole('menuitem', { name: 'Delete', exact: true });
+  const expectedRed = await inspector.evaluate(() =>
+    getComputedStyle(document.documentElement).getPropertyValue('--danger').trim(),
+  );
+  expect(await danger.evaluate((element) => getComputedStyle(element).color)).toBe(
+    await inspector.evaluate((color) => {
+      const probe = document.createElement('span');
+      probe.style.color = color;
+      document.body.append(probe);
+      const computed = getComputedStyle(probe).color;
+      probe.remove();
+      return computed;
+    }, expectedRed),
+  );
+  await inspector.screenshot({ path: 'test-results/visual/13-entity-menu.png' });
+  const menuA11y = await new AxeBuilder({ page: inspector })
+    .withTags(['wcag2a', 'wcag2aa', 'wcag21aa'])
+    .analyze();
+  expect(menuA11y.violations).toEqual([]);
+  await inspector.getByRole('heading', { name: 'Network requests' }).click();
+  await expect(menu).toHaveCount(0);
+  await manage.focus();
+  await inspector.keyboard.press('Enter');
+  await inspector.keyboard.press('Escape');
+  await expect(manage).toBeFocused();
+  await expect(menu).toHaveCount(0);
+  await inspector.getByRole('combobox', { name: 'Workspace', exact: true }).fill('project');
+  await expect(
+    inspector.getByRole('listbox', { name: 'Workspace options' }).getByRole('option'),
+  ).toHaveCount(1);
+  await inspector.keyboard.press('Enter');
+  await inspector.getByLabel('Open settings').click();
+  await inspector.getByRole('tab', { name: 'Capture', exact: true }).focus();
+  await inspector.keyboard.press('ArrowRight');
+  await expect(
+    inspector.getByRole('tab', { name: 'Privacy & storage', exact: true }),
+  ).toBeFocused();
+  await inspector.getByRole('tab', { name: 'Appearance', exact: true }).click();
+  await inspector.getByRole('combobox', { name: 'Theme', exact: true }).click();
+  await expect(inspector.getByRole('listbox', { name: 'Theme options' })).toBeVisible();
+  await inspector.screenshot({ path: 'test-results/visual/14-searchable-picker.png' });
+  const pickerA11y = await new AxeBuilder({ page: inspector })
+    .withTags(['wcag2a', 'wcag2aa', 'wcag21aa'])
+    .analyze();
+  expect(pickerA11y.violations).toEqual([]);
+  await inspector.keyboard.press('Escape');
+  await expect(inspector.getByRole('dialog', { name: 'Settings', exact: true })).toBeVisible();
+  await inspector.getByRole('button', { name: 'Help with settings', exact: true }).click();
+  await expect(inspector.getByRole('dialog', { name: 'Help & guide', exact: true })).toBeVisible();
+  await inspector.keyboard.press('Escape');
+  await expect(inspector.getByRole('dialog', { name: 'Settings', exact: true })).toBeVisible();
+  await inspector.getByLabel('Close dialog').click();
+  await inspector.getByLabel('Search APIs').fill('/api/users?');
+  await expect(inspector.getByTestId('request-row').first()).toBeVisible();
+  const all = inspector.getByRole('checkbox', { name: 'Select all matching requests' });
+  await all.check();
+  await expect(all).toBeChecked();
+  const count = await inspector.getByTestId('request-row').count();
+  await expect(inspector.locator('.selection-bar')).toContainText(count + ' selected');
+  await inspector.getByTestId('request-row').first().getByRole('checkbox').uncheck();
+  expect(await all.evaluate((element) => (element as HTMLInputElement).indeterminate)).toBe(true);
+  await inspector.getByRole('table', { name: 'Request list' }).focus();
+  await inspector.keyboard.press('Control+A');
+  await expect(all).toBeChecked();
+  await inspector.keyboard.press('ArrowDown');
+  await inspector.keyboard.press('Shift+F10');
+  await expect(inspector.getByRole('menu', { name: 'Request actions' })).toBeVisible();
+  await inspector.keyboard.press('Escape');
+  await inspector.getByRole('button', { name: 'Deselect', exact: true }).click();
+  if (await inspector.getByLabel('Close details', { exact: true }).count())
+    await inspector.getByLabel('Close details', { exact: true }).click();
+  await inspector.getByLabel('Search APIs').fill('');
+});
+
+test('shows contextual help, creator links and timed keyboard hints without losing focus', async () => {
+  await inspector.getByLabel('Help with capture', { exact: true }).click();
+  await expect(inspector.getByRole('article')).toHaveAccessibleName('Capture and badge');
+  await inspector.getByRole('textbox', { name: 'Search help' }).fill('creator');
+  await expect(inspector.getByRole('article')).toHaveAccessibleName('About and creator');
+  await expect(
+    inspector.getByRole('dialog').getByRole('link', { name: 'Mihir Bhadak on GitHub' }),
+  ).toHaveAttribute('href', 'https://github.com/mihirbhadak');
+  await expect(
+    inspector.getByRole('dialog').getByRole('link', { name: 'Mihir Bhadak on LinkedIn' }),
+  ).toHaveAttribute('href', 'https://www.linkedin.com/in/mihirbhadak/');
+  await expect(
+    inspector.getByRole('dialog').getByRole('link', { name: 'Mihir Bhadak on Instagram' }),
+  ).toHaveAttribute('href', 'https://www.instagram.com/mihir_bhadak/');
+  await inspector.screenshot({ path: 'test-results/visual/15-help-creator.png' });
+  const helpA11y = await new AxeBuilder({ page: inspector })
+    .withTags(['wcag2a', 'wcag2aa', 'wcag21aa'])
+    .analyze();
+  expect(helpA11y.violations).toEqual([]);
+  await inspector.getByRole('textbox', { name: 'Search help' }).fill('');
+  await inspector.getByRole('button', { name: 'Keyboard reference', exact: true }).click();
+  await expect(inspector.getByRole('article')).toContainText('Alt + Shift + N');
+  const helpLayout = await inspector.getByRole('article').evaluate((article) => {
+    const footer = document.querySelector('.help-footer')!;
+    const dialog = article.closest('dialog')!;
+    return {
+      clearsFooter:
+        article.getBoundingClientRect().bottom <= footer.getBoundingClientRect().top + 1,
+      scrollsInside: article.scrollHeight > article.clientHeight,
+      dialogFits: dialog.scrollHeight <= dialog.clientHeight + 1,
+    };
+  });
+  expect(helpLayout).toEqual({ clearsFooter: true, scrollsInside: true, dialogFits: true });
+  await inspector.screenshot({ path: 'test-results/visual/16-help-shortcuts.png' });
+  await inspector.getByRole('article').focus();
+  await inspector.keyboard.press('Control+End');
+  await expect
+    .poll(() => inspector.getByRole('article').evaluate((el) => el.scrollTop))
+    .toBeGreaterThan(0);
+  await inspector.keyboard.press('Escape');
+  await inspector.keyboard.press('Alt+Shift+F');
+  await expect(inspector.getByRole('dialog')).toBeVisible();
+  await inspector.keyboard.press('Escape');
+  const input = inspector.getByLabel('Search APIs');
+  await inspector.keyboard.press('Control+Shift+P');
+  await inspector.getByLabel('Search commands').fill('Search requests');
+  await inspector.keyboard.press('Enter');
+  await expect(input).toBeFocused();
+  await inspector.keyboard.down('Control');
+  await expect(inspector.getByLabel('Keyboard shortcuts', { exact: true })).toBeVisible({
+    timeout: 2500,
+  });
+  await expect(input).toBeFocused();
+  await inspector.screenshot({ path: 'test-results/visual/17-keyboard-hints.png' });
+  await inspector.keyboard.up('Control');
+  await expect(inspector.getByLabel('Keyboard shortcuts', { exact: true })).toHaveCount(0);
+  await inspector.keyboard.down('Alt');
+  await expect(inspector.getByLabel('Keyboard shortcuts', { exact: true })).toBeVisible({
+    timeout: 2500,
+  });
+  await expect(inspector.getByLabel('Keyboard shortcuts', { exact: true })).toContainText(
+    'New session',
+  );
+  await inspector.keyboard.up('Alt');
+  await expect(inspector.getByLabel('Keyboard shortcuts', { exact: true })).toHaveCount(0);
+  await inspector.getByLabel('Open settings').click();
+  await inspector.getByRole('tab', { name: 'Appearance', exact: true }).click();
+  await choose('Theme', 'Light');
+  await inspector.getByRole('button', { name: 'Save settings' }).click();
+  await expect(inspector.locator('html')).toHaveAttribute('data-theme', 'light');
+  await inspector.getByLabel('Open help and guide', { exact: true }).click();
+  await inspector.screenshot({ path: 'test-results/visual/18-help-light.png' });
+  const lightHelpA11y = await new AxeBuilder({ page: inspector })
+    .withTags(['wcag2a', 'wcag2aa', 'wcag21aa'])
+    .analyze();
+  expect(lightHelpA11y.violations).toEqual([]);
+  await inspector.setViewportSize({ width: 640, height: 850 });
+  await inspector.screenshot({ path: 'test-results/visual/19-help-mobile.png' });
+  expect(await inspector.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
+    640,
+  );
+  await inspector.setViewportSize({ width: 1512, height: 982 });
+  await inspector.keyboard.press('Escape');
+  await inspector.getByLabel('Open settings').click();
+  await inspector.getByRole('tab', { name: 'Appearance', exact: true }).click();
+  await choose('Theme', 'Dark');
+  await inspector.getByRole('button', { name: 'Save settings' }).click();
+  expect(errors).toEqual([]);
+});
+
 test('remains interactive at 1,000, 5,000 and 10,000 real requests', async () => {
   test.setTimeout(360000);
   if (!(await state()).settings.recording)
@@ -642,7 +825,9 @@ test('restores workspaces, sessions, records and capture after a full browser re
   inspector = await context.newPage();
   inspector.on('pageerror', (error) => errors.push(error.message));
   await inspector.goto('chrome-extension://' + extensionId + '/inspector.html');
-  await expect(inspector.getByLabel('Workspace')).toContainText('Project A');
+  await expect(inspector.getByRole('combobox', { name: 'Workspace', exact: true })).toHaveValue(
+    'Project A',
+  );
   await expect(
     inspector.getByRole('button', { name: 'Integration session', exact: true }),
   ).toBeVisible();
@@ -685,7 +870,7 @@ test('handles revoked optional site access without pretending capture or replay 
   expect(replay.data.response).toBeUndefined();
   await inspector.getByLabel('Search APIs').fill('');
   await inspector.getByLabel('Open settings').click();
-  await inspector.getByRole('button', { name: 'Diagnostics', exact: true }).click();
+  await inspector.getByRole('tab', { name: 'Diagnostics', exact: true }).click();
   await expect(inspector.getByRole('dialog')).toContainText('Site access');
   await inspector.screenshot({ path: 'test-results/visual/10-permission-error.png' });
   expect(errors).toEqual([]);

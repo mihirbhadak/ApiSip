@@ -1,3 +1,4 @@
+import { SearchSelect } from './SearchSelect';
 import { useState } from 'react';
 import type { CapturedRequest, RequestData, ReplayResult, Settings } from '../../shared/model';
 import { formatTime } from '../../shared/parse';
@@ -36,10 +37,10 @@ export function ReplayPanel({
           Replay history <span className="muted">{r.replayHistory?.length ?? 0}</span>
         </h3>
         {!!r.replayHistory?.length && (
-          <select
+          <SearchSelect
             aria-label="Replay history"
             value={history}
-            onChange={(e) => setHistory(Number(e.target.value))}
+            onValueChange={(value) => setHistory(Number(value))}
           >
             <option value={-1}>Latest replay</option>
             {r.replayHistory.map((h, i) => (
@@ -47,7 +48,7 @@ export function ReplayPanel({
                 Replay #{i + 1} · {new Date(h.timestamp).toLocaleTimeString()}
               </option>
             ))}
-          </select>
+          </SearchSelect>
         )}
       </div>
       {replay ? (

@@ -1,3 +1,5 @@
+import { HelpButton } from './HelpButton';
+import type { HelpTopic } from '../help-content';
 import { useEffect, useRef, type ReactNode } from 'react';
 import { X } from 'lucide-react';
 export function Dialog({
@@ -5,11 +7,13 @@ export function Dialog({
   children,
   onClose,
   wide = false,
+  className = '',
 }: {
   title: string;
   children: ReactNode;
   onClose: () => void;
   wide?: boolean;
+  className?: string;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
   useEffect(() => {
@@ -19,10 +23,23 @@ export function Dialog({
       previous?.focus();
     };
   }, []);
+  const helpTopic: HelpTopic | undefined = title.includes('filter')
+    ? 'filters'
+    : title.includes('Export')
+      ? 'export'
+      : title.includes('Settings')
+        ? 'settings'
+        : title.includes('collection')
+          ? 'collections'
+          : title.includes('columns')
+            ? 'requests'
+            : /workspace|session/i.test(title)
+              ? 'workspaces'
+              : undefined;
   return (
     <dialog
       ref={ref}
-      className={wide ? 'dialog wide' : 'dialog'}
+      className={(wide ? 'dialog wide ' : 'dialog ') + className}
       aria-label={title}
       onCancel={(e) => {
         e.preventDefault();
@@ -43,6 +60,7 @@ export function Dialog({
     >
       <div className="dialog-heading">
         <h2>{title}</h2>
+        {helpTopic && <HelpButton topic={helpTopic} label={'Help with ' + title.toLowerCase()} />}
         <button aria-label="Close dialog" className="icon-button" onClick={onClose}>
           <X size={18} />
         </button>

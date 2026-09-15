@@ -1,3 +1,5 @@
+import { HelpCenter } from './components/HelpCenter';
+import { KeyboardHints } from './components/KeyboardHints';
 import { useInspectorController } from './use-inspector-controller';
 import { Sidebar } from './components/Sidebar';
 import { InspectorHeader } from './components/InspectorHeader';
@@ -48,6 +50,8 @@ export default function App() {
         <InspectorStatus controller={controller} />
       </main>
       <InspectorOverlays controller={controller} />
+      <HelpCenter />
+      <KeyboardHints />
     </div>
   );
 }
