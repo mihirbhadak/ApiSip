@@ -4,6 +4,7 @@ import { helpTopics, type HelpTopic } from '../help-content';
 import { Dialog } from './Dialog';
 import { ShortcutList } from './KeyboardHints';
 import { CreatorLinks } from './CreatorLinks';
+import { CreatorAvatar } from './CreatorAvatar';
 export function HelpCenter() {
   const [topic, setTopic] = useState<HelpTopic>();
   useEffect(() => {
@@ -68,7 +69,7 @@ export function HelpDialog({
             <p className="muted">{active.summary}</p>
             {active.id === 'about' && (
               <div className="creator-profile">
-                <span className="creator-avatar">MB</span>
+                <CreatorAvatar />
                 <div>
                   <strong>Mihir Bhadak</strong>
                   <span>Creator of API Catcher</span>

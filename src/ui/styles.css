@@ -2041,15 +2041,12 @@ button.danger-outline {
   font-size: 12px;
 }
 .creator-avatar {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+  display: block;
   width: 33px;
   height: 33px;
-  border-radius: 8px;
+  border-radius: 50%;
+  object-fit: cover;
   background: var(--accent-soft);
-  color: var(--accent-text);
-  font-weight: 700;
   flex-shrink: 0;
 }
 .creator-socials {
@@ -2095,9 +2092,8 @@ button.danger-outline {
   margin: 24px 0;
 }
 .creator-profile .creator-avatar {
-  width: 55px;
-  height: 55px;
-  font-size: 19px;
+  width: 64px;
+  height: 64px;
 }
 .creator-profile strong {
   display: block;

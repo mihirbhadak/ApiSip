@@ -16,6 +16,16 @@ npm audit
 
 ## Latest verified results
 
+### Profile photo update
+
+Build `2026-09-15T14:26:41.561Z` bundles Mihir Bhadak's supplied photo and displays it in the sidebar and creator guide. ESLint, strict TypeScript, the production build, formatting and all 22 existing UI tests across two files passed.
+
+Focused real Chrome checks passed with fresh profiles for both repository-root and standalone `dist` installation. They verified that both images decoded from the extension's own origin, the creator image displays at 64 by 64 pixels with a circular crop, light/dark appearance, the 640-pixel layout, zero page errors and axe accessibility checks. Screenshots were reviewed and saved under `artifacts/qa/20-profile-*`, `21-profile-*` and `22-profile-*`.
+
+The refreshed ZIP contains 17 entries and 1,026,664 bytes. Archive integrity, manifest references, equality with `dist`, and exact preservation of the supplied portrait were verified. Capture/replay behavior was unchanged; the full-suite results below refer to the preceding build.
+
+### Last full-suite run
+
 Verified September 15, 2026 on Windows with Chrome for Testing 153.0.8010.12 and Node.js 26.4.0.
 
 - ESLint: passed with zero warnings.

@@ -51,7 +51,7 @@ After source changes, build again and click **Reload** on the extension card. `n
 
 ### Creator
 
-Built by **Mihir Bhadak**. [GitHub](https://github.com/mihirbhadak), [LinkedIn](https://www.linkedin.com/in/mihirbhadak/), [Instagram](https://www.instagram.com/mihir_bhadak/). Links open only when clicked; no remote social widgets are loaded.
+Built by **Mihir Bhadak**. [GitHub](https://github.com/mihirbhadak), [LinkedIn](https://www.linkedin.com/in/mihirbhadak/), [Instagram](https://www.instagram.com/mihir_bhadak/). His profile photo is bundled locally. Links open only when clicked; no remote social widgets are loaded.
 
 ## Capture modes and limitations
 

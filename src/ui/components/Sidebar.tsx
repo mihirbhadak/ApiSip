@@ -1,5 +1,6 @@
 import { HelpButton, openHelp } from './HelpButton';
 import { CreatorLinks } from './CreatorLinks';
+import { CreatorAvatar } from './CreatorAvatar';
 import { ActionMenu } from './ActionMenu';
 import { SearchSelect } from './SearchSelect';
 import {
@@ -219,7 +220,7 @@ export function Sidebar({
       <div className="sidebar-bottom">
         <div className="creator-credit">
           <button onClick={() => openHelp('about')} title="About Mihir Bhadak">
-            <span className="creator-avatar">MB</span>
+            <CreatorAvatar />
             <span>
               <small>CREATED BY</small>
               <strong>Mihir Bhadak</strong>
