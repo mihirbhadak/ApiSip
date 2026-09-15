@@ -61,6 +61,21 @@ test('loads the project root as an unpacked extension and opens the built inspec
     expect(state.data.buildId).toBe(
       JSON.parse(await readFile('dist/build-info.json', 'utf8')).buildId,
     );
+    // The root manifest also resolves the real offscreen host under dist.
+    await inspector.evaluate(async () => {
+      await chrome.offscreen.createDocument({
+        url: 'dist/offscreen.html',
+        reasons: [chrome.offscreen.Reason.WORKERS],
+        justification: 'Verify the bundled timed runner host loads from the root installation.',
+      });
+    });
+    const host = await inspector.evaluate(() =>
+      chrome.runtime.sendMessage({ target: 'load-host', action: 'status' }),
+    );
+    expect(host).toEqual({ ok: true, report: null });
+    expect(
+      (await inspector.evaluate(() => chrome.runtime.sendMessage({ type: 'runner-release' }))).ok,
+    ).toBe(true);
     await mkdir('test-results/visual', { recursive: true });
     await inspector.screenshot({ path: 'test-results/visual/12-root-install.png' });
     const editor = await context.newPage();

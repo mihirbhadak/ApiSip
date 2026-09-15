@@ -23,19 +23,21 @@ export function Dialog({
       previous?.focus();
     };
   }, []);
-  const helpTopic: HelpTopic | undefined = title.includes('filter')
-    ? 'filters'
-    : title.includes('Export')
-      ? 'export'
-      : title.includes('Settings')
-        ? 'settings'
-        : title.includes('collection')
-          ? 'collections'
-          : title.includes('columns')
-            ? 'requests'
-            : /workspace|session/i.test(title)
-              ? 'workspaces'
-              : undefined;
+  const helpTopic: HelpTopic | undefined = /timed run/i.test(title)
+    ? 'runner'
+    : title.includes('filter')
+      ? 'filters'
+      : title.includes('Export')
+        ? 'export'
+        : title.includes('Settings')
+          ? 'settings'
+          : title.includes('collection')
+            ? 'collections'
+            : title.includes('columns')
+              ? 'requests'
+              : /workspace|session/i.test(title)
+                ? 'workspaces'
+                : undefined;
   return (
     <dialog
       ref={ref}

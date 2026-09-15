@@ -19,7 +19,8 @@ import {
   type ColumnConfig,
 } from './components/RequestTable';
 import type { PaletteCommand } from './components/CommandPalette';
-type Modal = '' | 'filters' | 'export' | 'settings' | 'commands' | 'columns' | 'collection';
+type Modal =
+  'runs' | '' | 'filters' | 'export' | 'settings' | 'commands' | 'columns' | 'collection';
 export function useInspectorController() {
   const [search, setSearch] = useState(''),
     [expression, setExpression] = useState(''),
@@ -289,6 +290,7 @@ export function useInspectorController() {
     { name: 'Export requests', shortcut: keyFor('export'), run: () => setModal('export') },
     { name: 'Copy cURL', shortcut: keyFor('copy'), run: copyCurl },
     { name: 'Replay selected request', run: () => setDetailTab('Replay') },
+    { name: 'Timed runs', run: () => setModal('runs') },
     { name: 'Save selected request', run: () => updateRecord({ isFavorite: true }) },
     { name: 'Clear current session', run: () => clear('Current session') },
     { name: 'Open settings', shortcut: keyFor('settings'), run: () => setModal('settings') },
@@ -358,7 +360,8 @@ export function useInspectorController() {
           run: () =>
             management.setConfirmation({
               title: 'Delete request?',
-              description: 'This removes the request and its replay history.',
+              description:
+                'This removes the request, its drafts, replay history and timed run reports. An active timed run for this request will stop.',
               action: async () => {
                 await deleteRecords([record.id]);
                 setRecordId(undefined);

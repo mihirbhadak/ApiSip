@@ -18,27 +18,46 @@ npm audit
 
 Verified September 15, 2026 on Windows with Chrome for Testing 153.0.8010.12 and Node.js 26.4.0.
 
-This build adds dedicated editor tabs with persistent drafts, shared replay history, both replay contexts and a return-to-inspector action. It preserves the existing dashboard improvements and Mihir Bhadak's locally bundled profile photo.
+This build adds paced API testing entirely inside the extension, with variables, bounded measurements, persistent reports and recovery after worker interruption. It preserves dedicated editor tabs, both single-request replay contexts, dashboard interactions and Mihir Bhadak's locally bundled profile photo.
 
 - ESLint: passed with zero warnings.
 - Strict TypeScript: passed.
-- Vitest: 122 tests passed across 12 files, including components, repositories, database migration, draft concurrency and executable snippets.
-- Production Vite build: passed; build identifier `2026-09-15T15:03:50.715Z`.
+- Vitest: 151 tests passed across 16 files, including components, repositories, migration, timer granularity/stalls, bounded scheduling, real streaming HTTP transport and executable snippets.
+- Production Vite build: passed; build identifier `2026-09-15T18:05:14.652Z`.
 - Dependency audit: zero known vulnerabilities reported by npm.
-- Real Chrome E2E: all 18 scenarios passed in 1.5 minutes, with no retries or skips. Coverage includes the new editor workflow, exact repository-root installation, worker termination/recovery, both replay contexts and 10,000 completed requests.
-- Automated accessibility checks and visual review: passed for the documented screens, including editor tabs in light/dark/narrow layouts and the missing-draft state.
+- Real Chrome E2E: all 25 scenarios passed in 2.6 minutes, with no retries or skips. Coverage includes the timed runner, source deletion and permission revocation, exact repository-root installation and offscreen host loading, worker recovery, both replay contexts and separate 10,000-request capture and timed-run tests.
+- Automated accessibility checks and visual review: passed for the documented screens, including timed runs and editor tabs in light/dark/narrow layouts, the missing-draft state and a completed 10,000-request report. A separate check also verified the profile photo, creator links and accessible help under both root and dist installations.
 - Formatting and Git whitespace checks: passed.
-- ZIP package: verified manifest, script/style/icon paths, archive integrity and exact equality with the built files (17 entries, 1,042,801 bytes). The supplied profile photo is preserved byte-for-byte.
+- ZIP package: verified manifest, script/style/icon paths, archive integrity and exact equality with the built files (26 entries, 1,169,862 bytes). The supplied profile photo is preserved byte-for-byte.
 
 The package and build identifier are in `artifacts`; `SHA256SUMS.txt` and `package-verification.json` record package integrity. Screenshots are copied to `artifacts/qa`.
+
+## Timed-run measurements
+
+The final Chrome run used the loopback `/api/load/ten-thousand?index={{index}}` fixture with an 11-byte response, 10,000 planned starts, a 60-second window, concurrency 32 and a 1,000 ms start-delay tolerance. The default tolerance is 100 ms; the benchmark explicitly allows more scheduling jitter. The UI remained open. All numbers below are measurements from this machine and this fixture.
+
+| Measurement                                       | Observed result                                 |
+| ------------------------------------------------- | ----------------------------------------------- |
+| Requests started / finished / passed              | 10,000 / 10,000 / 10,000                        |
+| Independent server receipts / unique indices      | 10,000 / 10,000                                 |
+| Missed starts                                     | 0                                               |
+| Run elapsed                                       | 60,003.1 ms                                     |
+| Approximate attempt-duration P95                  | 18.54 ms                                        |
+| Maximum measured start delay                      | 30.73 ms                                        |
+| Foreground history dropdown interaction           | 40 ms for open, visibility assertion and Escape |
+| Serialized run report                             | 32,621 bytes                                    |
+| Inspector JS used heap after 1,000 / 8,000 starts | 16,717,452 / 14,802,104 bytes                   |
+| Measured isolated Chrome CPU time                 | 41.05 CPU-seconds over 60.60 wall-seconds       |
+
+CPU time is summed across surviving processes in the isolated test browser and excludes processes that exited before the final sample. It includes Chrome/network/UI work; it is **not** extension-only or whole-computer CPU usage. Heap samples come from the inspector's JavaScript isolate, with no forced garbage collection. They do not measure the dedicated runner worker, native networking buffers, peak memory or total Chrome RAM. The smaller second sample illustrates normal garbage collection, not a universal memory ceiling. Bounded-memory guarantees here concern data structures: fixed histograms, capped samples/timeline/history and streamed response disposal. Large request bodies, high concurrency, other applications and browser scheduling still affect resources and throughput. Detailed result metadata is in `artifacts/runner-benchmark.json`.
 
 ## Real Chrome burst measurements
 
 | Persisted test requests | Requests added in this stage | Stage duration | Targeted search |
 | ----------------------- | ---------------------------- | -------------- | --------------- |
-| 1,000                   | 1,000                        | 2.64 s         | 336 ms          |
-| 5,000                   | 4,000                        | 9.41 s         | 841 ms          |
-| 10,000                  | 5,000                        | 15.30 s        | 852 ms          |
+| 1,000                   | 1,000                        | 2.17 s         | 322 ms          |
+| 5,000                   | 4,000                        | 7.54 s         | 857 ms          |
+| 10,000                  | 5,000                        | 10.92 s        | 842 ms          |
 
 Stages send genuine HTTP requests in concurrent groups of 50. Stage duration includes generation, waiting for every completed HTTP 200 response to persist, displaying the matching set, and targeted search. Durations are incremental, not cumulative. The test raises the request retention cap to 20,000 to keep earlier fixture records while measuring 10,000 additional requests. Fewer than 50 request rows are rendered at each size. These measurements describe this machine and fixture, not a throughput or latency guarantee for arbitrary sites or bodies.
 
@@ -82,11 +101,27 @@ The serial E2E suite uses the loopback HTTP/WebSocket laboratory in `tests/serve
 
 The action test uses the browser's supported extension-testing switch and local debugging pipe. This is test infrastructure; the shipped extension has no test-only event injection or alternate capture behavior. Native OS keyboard accelerator dispatch is outside Playwright's page-input checks. The action handler itself is exercised by Chrome.
 
+## Timed runner coverage
+
+`tests/e2e/runner.spec.ts` exercises real extension fetches and verifies a separate server ledger:
+
+1. Capture an API, open its editor tab, change URL/headers/JSON body, apply cycling data rows and built-ins, review without sending, then send ten paced requests. Check actual values, unique indices, omitted ambient cookies, streamed timings and downloaded JSON/CSV reports.
+2. Close the editor and terminate the exact extension service-worker target during a run. Confirm execution continues in the offscreen worker, stop from the dashboard, verify server counts stop increasing and the host closes.
+3. Exercise concurrency saturation, timeouts, consecutive HTTP failures, response read limits, blocked redirects and HTTP 429 cancellation.
+4. Reject overlapping starts, remove the offscreen context, recover the last checkpoint as interrupted and verify there is no automatic replay.
+5. Schedule 10,000 requests over 60 seconds with concurrency 32 and a 1,000 ms start-delay tolerance. Require exactly 10,000 server receipts and unique indices, all finished successfully, bounded report/sample sizes and a responsive foreground inspector. Sample the inspector's JS heap and isolated Chrome process CPU time without a whole-computer resource claim.
+6. Delete the source through the actual context menu and confirmation while its run is active. Verify traffic stops, reports disappear and later checkpoints cannot recreate them.
+7. Revoke host access during a run. Verify it stops and a later start receives a permission error without sending traffic.
+
+Focused domain tests reproduce timer stalls, 16 ms clock granularity, late slots within tolerance, expiration after expensive template preparation, bounded dispatch/concurrency, cancellation and drain behavior. They also check every-row template validation, JSON escaping/type preservation, fixed origins, body/header limits, approximate percentiles, bounded timelines/samples, report exports, v2-to-v3 migration and source deletion races. Transport integration uses real streaming HTTP responses, including partial body measurements on timeout. Component tests cover plan editing, searchable units, variables, review-before-send and absent measurement states.
+
+Development verification exposed two scheduler problems: coarse timers could miss the final slots, and a full dispatch batch discarded otherwise eligible late slots. The scheduler now reserves a small deadline margin and yields eligible work to the next bounded batch. Separate regression tests cover both; the deadline and exact-count assertions remain enforced. Foreground interaction timing explicitly verifies page visibility and focus before measuring the dropdown, avoiding measurements of an inactive browser surface.
+
 ## Visual and accessibility QA
 
-Actual extension screenshots include the dedicated editor in light, dark and narrow layouts, its missing-draft state, and the empty/light inspector, captured traffic, response details, replay editor, dark table, filter dialog, settings, 640-pixel layout, 10k session, permission error, export dialog and fresh root-folder installation. Additional UI coverage includes three-dot menus, searchable dropdowns inside modal dialogs, the creator profile, the full keyboard reference, timed shortcut hints and light/mobile help. Generated files are under `test-results/visual`. The toolbar opens the full-page inspector directly.
+Actual extension screenshots include timed-run configuration and analytics in light/dark/narrow layouts, as well as the dedicated editor in light, dark and narrow layouts, its missing-draft state, and the empty/light inspector, captured traffic, response details, replay editor, dark table, filter dialog, settings, 640-pixel layout, 10k session, permission error, export dialog and fresh root-folder installation. Additional UI coverage includes three-dot menus, searchable dropdowns inside modal dialogs, the creator profile, the full keyboard reference, timed shortcut hints and light/mobile help. Generated files are under `test-results/visual`. The toolbar opens the full-page inspector directly.
 
-New editor tests cover version-1-to-2 database migration, unfinished draft persistence, serialized autosaves, revision conflicts, retention/deletion transactions and transferring current edits without resetting them on history refresh. Real Chrome testing also exposed and fixed permission-dependent dashboard discovery on a fresh installation.
+Editor and runner tests cover additive upgrades from version-1 and version-2 databases to version 3, unfinished draft persistence, serialized autosaves, revision conflicts, retention/deletion transactions and transferring current edits without resetting them on history refresh. Real Chrome testing also exposed and fixed permission-dependent dashboard discovery on a fresh installation.
 
 Interaction regression tests cover outside-click/one-menu-at-a-time dismissal, focus restoration, disabled/custom/empty picker options, typing after keyboard focus, label activation after choosing an option, tab navigation, selection across virtualized rows, modifier timing, exact creator URLs, help search and editing-safe shortcut dispatch. Chrome testing caught and fixed a label click that reopened a picker after selection; visual review caught and fixed long help content overflowing into the footer.
 
@@ -97,5 +132,5 @@ Automated accessibility checks use axe with WCAG 2 A/AA rules. Component tests c
 - Browser results apply to the installed Chrome for Testing build on Windows, with local HTTP/WebSocket fixtures. They do not establish compatibility with every Chrome version, enterprise policy, site authentication flow or operating system.
 - CORS, forbidden headers, private browser pages, missing bodies and debugger ownership remain Chrome limitations. The UI explains unavailable data and replay failures rather than synthesizing success.
 - Storage tests include 10k records in both fake-indexeddb and actual Chrome. Performance measurements are machine-specific, not a latency guarantee.
-- No known failing acceptance test should be hidden with skips or retries. The test configuration has no retry policy. A failure captures diagnostics and a screenshot.
+- No known failing acceptance test should be hidden with skips or retries. The test configuration has no retry policy. A failure captures diagnostics and a screenshot. Timing misses are valid runner outcomes when Chrome cannot meet the schedule; the exact-count benchmark uses an explicitly configured one-second start-delay tolerance.
 - No cloud, store publication, interception, WebSocket replay, exact multipart-file replay, unlimited bodies or secrets vault is included.

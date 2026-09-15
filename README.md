@@ -35,6 +35,7 @@ After source changes, build again and click **Reload** on the extension card. `n
 - Nested AND/OR/NOT filters, visual builder, expression editor, saved filters and quick filters.
 - Persistent workspaces, sessions, collections, editable saved requests, tags and notes.
 - Request editor with query/header/body editing, browser-context and extension-context replay, history and structural JSON comparison. Open an editor in its own tab with persistent, automatically saved drafts.
+- Timed API runs in the extension: paced starts, optional ramp-up, bounded concurrency, body/header variables, streamed measurements, live charts, failure limits and saved reports.
 - cURL/Bash/CMD, PowerShell, JavaScript fetch/Axios, TypeScript fetch, Python requests/httpx, Go, Java, C#, PHP, Ruby, Rust and HTTPie generators.
 - JSON, CSV, Markdown, HAR and text exports; versioned JSON/HAR imports; sensitive values excluded by default.
 - Local statistics, status/type/domain/latency distributions, endpoint grouping and slow/large-request lists.
@@ -90,6 +91,51 @@ Automatic selection prefers the browser context when a source tab exists. Reques
 
 Each click opens an independent draft. Duplicating an existing browser tab shares its draft; conflicting saves are rejected with a reload action. Only a random draft ID appears in the tab URL. Drafts and their source requests are protected from automatic retention and navigation cleanup. Explicitly deleting their source request, session, workspace or history removes the related drafts. Drafts are not included in exports; save a request copy first. Browser-context replay still requires the original source tab and origin to remain available.
 
+## Timed API testing
+
+1. Select an API, choose **Replay → Open in new tab**, and edit its URL, headers and body.
+2. Choose **Timed run**. Enter **Requests to schedule** and a **Start window** in seconds or minutes. For example, **10,000 / 1 minute** plans an average of **166.67 starts/second**.
+3. Set maximum concurrency and a per-request timeout. Optional advanced controls add linear ramp-up, acceptable status codes, a latency budget, a response read limit and automatic stopping on consecutive failures or HTTP 429.
+4. Use **Review run** (Ctrl/Cmd + Enter in the configuration panel), inspect the target and masked first-slot preview, then **Start run**.
+5. Watch **Run analytics**, or close the editor and use **Timed runs** in the dashboard to monitor or stop. **Report JSON** exports aggregates; **Sample CSV** exports the retained attempt samples.
+
+The time is a **window for starting requests**, not a guarantee that all responses finish within it. Scheduling reserves at most 1% of the window (capped at 50 ms and the allowed start delay) at the end for normal timer granularity; ramp-up is clamped to the remaining scheduling interval. Slow responses, concurrency limits, computer sleep or late browser timers can leave slots unsent. These are counted separately; the runner does not flood the API with catch-up requests. Requests already in flight may finish after the window, within their timeouts. For a starting concurrency estimate, multiply planned starts/second by typical response duration in seconds: 166.67 × 0.2 s needs about 34 simultaneous requests. Validate with the API's actual capacity and measured delays.
+
+### Changing values per request
+
+Put placeholders in the editor before switching to Timed run:
+
+```text
+URL:    https://api.example.com/users/{{userId}}?attempt={{index}}
+Header: X-Test-Request: {{uuid}}
+Body:   {"userId":"{{userId}}","name":"{{name}}","attempt":"{{index}}"}
+```
+
+Under **Variables & data rows**, add custom constants or JSON rows such as:
+
+```json
+[
+  { "userId": 1, "name": "Mihir" },
+  { "userId": 2, "name": "Ada" }
+]
+```
+
+Rows cycle by scheduled slot and override constants. `{{index}}` is one-based, so missed slots leave gaps. `{{uuid}}` and `{{timestamp}}` change per attempt; `{{randomInt}}` is a seeded integer from 0 to 999,999. JSON placeholders must be quoted: an entire placeholder preserves the supplied scalar type, while embedded text is escaped. URL/form substitutions are encoded. Headers and plain text use literal substitutions. The target origin must stay fixed. No scripts or expressions are executed.
+
+### Measurements and resource limits
+
+- Counts: planned, started, finished, passed/failed/cancelled, missed timing/capacity slots, outstanding requests and peak concurrency.
+- Timing: attempt duration, time until exposed headers, body read, scheduled-start delay and timer lag. Each has sample count, min/mean/max, standard deviation and approximate P50/P95/P99. P95 needs 20 samples; P99 needs 100.
+- Charts and distributions: starts/completions over time, attempt durations, outcome categories and HTTP status counts; decoded bytes read and achieved throughput.
+- Responses are streamed, counted and discarded. A dedicated Web Worker performs the run; the UI updates once a second. Fixed histograms, at most 241 timeline buckets, the latest 100 attempts and first 20 failures keep report memory bounded. History retains the latest 50 reports globally.
+- Limits: one active run, 1–1,000,000 planned requests, 1 second–60 minutes, peak planned rate ≤1,000/second, concurrency ≤128, timeout 100 ms–120 seconds, request text ≤1 MiB, up to 100 headers/variables and 1,000 scalar data rows. The combined plan is capped at 1.5 million serialized characters. Response read limits are 1/5/10/25 MiB; one received chunk can cross the limit before cancellation.
+
+**Chrome boundaries:** timed runs use the extension context with granted site access, without ambient page cookies. Forbidden headers are omitted and listed. Redirects are not followed, and requests are never automatically retried. Ordinary browser-context replay remains available for single requests. DNS, connect/TLS, exact wire TTFB, compressed wire bytes, server processing time and whole-computer CPU/memory are unavailable in this fetch runner. Header timing includes browser queueing; it is not an isolated server-latency measurement. Browser preflights are not counted as scheduled attempts.
+
+Closing the editor does not stop a run. Closing Chrome, reloading the extension or losing its worker interrupts it. Saved checkpoints recover as **interrupted**, with unresolved outcomes identified; no requests restart automatically. Revoking site access or deleting the source history stops an active run. Reports omit request payloads, credentials, full URLs and variable values, but include the target origin and source identifiers. Run configurations/rows are not restored after leaving the run panel; edited API drafts remain locally saved. Reports have their own JSON export and are excluded from general history backups.
+
+This uses bundled Chrome/Web APIs with no native installation or OS-specific executable. Low overhead is a design goal, not a universal CPU/RAM or throughput guarantee. See [TESTING.md](TESTING.md) for actual Chrome measurements and verification boundaries.
+
 ## Permissions
 
 | Permission                           | Purpose                                                                                                                                |
@@ -100,6 +146,7 @@ Each click opens an independent draft. Duplicating an existing browser tab share
 | `scripting`                          | Execute the fixed browser-context replay function in the selected source tab.                                                          |
 | `storage`                            | Keep a browser-lifetime capture identifier in session storage; request data uses IndexedDB.                                            |
 | `alarms`                             | Run periodic local retention cleanup.                                                                                                  |
+| `offscreen`                          | Host the dedicated worker for a user-started timed run, using Chrome's WORKERS reason; close the host when idle.                       |
 | Optional `http://*/*`, `https://*/*` | Observe APIs and initiators across supported sites and perform explicit replay. Requested when capture starts.                         |
 
 No blocking/interception, cookies API, history API, native messaging, cloud service, remote scripts, telemetry or hidden analytics. Clipboard writing uses the user's click/shortcut and requires no blanket clipboard permission.

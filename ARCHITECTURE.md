@@ -30,6 +30,7 @@ Network and imported content is untrusted text. No captured HTML rendering, scri
 - [Extension worker lifecycle](https://developer.chrome.com/docs/extensions/develop/concepts/service-workers/lifecycle)
 - [CDP Network](https://chromedevtools.github.io/devtools-protocol/tot/Network/)
 - [Extension cross-origin requests](https://developer.chrome.com/docs/extensions/develop/concepts/network-requests)
+- [Offscreen documents and the WORKERS reason](https://developer.chrome.com/docs/extensions/reference/api/offscreen)
 - [Playwright extension testing](https://playwright.dev/docs/chrome-extensions)
 
 See README and TESTING for implemented behavior, limitations and verification evidence.
@@ -77,6 +78,29 @@ The expression parser produces an AND/OR/NOT tree. Compilation orders inexpensiv
 The table renders the visible range plus overscan, with fixed-height rows. React retains summary data and the selected full record, not every response body. Sorting and analytics operate on available metadata. Percentile thresholds avoid presenting P95/P99 from tiny samples. Endpoint grouping is a view; original URLs remain intact.
 
 ## Extension boundaries
+
+### Timed runner
+
+```text
+Editor draft -> validated plan -> service-worker control adapter
+  -> bundled offscreen.html (WORKERS reason)
+  -> dedicated runner Web Worker
+  -> paced fetch + streaming byte counter + bounded statistics
+  -> coalesced IndexedDB checkpoints and throttled snapshots
+  -> editor analytics / dashboard run monitor / report exports
+```
+
+The offscreen document supplies a supported worker host independent of an open editor. It uses only `chrome.runtime`; the service worker owns permissions, lifecycle and offscreen creation/discovery. Global serialized controls and a host worker reservation prevent overlapping runs, including while aborted fetches drain and final storage commits finish. No artificial service-worker keepalive is used. A sleeping/restarted service worker rediscovers the active host through `runtime.getContexts`. The host and worker terminate when idle. Startup failures and an unresponsive worker produce a bounded error instead of an indefinite pending start.
+
+The scheduler computes each slot from the integral of a uniform or linear-ramp rate. A deadline margin of at most 1% of the window, capped at 50 ms and the allowed start delay, accommodates normal timer granularity without starting requests after the window. Peak-rate validation includes that margin. It stores no per-slot task array. One scheduler timer, a bounded controller set and at most eight launches per tick prevent queue growth. Expired slots and slots beyond concurrency are counted and dropped. Eligible late slots remain as an integer cursor, and subsequent ticks process at most eight at a time within the chosen delay tolerance. There is no per-slot queue allocation or automatic retry. `stopping` stays active until outstanding fetches settle; terminal outcomes are persisted before the host releases its worker reservation. Timeouts include browser queueing and body reads. Streaming bodies are discarded immediately; status/latency checks run on measured outcomes. Redirects are blocked and an enabled 429 limit cancels the response at headers.
+
+Templates compile before any traffic. Validation covers every supplied data row, fixed HTTP(S) origin, restricted headers, native header syntax, request/plan byte budgets, bounded JSON nesting and placeholder counts. Rendering uses data substitution, never executable code. Static bodies are reused; preflight row validation avoids constructing a body for every row. URL/form values are encoded, JSON scalar types preserved, and substitution cannot move credentials to another origin. Runs omit ambient cookies and require current target host access.
+
+IndexedDB **version 3** adds a `runs` store indexed by `sourceId`, `createdAt` and `state`, preserving version-1 history and version-2 drafts. Each report includes aggregate timings, counts, fixed distributions, at most 241 timeline buckets, 100 recent samples and 20 initial failures. Five 1,024-bin histograms use about 20 KiB for their counters, independent of request count. Periodic worker publications are at most twice per second, plus state transitions; UI polling is coalesced at one second and checkpoints at approximately two seconds. Only the latest 50 terminal reports are retained globally. The observer rejects negative-tab-ID events before preparing mutations so extension runner traffic does not enter capture storage or badges.
+
+Automatic retention protects active source requests; explicit source/session/workspace/history deletion removes reports in the same transaction and signals Stop. Checkpoint transactions verify both source and report still exist, preventing resurrection. Lost hosts leave active checkpoints marked interrupted, without fabricated cancellations or automatic replay. Report JSON uses its own schema version 1; capture backup format remains version 1 and excludes drafts and run reports. Reports omit bodies, headers, variable data and full URLs. In-memory execution plans last only for the run; original editable drafts retain their existing local-storage behavior.
+
+Fetch does not reliably expose isolated DNS/TCP/TLS, wire TTFB, compressed transfer bytes, server processing or whole-computer CPU/RAM. UI measurement labels explicitly distinguish headers received, body read, total attempt duration and scheduler delays. Approximate quantiles use bounded logarithmic bins with roughly 2% relative precision and minimum sample thresholds. Browser/OS scheduling, network pools, sleep and payloads can prevent the planned rate; missed starts are part of the report.
 
 A content-script capture provider is intentionally absent: monkey-patching fetch/XHR misses traffic and changes page behavior. The provider interface permits another officially supported mechanism in the future without coupling React to it. Interception, response overrides, secrets vaults, cloud sync, remote collaboration, OpenAPI/Postman conversion and unlimited capture are outside the implemented scope.
 

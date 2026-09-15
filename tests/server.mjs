@@ -1,15 +1,66 @@
 import http from 'node:http';
 import { WebSocketServer } from 'ws';
+const loadRuns = new Map();
 const server = http.createServer(async (request, response) => {
   const url = new URL(request.url, 'http://127.0.0.1:4177');
   const chunks = [];
-  for await (const chunk of request) chunks.push(chunk);
+  try {
+    for await (const chunk of request) chunks.push(chunk);
+  } catch {
+    response.destroy();
+    return;
+  }
   const raw = Buffer.concat(chunks).toString('utf8');
   const headers = {
     'content-type': 'application/json; charset=utf-8',
     'cache-control': 'no-store',
     'x-test-server': 'api-catcher',
   };
+  if (url.pathname === '/api/load-stats') {
+    const run = loadRuns.get(url.searchParams.get('id'));
+    response.writeHead(200, headers);
+    response.end(JSON.stringify(run ? { ...run, indices: [...run.indices] } : { count: 0 }));
+    return;
+  }
+  if (url.pathname.startsWith('/api/load/')) {
+    const id = url.pathname.slice('/api/load/'.length);
+    if (!loadRuns.has(id)) {
+      if (loadRuns.size >= 50) loadRuns.delete(loadRuns.keys().next().value);
+      loadRuns.set(id, {
+        count: 0,
+        active: 0,
+        peak: 0,
+        firstAt: Date.now(),
+        lastAt: 0,
+        indices: new Set(),
+        samples: [],
+      });
+    }
+    const run = loadRuns.get(id);
+    run.count++;
+    run.active++;
+    run.peak = Math.max(run.peak, run.active);
+    run.lastAt = Date.now();
+    const index = url.searchParams.get('index') ?? request.headers['x-run-index'];
+    if (index !== undefined) run.indices.add(Number(index));
+    if (run.samples.length < 4) run.samples.push({ index, raw, headers: request.headers });
+    response.once('close', () => {
+      run.active--;
+    });
+    await new Promise((resolve) => setTimeout(resolve, Number(url.searchParams.get('delay') ?? 0)));
+    if (response.destroyed) return;
+    response.writeHead(Number(url.searchParams.get('status') ?? 200), headers);
+    response.flushHeaders();
+    const size = Math.min(3_000_000, Number(url.searchParams.get('size') ?? 11));
+    if (url.searchParams.has('bodyDelay')) {
+      response.write('x');
+      await new Promise((resolve) =>
+        setTimeout(resolve, Number(url.searchParams.get('bodyDelay'))),
+      );
+      if (!response.destroyed) response.end('x'.repeat(Math.max(0, size - 1)));
+    } else response.end('x'.repeat(size));
+    return;
+  }
   if (url.pathname === '/') {
     response.writeHead(200, { 'content-type': 'text/html' });
     response.end(

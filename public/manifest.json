@@ -4,7 +4,15 @@
   "version": "0.1.0",
   "description": "Inspect, organize, compare and replay network requests. Local-first, with optional response capture.",
   "minimum_chrome_version": "125",
-  "permissions": ["storage", "webRequest", "activeTab", "scripting", "alarms", "debugger"],
+  "permissions": [
+    "storage",
+    "webRequest",
+    "activeTab",
+    "scripting",
+    "alarms",
+    "debugger",
+    "offscreen"
+  ],
   "optional_host_permissions": ["http://*/*", "https://*/*"],
   "background": {
     "service_worker": "service-worker.js",

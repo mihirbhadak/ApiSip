@@ -2,13 +2,17 @@
 
 ## Local data
 
-API Catcher stores captured requests, available bodies, replay history, editor drafts, workspaces, sessions, collections, saved filters and settings in IndexedDB inside the extension's Chrome profile. Table preferences use localStorage. A random browser-lifetime identifier uses chrome.storage.session to prevent capture-key collisions.
+API Catcher stores captured requests, available bodies, replay history, editor drafts, timed run reports, workspaces, sessions, collections, saved filters and settings in IndexedDB inside the extension's Chrome profile. Table preferences use localStorage. A random browser-lifetime identifier uses chrome.storage.session to prevent capture-key collisions.
 
 Editor tabs automatically persist edited URLs, headers, bodies and replay context locally, including unfinished edits and credentials. Their URLs contain only a random draft ID. Drafts have the same unencrypted storage boundary as captured history. They are excluded from exports; Save as new request creates an exportable saved API.
 
 There is no telemetry, analytics service, cloud account, remote logging, sync or remote script. Statistics are computed locally. Installing and using the inspector requires no external API.
 
 **Replay sends the edited request to the API URL chosen by the user.** Opening an endpoint also navigates to that site. Copy and export put selected data on the system clipboard or into a local download, where other applications may access it.
+
+**Start run repeatedly sends the reviewed API request according to the configured schedule.** The runner operates entirely within the extension, including when its editor closes. It streams and discards response bodies. Stored reports contain method, target origin, source/workspace/session IDs, numeric configuration, timing aggregates, status counts and bounded numeric/category samples. They exclude full request URLs, headers, cookies, payloads and variable/data-row values. These execution inputs remain in memory only for the run; the original edited API draft follows the persistent storage behavior above. Reports retain the latest 50 runs and export separately from capture backups. Closing Chrome or losing the runner interrupts execution, with no automatic resume or retry.
+
+The added `offscreen` permission hosts a dedicated Web Worker using Chrome's supported WORKERS reason. It does not read other tabs, files or system performance counters. The host is closed when idle. Timed fetches require granted host access, omit ambient cookies, keep a fixed origin and block redirects. Cancelling a fetch cannot undo work an API already received. Revoking site access stops the run.
 
 ## Defaults
 
@@ -41,4 +45,4 @@ Browser replay runs a fixed bundled function in an isolated content-script world
 
 Cleanup runs every five minutes and protects favorites, pins, collection members and editor draft sources; those records can exceed configured limits. Drafts remain until discarded or explicitly removed with their source history. Storage-budget enforcement estimates payload sizes and is not a hard quota guarantee. Chrome can still deny writes when profile storage is exhausted. Failures appear in diagnostics without logging request payloads.
 
-Settings offers confirmed deletion of a session's requests, a workspace's requests, all captured history, or all extension data. Workspace/session deletion removes contained history. These explicit history deletions also remove related editor drafts; open editors show an unavailable state. Discard draft removes only that draft, preserving the original request and replay results. Collection deletion removes membership, preserving request history. Exported files are never deleted by those actions.
+Settings offers confirmed deletion of a session's requests, a workspace's requests, all captured history, or all extension data. Workspace/session deletion removes contained history. These explicit history deletions also remove related editor drafts and run reports, and stop affected runs; open editors show an unavailable state. Active run sources are protected from automatic retention. Discard draft removes only that draft, preserving the original request and replay results. A terminal run report can be deleted separately after confirmation. Collection deletion removes membership, preserving request history. Exported files are never deleted by those actions.

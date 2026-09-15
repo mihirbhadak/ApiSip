@@ -154,6 +154,12 @@ export function useEditorPage(id: string) {
     send,
     save,
     discard,
+    prepareRun: async () => {
+      await flush();
+      const current = await getDraft(id);
+      if (!current) throw new Error('This draft was deleted.');
+      return current.request;
+    },
     change: (request: RequestData, context: Settings['replayContext']) =>
       writer.current?.change(request, context),
     copy: (text: string) =>

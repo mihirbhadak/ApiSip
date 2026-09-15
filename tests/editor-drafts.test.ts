@@ -54,7 +54,7 @@ describe('persistent editor drafts', () => {
     await legacy.put('state', { ...defaultSettings, theme: 'dark' }, 'settings');
     legacy.close();
     const current = await getDB();
-    expect(current.version).toBe(2);
+    expect(current.version).toBe(3);
     expect(current.objectStoreNames.contains('drafts')).toBe(true);
     expect((await getRecord('test-1'))?.request.body?.text).toBe(fixture().request.body?.text);
     expect((await current.get('state', 'settings'))?.theme).toBe('dark');

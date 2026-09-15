@@ -21,6 +21,7 @@ import { parseFilter } from '../filters/parser';
 import { executeReplay } from '../replay/executor';
 import { Badge } from './badge';
 import { openInspector } from './inspector-tabs';
+import { startRun, runnerStatus, stopRun, releaseRunner, stopOrphanedRun } from './runner';
 
 const diagnostics: Diagnostic[] = [];
 let notificationTimer: ReturnType<typeof setTimeout> | undefined;
@@ -172,6 +173,7 @@ chrome.permissions.onAdded.addListener(() => {
 });
 chrome.permissions.onRemoved.addListener(() => {
   void (async () => {
+    await stopRun('Site access changed. Run stopped; grant access before starting again.');
     if (!(await chrome.permissions.contains({ origins: ['http://*/*', 'https://*/*'] }))) {
       await updateSettings({ recording: false });
       report('Site access was removed. Capture is paused.', 'error');
@@ -191,6 +193,13 @@ chrome.runtime.onMessage.addListener((raw: unknown, sender, respond) => {
   const cmd = parsed.data;
   const run = async (): Promise<Replies[keyof Replies]> => {
     await ready;
+    if (cmd.type === 'runner-start') return startRun(cmd.plan);
+    if (cmd.type === 'runner-status') return runnerStatus();
+    if (cmd.type === 'runner-stop') return stopRun();
+    if (cmd.type === 'runner-release') {
+      await releaseRunner();
+      return null;
+    }
     if (cmd.type === 'open-inspector') {
       await openInspector();
       return null;
@@ -248,6 +257,7 @@ chrome.runtime.onMessage.addListener((raw: unknown, sender, respond) => {
       return null;
     }
     if (cmd.type === 'changed') {
+      await stopOrphanedRun();
       await reconcile();
       return null;
     }

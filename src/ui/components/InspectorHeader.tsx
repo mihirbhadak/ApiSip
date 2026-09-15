@@ -20,6 +20,7 @@ export function InspectorHeader({ controller }: { controller: InspectorControlle
           <strong>{session?.name ?? (viewSession === 'all' ? 'All sessions' : 'Session')}</strong>
         </div>
         <div className="header-actions">
+          <button onClick={() => setModal('runs')}>Timed runs</button>
           <span className="shortcut-prompt">Hold Ctrl / Alt for shortcuts</span>
           <HelpButton topic="start" label="Open help and guide" />
           <button

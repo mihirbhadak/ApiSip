@@ -8,12 +8,15 @@ import { ReplayResults } from './components/ReplayResults';
 import { HelpButton } from './components/HelpButton';
 import { HelpCenter } from './components/HelpCenter';
 import { ConfirmDialog } from './components/Dialog';
+import type { RequestData } from '../shared/model';
+import { RunnerPanel } from './runner/RunnerPanel';
 
 export default function EditorPage({ id }: { id: string }) {
   const editor = useEditorPage(id);
   const { record, draft, settings, fatal, error, status, saveError, toast, task } = editor;
   const [confirm, setConfirm] = useState(false),
     [reveal, setReveal] = useState(false);
+  const [runRequest, setRunRequest] = useState<RequestData>();
   const safe = useMemo(
     () => record && (settings.maskSecrets && !reveal ? redactRecord(record) : record),
     [record, settings.maskSecrets, reveal],
@@ -35,6 +38,17 @@ export default function EditorPage({ id }: { id: string }) {
           <span>Request editor</span>
         </div>
         <div className="button-row">
+          {!fatal && draft && (
+            <button
+              onClick={() =>
+                runRequest
+                  ? setRunRequest(undefined)
+                  : task(async () => setRunRequest(await editor.prepareRun()))
+              }
+            >
+              {runRequest ? 'Back to editor' : 'Timed run'}
+            </button>
+          )}
           <button onClick={() => task(focusInspector)}>
             <ArrowLeft size={14} /> Open inspector
           </button>
@@ -57,7 +71,7 @@ export default function EditorPage({ id }: { id: string }) {
           Loading editor draft...
         </main>
       ) : (
-        <main className="editor-page-content">
+        <main className="editor-page-content" hidden={!!runRequest}>
           <section className="editor-workspace" aria-label="Request draft">
             <div
               className={'draft-status ' + (saveError ? 'error-text' : 'muted')}
@@ -96,6 +110,7 @@ export default function EditorPage({ id }: { id: string }) {
           </section>
         </main>
       )}
+      {!fatal && record && runRequest && <RunnerPanel sourceId={record.id} request={runRequest} />}
       {error && (
         <div className="editor-page-error error-banner" role="alert">
           {error}

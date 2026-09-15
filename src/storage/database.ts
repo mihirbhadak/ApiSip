@@ -1,6 +1,7 @@
 import { openDB, type DBSchema, type IDBPDatabase } from 'idb';
 import type { Body, CapturedRequest, Entity, ReplayResult, Settings } from '../shared/model';
 import type { EditorDraft } from '../shared/editor';
+import type { RunReport } from '../runner/model';
 export type RequestRow = CapturedRequest & {
   domain: string;
   method: string;
@@ -33,10 +34,15 @@ export interface InspectorDB extends DBSchema {
   entities: { key: string; value: Entity; indexes: { workspaceId: string; kind: string } };
   state: { key: string; value: Settings };
   drafts: { key: string; value: EditorDraft; indexes: { sourceId: string } };
+  runs: {
+    key: string;
+    value: RunReport;
+    indexes: { sourceId: string; createdAt: number; state: string };
+  };
 }
 let database: Promise<IDBPDatabase<InspectorDB>> | undefined;
 export function getDB() {
-  database ??= openDB<InspectorDB>('api-catcher', 2, {
+  database ??= openDB<InspectorDB>('api-catcher', 3, {
     upgrade(db, oldVersion) {
       if (oldVersion < 1) {
         const requests = db.createObjectStore('requests', { keyPath: 'id' });
@@ -60,6 +66,12 @@ export function getDB() {
       if (oldVersion < 2) {
         const drafts = db.createObjectStore('drafts', { keyPath: 'id' });
         drafts.createIndex('sourceId', 'sourceId');
+      }
+      if (oldVersion < 3) {
+        const runs = db.createObjectStore('runs', { keyPath: 'id' });
+        runs.createIndex('sourceId', 'sourceId');
+        runs.createIndex('createdAt', 'createdAt');
+        runs.createIndex('state', 'state');
       }
     },
     blocking() {

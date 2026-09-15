@@ -11,6 +11,7 @@ import {
 } from '../shared/model';
 import { presets } from '../filters/parser';
 import { draftSourceIds, removeRelatedDrafts } from './drafts';
+import { activeRunSources, removeRelatedRuns } from './runs';
 
 const descriptor = (body?: Body): Body | undefined =>
   body && { ...body, text: undefined, fields: undefined };
@@ -273,7 +274,7 @@ export async function countRows(scope: Scope = {}) {
 }
 export async function deleteRecords(ids: string[], preserveDrafts = false) {
   const db = await getDB(),
-    tx = db.transaction(['requests', 'bodies', 'drafts'], 'readwrite');
+    tx = db.transaction(['requests', 'bodies', 'drafts', 'runs'], 'readwrite');
   if (preserveDrafts) {
     const protectedIds = new Set<string>();
     let cursor = await tx.objectStore('drafts').index('sourceId').openKeyCursor();
@@ -281,8 +282,12 @@ export async function deleteRecords(ids: string[], preserveDrafts = false) {
       protectedIds.add(cursor.key);
       cursor = await cursor.continue();
     }
+    for (const state of ['running', 'draining', 'stopping'])
+      for (const run of await tx.objectStore('runs').index('state').getAll(state))
+        protectedIds.add(run.sourceId);
     ids = ids.filter((id) => !protectedIds.has(id));
   } else await removeRelatedDrafts(tx.objectStore('drafts'), new Set(ids));
+  await removeRelatedRuns(tx.objectStore('runs'), new Set(ids));
   for (const id of ids) {
     void tx.objectStore('requests').delete(id);
     void tx.objectStore('bodies').delete(id);
@@ -299,7 +304,7 @@ export async function deleteEntity(id: string) {
   const db = await getDB(),
     entity = await db.get('entities', id);
   if (!entity) return;
-  const tx = db.transaction(['entities', 'requests', 'bodies', 'drafts'], 'readwrite');
+  const tx = db.transaction(['entities', 'requests', 'bodies', 'drafts', 'runs'], 'readwrite');
   let rows: RequestRow[] = [];
   if (entity.kind === 'workspace') {
     rows = await tx.objectStore('requests').index('workspaceId').getAll(id);
@@ -313,6 +318,7 @@ export async function deleteEntity(id: string) {
       void tx.objectStore('requests').put({ ...row, collectionId: undefined });
   }
   await removeRelatedDrafts(tx.objectStore('drafts'), new Set(rows.map((row) => row.id)));
+  await removeRelatedRuns(tx.objectStore('runs'), new Set(rows.map((row) => row.id)));
   for (const row of rows) {
     void tx.objectStore('requests').delete(row.id);
     void tx.objectStore('bodies').delete(row.id);
@@ -322,6 +328,7 @@ export async function deleteEntity(id: string) {
 }
 export async function prune(settings: Settings) {
   const editing = await draftSourceIds();
+  for (const id of await activeRunSources()) editing.add(id);
   const rows = (await listRows()).sort((a, b) => a.timestamp - b.timestamp);
   const cutoff = settings.retentionDays ? Date.now() - settings.retentionDays * 86400000 : 0;
   const candidates = rows.filter(
@@ -353,8 +360,8 @@ export async function prune(settings: Settings) {
 }
 export async function clearDatabase() {
   const db = await getDB(),
-    tx = db.transaction(['requests', 'bodies', 'entities', 'state', 'drafts'], 'readwrite');
-  for (const store of ['requests', 'bodies', 'entities', 'state', 'drafts'] as const)
+    tx = db.transaction(['requests', 'bodies', 'entities', 'state', 'drafts', 'runs'], 'readwrite');
+  for (const store of ['requests', 'bodies', 'entities', 'state', 'drafts', 'runs'] as const)
     void tx.objectStore(store).clear();
   await tx.done;
   return initialize();

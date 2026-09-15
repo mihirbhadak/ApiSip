@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { runPlanSchema, type RunReport } from '../runner/model';
 import {
   requestSchema,
   settingsSchema,
@@ -11,6 +12,10 @@ export const commandSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('settings'), patch: settingsSchema.partial() }),
   z.object({ type: z.literal('changed') }),
   z.object({ type: z.literal('open-inspector') }),
+  z.object({ type: z.literal('runner-start'), plan: runPlanSchema }),
+  z.object({ type: z.literal('runner-status') }),
+  z.object({ type: z.literal('runner-stop') }),
+  z.object({ type: z.literal('runner-release') }),
   z.object({ type: z.literal('retry-debugger') }),
   z.object({
     type: z.literal('replay'),
@@ -36,6 +41,10 @@ export interface Replies {
   settings: Settings;
   changed: null;
   'open-inspector': null;
+  'runner-start': RunReport | null;
+  'runner-status': RunReport | null;
+  'runner-stop': RunReport | null;
+  'runner-release': null;
   'retry-debugger': null;
   replay: ReplayResult;
 }

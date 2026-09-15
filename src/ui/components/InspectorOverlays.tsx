@@ -12,6 +12,7 @@ import { ConfirmDialog } from './Dialog';
 import { EntityDialog } from './EntityDialog';
 import { CollectionDialog, ColumnsDialog, RequestMenu } from './RequestActions';
 import type { InspectorController } from '../use-inspector-controller';
+import { RunMonitor } from '../runner/RunMonitor';
 export function InspectorOverlays({ controller }: { controller: InspectorController }) {
   const {
     importInput,
@@ -44,7 +45,7 @@ export function InspectorOverlays({ controller }: { controller: InspectorControl
   } = controller;
   return (
     <>
-      {' '}
+      {modal === 'runs' && <RunMonitor onClose={() => setModal('')} />}{' '}
       <input
         ref={importInput}
         type="file"

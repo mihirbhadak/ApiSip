@@ -43,6 +43,7 @@ export default defineConfig({
     rollupOptions: {
       input: {
         inspector: resolve('inspector.html'),
+        offscreen: resolve('offscreen.html'),
         'service-worker': resolve('src/background/service-worker.ts'),
       },
       output: { entryFileNames: '[name].js', chunkFileNames: 'assets/[name]-[hash].js' },

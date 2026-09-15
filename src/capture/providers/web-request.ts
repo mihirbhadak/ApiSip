@@ -132,6 +132,7 @@ export class WebRequestProvider implements CaptureProvider {
     const onBeforeSendHeaders: Parameters<
       typeof chrome.webRequest.onBeforeSendHeaders.addListener
     >[0] = (d) => {
+      if (d.tabId < 0) return;
       this.event(d.requestId, async (key) => {
         this.context.enqueue(key, (r) => {
           if (!r) return;
@@ -167,6 +168,7 @@ export class WebRequestProvider implements CaptureProvider {
     const onHeadersReceived: Parameters<
       typeof chrome.webRequest.onHeadersReceived.addListener
     >[0] = (d) => {
+      if (d.tabId < 0) return;
       this.event(d.requestId, async (key) => {
         this.context.enqueue(
           key,
@@ -199,6 +201,7 @@ export class WebRequestProvider implements CaptureProvider {
       chrome.webRequest.onHeadersReceived.removeListener(onHeadersReceived),
     );
     const onCompleted: Parameters<typeof chrome.webRequest.onCompleted.addListener>[0] = (d) => {
+      if (d.tabId < 0) return;
       this.event(d.requestId, async (key) => {
         this.context.enqueue(
           key,
@@ -222,6 +225,7 @@ export class WebRequestProvider implements CaptureProvider {
     const onBeforeRedirect: Parameters<typeof chrome.webRequest.onBeforeRedirect.addListener>[0] = (
       d,
     ) => {
+      if (d.tabId < 0) return;
       this.event(d.requestId, async (key) => {
         this.context.enqueue(
           key,
@@ -241,6 +245,7 @@ export class WebRequestProvider implements CaptureProvider {
     const onErrorOccurred: Parameters<typeof chrome.webRequest.onErrorOccurred.addListener>[0] = (
       d,
     ) => {
+      if (d.tabId < 0) return;
       this.event(d.requestId, async (key) => {
         this.context.enqueue(
           key,

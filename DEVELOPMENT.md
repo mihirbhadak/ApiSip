@@ -44,23 +44,32 @@ Open `http://127.0.0.1:4177`. The server provides users CRUD, JSON, URL-encoded/
 
 ## Code layout
 
-| Directory        | Responsibility                                                                        |
-| ---------------- | ------------------------------------------------------------------------------------- |
-| `src/background` | Chrome event registration, scope, commands, badge and lifecycle                       |
-| `src/capture`    | Provider contract, webRequest observer, CDP adapter and event sequencing              |
-| `src/storage`    | IndexedDB schema, transactional repositories and atomic imports                       |
-| `src/shared`     | Domain schemas, parsing, redaction, diffing and statistics                            |
-| `src/filters`    | Expression parser and compiled predicate engine                                       |
-| `src/replay`     | Context selection, fixed fetch executor and result normalization                      |
-| `src/export`     | Versioned formats and code generators                                                 |
-| `src/ui`         | React inspector, search worker, controller and focused components                     |
-| `tests`          | Domain, components, repositories, executable snippets, browser tests and local server |
+| Directory        | Responsibility                                                                                 |
+| ---------------- | ---------------------------------------------------------------------------------------------- |
+| `src/background` | Chrome event registration, scope, commands, badge and lifecycle                                |
+| `src/capture`    | Provider contract, webRequest observer, CDP adapter and event sequencing                       |
+| `src/storage`    | IndexedDB schema, transactional repositories and atomic imports                                |
+| `src/shared`     | Domain schemas, parsing, redaction, diffing and statistics                                     |
+| `src/filters`    | Expression parser and compiled predicate engine                                                |
+| `src/replay`     | Context selection, fixed fetch executor and result normalization                               |
+| `src/runner`     | Paced scheduler, worker host, templates, streamed measurements, bounded statistics and reports |
+| `src/export`     | Versioned formats and code generators                                                          |
+| `src/ui`         | React inspector, search worker, controller and focused components                              |
+| `tests`          | Domain, components, repositories, executable snippets, browser tests and local server          |
 
 Keep Chrome API access in adapters. Domain functions should remain independently testable. Message payloads are defined and validated in `shared/messages.ts`; avoid adding untyped message strings.
 
 ## Data migrations
 
-IndexedDB is version 2: its additive migration introduces persistent editor drafts while preserving version-1 history and settings. JSON backup format remains version 1 and does not contain drafts. These are independent formats. A database change must increment the IndexedDB version and add an additive migration in `storage/database.ts`. A backup format change must introduce explicit version parsing/migration; unknown versions are currently rejected. Do not clear user history to make a migration pass. `tests/editor-drafts.test.ts` exercises a real version-1 database upgrade with fake-indexeddb, draft serialization, revision conflicts and deletion/retention behavior.
+IndexedDB is version 3: additive migrations introduce persistent editor drafts (v2) and timed run reports (v3), preserving history and settings. JSON backup format remains version 1 and does not contain drafts or timed run reports. Runner report JSON has its own version 1 format. These are independent formats. A database change must increment the IndexedDB version and add an additive migration in `storage/database.ts`. A backup format change must introduce explicit version parsing/migration; unknown versions are currently rejected. Do not clear user history to make a migration pass. `tests/editor-drafts.test.ts` and `tests/runner-storage.test.ts` exercise upgrades from genuine earlier schemas using fake-indexeddb, including preserved draft revisions and settings.
+
+## Working on the timed runner
+
+`offscreen.html` is a production entry alongside the inspector and service worker. The host spawns the Vite-bundled `runner.worker` asset. Paths must work under both root and standalone-dist installation. Keep scheduling, templates, measurement and analytics independently testable; Chrome permission and lifecycle calls belong in `background/runner.ts`.
+
+Run `npx vitest run tests/runner.test.ts tests/runner-storage.test.ts tests/runner-transport.test.ts tests/runner-components.test.tsx` for focused checks. Transport tests use a real Node HTTP server. After building, `npx playwright test tests/e2e/runner.spec.ts` loads the actual extension and sends loopback requests, including 10,000 starts over one minute. Tests verify the server ledger, not merely UI counts. `/api/load/<id>` accepts delay/bodyDelay/status/size test parameters; `/api/load-stats?id=<id>` exposes bounded fixture evidence. These endpoints exist only in the development test server.
+
+The Chrome benchmark samples the inspector's JS heap through CDP and CPU time of surviving processes in the isolated test browser. These diagnostics are test-only, not permissions or monitoring shipped to users. The heap sample covers the inspector isolate, not the dedicated runner worker or Chrome network buffers; neither metric measures whole-computer resources. Keep heavy tracing separate when interpreting performance numbers, and never automatically benchmark arbitrary remote APIs.
 
 ## Browser test isolation
 

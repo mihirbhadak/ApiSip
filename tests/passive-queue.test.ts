@@ -86,4 +86,7 @@ it('queues a complete passive lifecycle in event order without waiting between d
   expect(captured.response?.body?.available).toBe(false);
   expect(captured.timing?.total).toBe(24);
   expect(context.report).not.toHaveBeenCalled();
+  for (const callback of callbacks.values()) callback({ ...event, tabId: -1 });
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  expect(changes).toHaveLength(4);
 });

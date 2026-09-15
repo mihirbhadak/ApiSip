@@ -1,5 +1,19 @@
 export const helpTopics = [
   {
+    id: 'runner',
+    title: 'Timed API runs',
+    summary: 'Paced requests, variables and local performance measurements.',
+    steps: [
+      'Open a request in a new editor tab. Edit its URL, headers and body, then choose Timed run. Enter a request count, time window, concurrency and timeout. Review run previews the target; Start run sends traffic.',
+      '10,000 requests over 1 minute plans 166.67 starts per second. Slots are evenly paced, or linearly ramped when configured. In-flight requests may finish after the window. Concurrency or timer delays can leave slots unsent; the report shows those counts instead of catching up in a burst.',
+      'Advanced options include a status range, latency budget, response read limit, consecutive-failure circuit breaker and stopping on HTTP 429. Stop run aborts active requests and prevents later starts. The runner never follows redirects or retries automatically.',
+      'Use {{index}}, {{uuid}}, {{timestamp}} and {{randomInt}} in the request. Define custom variables or cycle JSON data rows. Index starts at 1 and follows scheduled slots. Quote placeholders in JSON; whole placeholders preserve numeric/boolean types. URL and form values are encoded, while headers and plain text are literal. Variables cannot change the origin.',
+      'Analytics cover start rate, completed outcomes, status counts, decoded bytes, attempt duration, headers received, body read, start delay and timer lag. Percentiles use bounded histograms; every outcome contributes. Samples keep only the last 100 attempts and first 20 failures.',
+      'The extension worker runs independently of editor tabs. Close/reopen editors freely, and use Timed runs in the dashboard to monitor or stop. The latest 50 reports stay local. Export Report JSON for all aggregate metrics or Sample CSV for the bounded samples.',
+    ],
+    note: 'This runner uses extension context without page cookies. Closing Chrome or reloading the extension interrupts a run; saved checkpoints are recovered without repeating requests. DNS/TLS, exact wire timing, server processing and computer-wide CPU/memory are unavailable. Response bodies and request credentials are not stored in run reports. Browser and OS scheduling prevent a guaranteed rate on every computer.',
+  },
+  {
     id: 'start',
     title: 'Getting started',
     summary: 'From your first capture to a replay.',
