@@ -16,34 +16,29 @@ npm audit
 
 ## Latest verified results
 
-### Profile photo update
-
-Build `2026-09-15T14:26:41.561Z` bundles Mihir Bhadak's supplied photo and displays it in the sidebar and creator guide. ESLint, strict TypeScript, the production build, formatting and all 22 existing UI tests across two files passed.
-
-Focused real Chrome checks passed with fresh profiles for both repository-root and standalone `dist` installation. They verified that both images decoded from the extension's own origin, the creator image displays at 64 by 64 pixels with a circular crop, light/dark appearance, the 640-pixel layout, zero page errors and axe accessibility checks. Screenshots were reviewed and saved under `artifacts/qa/20-profile-*`, `21-profile-*` and `22-profile-*`.
-
-The refreshed ZIP contains 17 entries and 1,026,664 bytes. Archive integrity, manifest references, equality with `dist`, and exact preservation of the supplied portrait were verified. Capture/replay behavior was unchanged; the full-suite results below refer to the preceding build.
-
-### Last full-suite run
-
 Verified September 15, 2026 on Windows with Chrome for Testing 153.0.8010.12 and Node.js 26.4.0.
+
+This build adds dedicated editor tabs with persistent drafts, shared replay history, both replay contexts and a return-to-inspector action. It preserves the existing dashboard improvements and Mihir Bhadak's locally bundled profile photo.
 
 - ESLint: passed with zero warnings.
 - Strict TypeScript: passed.
-- Vitest: 112 tests passed across 11 files, including components, repositories and executable snippets.
-- Production Vite build: passed; build identifier `2026-09-15T14:06:08.843Z`.
+- Vitest: 122 tests passed across 12 files, including components, repositories, database migration, draft concurrency and executable snippets.
+- Production Vite build: passed; build identifier `2026-09-15T15:03:50.715Z`.
 - Dependency audit: zero known vulnerabilities reported by npm.
-- Real Chrome E2E: all 17 scenarios passed in 1.7 minutes, with no retries or skips. This includes the new dashboard controls/help, exact repository-root installation, proven worker termination/recovery, both replay contexts and 10,000 completed requests.
-- Automated accessibility checks and visual review: passed for the documented screens.
-- ZIP package: verified manifest, script/style/icon paths, archive integrity and exact equality with the built files (16 entries, 656,615 bytes).
+- Real Chrome E2E: all 18 scenarios passed in 1.5 minutes, with no retries or skips. Coverage includes the new editor workflow, exact repository-root installation, worker termination/recovery, both replay contexts and 10,000 completed requests.
+- Automated accessibility checks and visual review: passed for the documented screens, including editor tabs in light/dark/narrow layouts and the missing-draft state.
+- Formatting and Git whitespace checks: passed.
+- ZIP package: verified manifest, script/style/icon paths, archive integrity and exact equality with the built files (17 entries, 1,042,801 bytes). The supplied profile photo is preserved byte-for-byte.
+
+The package and build identifier are in `artifacts`; `SHA256SUMS.txt` and `package-verification.json` record package integrity. Screenshots are copied to `artifacts/qa`.
 
 ## Real Chrome burst measurements
 
 | Persisted test requests | Requests added in this stage | Stage duration | Targeted search |
 | ----------------------- | ---------------------------- | -------------- | --------------- |
-| 1,000                   | 1,000                        | 2.76 s         | 339 ms          |
-| 5,000                   | 4,000                        | 10.46 s        | 857 ms          |
-| 10,000                  | 5,000                        | 32.56 s        | 855 ms          |
+| 1,000                   | 1,000                        | 2.64 s         | 336 ms          |
+| 5,000                   | 4,000                        | 9.41 s         | 841 ms          |
+| 10,000                  | 5,000                        | 15.30 s        | 852 ms          |
 
 Stages send genuine HTTP requests in concurrent groups of 50. Stage duration includes generation, waiting for every completed HTTP 200 response to persist, displaying the matching set, and targeted search. Durations are incremental, not cumulative. The test raises the request retention cap to 20,000 to keep earlier fixture records while measuring 10,000 additional requests. Fewer than 50 request rows are rendered at each size. These measurements describe this machine and fixture, not a throughput or latency guarantee for arbitrary sites or bodies.
 
@@ -71,24 +66,27 @@ The serial E2E suite uses the loopback HTTP/WebSocket laboratory in `tests/serve
 3. Enable debugger capture; verify JSON, headers, forms, redirects, 4xx/5xx, latency, cookies, GraphQL, bounded large responses and WebSocket frames.
 4. Search and apply a compound status filter; inspect request/response/header/query data and masked values.
 5. Edit URL, header, query and body; execute extension and browser replays against the server; inspect the actual echo response, cookie behavior, history and diff.
-6. Copy cURL and structured data; paste using the real clipboard into the test page. Download JSON, CSV, Markdown and HAR; inspect content; import the JSON and verify its round trip.
-7. Save favorites and collection requests; create a workspace/session and reload the inspector to verify persistence.
-8. Switch active source tabs; confirm current-tab capture excludes background traffic and follows the new target.
-9. Capture across tabs; terminate/restart the service worker; verify new passive captures and a recorded closed-source replay error.
-10. Terminate the worker with debugger capture enabled; verify the recovered provider captures a new response body.
-11. Exercise themes, filter/settings dialogs and a narrow viewport; run axe checks on the table and key dialogs.
-12. Close three-dot menus by outside click and Escape; verify persistent red delete styling, searchable dropdowns, nested settings help, keyboard tabs, select-all/partial selection and the keyboard request menu. Run axe on open menus and pickers.
-13. Search contextual help and verify the exact creator links; check the long shortcut reference scrolls inside its panel without overlapping the footer, hold Ctrl/Alt for timed hints without losing focus, use the command palette to focus search, and inspect help in light/dark/narrow layouts with axe checks.
-14. Generate 1,000, then 5,000, then 10,000 real requests; verify exact persisted counts, completed HTTP 200 responses for every generated request, a bounded rendered row count and responsive targeted search.
-15. Close and relaunch Chrome with the same run profile; verify entities, records, capture settings and new capture survive.
-16. Revoke optional host access; assert capture cannot claim success, replay records a permission error and diagnostics explain the failure.
-17. Load the exact repository root as a fresh unpacked extension; verify Chrome enables it, the toolbar opens `dist/inspector.html`, and the worker reports the current build. Close the exact worker target, verify it disappears, and confirm another toolbar click wakes it and opens the inspector again.
+6. Open the edited request in a new tab, verify transfer of all edits, reload the autosaved draft, send in both contexts, compare responses, save a copy, share history with the original inspector, reject a simultaneous replay from another page, check both themes with axe, inspect the narrow layout, and discard/reopen the draft. Also verify the details-header button opens a fresh draft from the original capture.
+7. Copy cURL and structured data; paste using the real clipboard into the test page. Download JSON, CSV, Markdown and HAR; inspect content; import the JSON and verify its round trip.
+8. Save favorites and collection requests; create a workspace/session and reload the inspector to verify persistence.
+9. Switch active source tabs; confirm current-tab capture excludes background traffic and follows the new target.
+10. Capture across tabs; terminate/restart the service worker; verify new passive captures and a recorded closed-source replay error.
+11. Terminate the worker with debugger capture enabled; verify the recovered provider captures a new response body.
+12. Exercise themes, filter/settings dialogs and a narrow viewport; run axe checks on the table and key dialogs.
+13. Close three-dot menus by outside click and Escape; verify persistent red delete styling, searchable dropdowns, nested settings help, keyboard tabs, select-all/partial selection and the keyboard request menu. Run axe on open menus and pickers.
+14. Search contextual help and verify the exact creator links; check the long shortcut reference scrolls inside its panel without overlapping the footer, hold Ctrl/Alt for timed hints without losing focus, use the command palette to focus search, and inspect help in light/dark/narrow layouts with axe checks.
+15. Generate 1,000, then 5,000, then 10,000 real requests; verify exact persisted counts, completed HTTP 200 responses for every generated request, a bounded rendered row count and responsive targeted search.
+16. Close and relaunch Chrome with the same run profile; verify entities, records, capture settings and new capture survive.
+17. Revoke optional host access; assert capture cannot claim success, replay records a permission error and diagnostics explain the failure.
+18. Load the exact repository root as a fresh unpacked extension; verify Chrome enables it, the toolbar opens `dist/inspector.html`, and the worker reports the current build. Close the exact worker target, verify it disappears, and confirm another toolbar click wakes it and opens the inspector again. Before host access is granted, open an editor route and verify Open inspector and the toolbar focus the existing dashboard without creating duplicates.
 
 The action test uses the browser's supported extension-testing switch and local debugging pipe. This is test infrastructure; the shipped extension has no test-only event injection or alternate capture behavior. Native OS keyboard accelerator dispatch is outside Playwright's page-input checks. The action handler itself is exercised by Chrome.
 
 ## Visual and accessibility QA
 
-Actual extension screenshots cover the empty/light inspector, captured traffic, response details, replay editor, dark table, filter dialog, settings, 640-pixel layout, 10k session, permission error, export dialog and fresh root-folder installation. Additional UI coverage includes three-dot menus, searchable dropdowns inside modal dialogs, the creator profile, the full keyboard reference, timed shortcut hints and light/mobile help. Generated files are under `test-results/visual`. The toolbar opens the full-page inspector directly.
+Actual extension screenshots include the dedicated editor in light, dark and narrow layouts, its missing-draft state, and the empty/light inspector, captured traffic, response details, replay editor, dark table, filter dialog, settings, 640-pixel layout, 10k session, permission error, export dialog and fresh root-folder installation. Additional UI coverage includes three-dot menus, searchable dropdowns inside modal dialogs, the creator profile, the full keyboard reference, timed shortcut hints and light/mobile help. Generated files are under `test-results/visual`. The toolbar opens the full-page inspector directly.
+
+New editor tests cover version-1-to-2 database migration, unfinished draft persistence, serialized autosaves, revision conflicts, retention/deletion transactions and transferring current edits without resetting them on history refresh. Real Chrome testing also exposed and fixed permission-dependent dashboard discovery on a fresh installation.
 
 Interaction regression tests cover outside-click/one-menu-at-a-time dismissal, focus restoration, disabled/custom/empty picker options, typing after keyboard focus, label activation after choosing an option, tab navigation, selection across virtualized rows, modifier timing, exact creator URLs, help search and editing-safe shortcut dispatch. Chrome testing caught and fixed a label click that reopened a picker after selection; visual review caught and fixed long help content overflowing into the footer.
 

@@ -1,5 +1,6 @@
 import { openDB, type DBSchema, type IDBPDatabase } from 'idb';
 import type { Body, CapturedRequest, Entity, ReplayResult, Settings } from '../shared/model';
+import type { EditorDraft } from '../shared/editor';
 export type RequestRow = CapturedRequest & {
   domain: string;
   method: string;
@@ -31,28 +32,35 @@ export interface InspectorDB extends DBSchema {
   bodies: { key: string; value: BodyRow };
   entities: { key: string; value: Entity; indexes: { workspaceId: string; kind: string } };
   state: { key: string; value: Settings };
+  drafts: { key: string; value: EditorDraft; indexes: { sourceId: string } };
 }
 let database: Promise<IDBPDatabase<InspectorDB>> | undefined;
 export function getDB() {
-  database ??= openDB<InspectorDB>('api-catcher', 1, {
-    upgrade(db) {
-      const requests = db.createObjectStore('requests', { keyPath: 'id' });
-      for (const index of [
-        'workspaceId',
-        'sessionId',
-        'timestamp',
-        'tabId',
-        'method',
-        'status',
-        'domain',
-        'captureKey',
-      ] as const)
-        requests.createIndex(index, index);
-      db.createObjectStore('bodies', { keyPath: 'id' });
-      const entities = db.createObjectStore('entities', { keyPath: 'id' });
-      entities.createIndex('workspaceId', 'workspaceId');
-      entities.createIndex('kind', 'kind');
-      db.createObjectStore('state');
+  database ??= openDB<InspectorDB>('api-catcher', 2, {
+    upgrade(db, oldVersion) {
+      if (oldVersion < 1) {
+        const requests = db.createObjectStore('requests', { keyPath: 'id' });
+        for (const index of [
+          'workspaceId',
+          'sessionId',
+          'timestamp',
+          'tabId',
+          'method',
+          'status',
+          'domain',
+          'captureKey',
+        ] as const)
+          requests.createIndex(index, index);
+        db.createObjectStore('bodies', { keyPath: 'id' });
+        const entities = db.createObjectStore('entities', { keyPath: 'id' });
+        entities.createIndex('workspaceId', 'workspaceId');
+        entities.createIndex('kind', 'kind');
+        db.createObjectStore('state');
+      }
+      if (oldVersion < 2) {
+        const drafts = db.createObjectStore('drafts', { keyPath: 'id' });
+        drafts.createIndex('sourceId', 'sourceId');
+      }
     },
     blocking() {
       void database?.then((db) => db.close());

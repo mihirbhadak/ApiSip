@@ -1,12 +1,13 @@
+import { useTheme } from './use-theme';
 import { openHelp } from './components/HelpButton';
 import { shortcuts } from './shortcuts';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { uid, type CapturedRequest, type RequestData, type Settings } from '../shared/model';
+import { type CapturedRequest, type RequestData, type Settings } from '../shared/model';
 import { sendCommand } from '../shared/messages';
 import { normalizeEndpoint } from '../shared/parse';
 import { redactRecord } from '../shared/security';
 import { generateCode } from '../export/generators';
-import { deleteRecords, getRecord, mutateRecord, saveRecords } from '../storage/repository';
+import { deleteRecords, getRecord, mutateRecord, saveRequestCopy } from '../storage/repository';
 import { useInspector } from './use-inspector';
 import { useManagement } from './use-management';
 import { useShortcuts } from './use-shortcuts';
@@ -107,16 +108,7 @@ export function useInspectorController() {
     setModal('');
   };
   const management = useManagement({ settings, entities, updateSettings, changed, reset, notify });
-  useEffect(() => {
-    const media = window.matchMedia('(prefers-color-scheme: dark)');
-    const apply = () => {
-      document.documentElement.dataset.theme =
-        settings.theme === 'system' ? (media.matches ? 'dark' : 'light') : settings.theme;
-    };
-    apply();
-    media.addEventListener('change', apply);
-    return () => media.removeEventListener('change', apply);
-  }, [settings.theme]);
+  useTheme(settings.theme);
   useEffect(() => {
     localStorage.setItem('columns', JSON.stringify(columns));
   }, [columns]);
@@ -239,7 +231,8 @@ export function useInspectorController() {
     if (!ids.length) return;
     management.setConfirmation({
       title: 'Delete ' + ids.length + ' request(s)?',
-      description: 'Their bodies, notes and replay history will be permanently removed.',
+      description:
+        'Their bodies, notes, replay history and related editor drafts will be permanently removed.',
       action: async () => {
         await deleteRecords(ids);
         setSelected(new Set());
@@ -252,19 +245,7 @@ export function useInspectorController() {
   const saveDraft = (request: RequestData) =>
     task(async () => {
       if (!record) return;
-      await saveRecords([
-        {
-          ...record,
-          id: uid(),
-          timestamp: Date.now(),
-          request,
-          response: undefined,
-          timing: undefined,
-          replayHistory: undefined,
-          isFavorite: true,
-          metadata: { provider: 'import', resourceType: 'Saved request', state: 'complete' },
-        },
-      ]);
+      await saveRequestCopy(record.id, request);
       await changed();
       notify('Editable request saved');
     });

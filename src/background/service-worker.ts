@@ -20,6 +20,7 @@ import { compileFilter, needsBody } from '../filters/engine';
 import { parseFilter } from '../filters/parser';
 import { executeReplay } from '../replay/executor';
 import { Badge } from './badge';
+import { openInspector } from './inspector-tabs';
 
 const diagnostics: Diagnostic[] = [];
 let notificationTimer: ReturnType<typeof setTimeout> | undefined;
@@ -131,6 +132,7 @@ chrome.tabs.onUpdated.addListener((id, change, tab) => {
               !r.isFavorite && !r.isPinned && !r.collectionId && r.metadata.state !== 'pending',
           )
           .map((r) => r.id),
+        true,
       );
     }
     await reconcile();
@@ -152,18 +154,7 @@ chrome.action.onClicked.addListener((tab) => {
   void (async () => {
     await ready;
     if (tab.id !== undefined && /^https?:/.test(tab.url ?? '')) await activeTab(tab.id);
-    const background = chrome.runtime.getManifest().background;
-    const workerPath =
-      background && 'service_worker' in background
-        ? background.service_worker
-        : 'service-worker.js';
-    const url = chrome.runtime.getURL(workerPath.replace(/[^/]+$/, 'inspector.html'));
-    const pages = await chrome.tabs.query({ url });
-    if (pages[0]?.id !== undefined) {
-      await chrome.tabs.update(pages[0].id, { active: true });
-      if (pages[0].windowId !== undefined)
-        await chrome.windows.update(pages[0].windowId, { focused: true });
-    } else await chrome.tabs.create({ url });
+    await openInspector();
   })().catch(() => report('Could not open the inspector.', 'error'));
 });
 chrome.alarms.onAlarm.addListener((alarm) => {
@@ -200,6 +191,10 @@ chrome.runtime.onMessage.addListener((raw: unknown, sender, respond) => {
   const cmd = parsed.data;
   const run = async (): Promise<Replies[keyof Replies]> => {
     await ready;
+    if (cmd.type === 'open-inspector') {
+      await openInspector();
+      return null;
+    }
     if (cmd.type === 'state') {
       const s = await settings();
       const [count, tabCount, sessionCount, hostsGranted] = await Promise.all([
@@ -259,16 +254,19 @@ chrome.runtime.onMessage.addListener((raw: unknown, sender, respond) => {
     if (replaying.has(cmd.id)) throw new Error('This request is already being replayed.');
     if (replaying.size >= 4)
       throw new Error('Four replays are already running. Wait for one to finish.');
-    const original = await getRecord(cmd.id);
-    if (!original) throw new Error('The selected request was deleted.');
     replaying.add(cmd.id);
     try {
+      const original = await getRecord(cmd.id);
+      if (!original) throw new Error('The selected request was deleted.');
       const s = await settings(),
         result = await executeReplay(original, cmd.request, cmd.context, s.maxBodyBytes);
       await mutateRecord(cmd.id, (r) => ({
         ...r,
         replayHistory: [...(r.replayHistory ?? []), result].slice(-30),
       }));
+      void chrome.runtime.sendMessage({ type: 'replay-complete', id: cmd.id }).catch(() => {
+        /* No editor is open. */
+      });
       notify();
       return result;
     } finally {

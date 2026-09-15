@@ -34,7 +34,7 @@ After source changes, build again and click **Reload** on the extension card. `n
 - Global search through URLs, headers, query values, bodies, tags and notes in a separate worker.
 - Nested AND/OR/NOT filters, visual builder, expression editor, saved filters and quick filters.
 - Persistent workspaces, sessions, collections, editable saved requests, tags and notes.
-- Request editor with query/header/body editing, browser-context and extension-context replay, history and structural JSON comparison.
+- Request editor with query/header/body editing, browser-context and extension-context replay, history and structural JSON comparison. Open an editor in its own tab with persistent, automatically saved drafts.
 - cURL/Bash/CMD, PowerShell, JavaScript fetch/Axios, TypeScript fetch, Python requests/httpx, Go, Java, C#, PHP, Ruby, Rust and HTTPie generators.
 - JSON, CSV, Markdown, HAR and text exports; versioned JSON/HAR imports; sensitive values excluded by default.
 - Local statistics, status/type/domain/latency distributions, endpoint grouping and slow/large-request lists.
@@ -80,6 +80,16 @@ Neither mode captures literally all browser networking. Chrome-internal pages, o
 
 Automatic selection prefers the browser context when a source tab exists. Requests are never automatically retried in another context. Fetch controls forbidden headers such as Cookie, Origin, Referer, Host, Content-Length and Sec-*. The inspector lists omitted headers. Response headers may be filtered by fetch, especially Set-Cookie. Replays time out after 25 seconds and retain the latest 30 results per request.
 
+### Editor in a new tab
+
+1. Select a captured request and choose **Replay**.
+2. Click **Open in new tab**. Your current URL, query, header, body and context edits go with you. The external-link button in the details header also opens an editor, starting from the captured request.
+3. Edit and click **Send**, or press **Ctrl/Cmd + Enter**. The adjacent panel shows the response, headers, replay history and comparison with the original. Both replay contexts use the same behavior described above.
+4. Edits save locally after a short typing pause. Wait for **Draft saved locally** before closing; reloading or restoring the same tab recovers the draft. The captured request stays intact. **Save as new request** adds an editable copy to Saved APIs.
+5. **Open inspector** returns to the dashboard. Replay results are shared with the original request there. **Discard draft** removes only that draft after confirmation.
+
+Each click opens an independent draft. Duplicating an existing browser tab shares its draft; conflicting saves are rejected with a reload action. Only a random draft ID appears in the tab URL. Drafts and their source requests are protected from automatic retention and navigation cleanup. Explicitly deleting their source request, session, workspace or history removes the related drafts. Drafts are not included in exports; save a request copy first. Browser-context replay still requires the original source tab and origin to remain available.
+
 ## Permissions
 
 | Permission                           | Purpose                                                                                                                                |
@@ -98,7 +108,7 @@ No blocking/interception, cookies API, history API, native messaging, cloud serv
 
 Captured content may contain credentials. Masking affects display and export; **stored data is not encrypted**. Use a dedicated browser profile for sensitive debugging and clear history when finished. Known secret names, Bearer/Basic credentials and JWT-like values are redacted; arbitrary unstructured secrets may require manual review. See [PRIVACY.md](PRIVACY.md).
 
-Retention defaults to 30 days, 10,000 requests and an approximate 500 MB budget. Cleanup runs every five minutes. Favorites, pinned requests and collections are protected and may exceed those limits. Settings exposes explicit clearing actions. Import/export files are capped at 100 MB; export smaller selections for large histories.
+Retention defaults to 30 days, 10,000 requests and an approximate 500 MB budget. Cleanup runs every five minutes. Favorites, pinned requests, collection members and editor draft sources are protected and may exceed those limits. Settings exposes explicit clearing actions. Import/export files are capped at 100 MB; export smaller selections for large histories.
 
 ## Shortcuts
 

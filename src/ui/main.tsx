@@ -1,6 +1,8 @@
-import { Component, type ReactNode } from 'react';
+import { Component, useEffect, useState, type ReactNode } from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App';
+import EditorPage from './EditorPage';
+import { editorRoute } from '../shared/editor';
 import './styles.css';
 class ErrorBoundary extends Component<{ children: ReactNode }, { failed: boolean }> {
   state = { failed: false };
@@ -19,8 +21,17 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { failed: boolean
     );
   }
 }
+function RootView() {
+  const [draftId, setDraftId] = useState(() => editorRoute(location.hash));
+  useEffect(() => {
+    const change = () => setDraftId(editorRoute(location.hash));
+    window.addEventListener('hashchange', change);
+    return () => window.removeEventListener('hashchange', change);
+  }, []);
+  return draftId === undefined ? <App /> : <EditorPage key={draftId} id={draftId} />;
+}
 createRoot(document.getElementById('root')!).render(
   <ErrorBoundary>
-    <App />
+    <RootView />
   </ErrorBoundary>,
 );

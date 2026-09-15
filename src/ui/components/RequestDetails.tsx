@@ -2,7 +2,8 @@ import { TabBar } from './TabBar';
 import { HelpButton } from './HelpButton';
 import { SearchSelect } from './SearchSelect';
 import { useState } from 'react';
-import { Copy, Eye, X } from 'lucide-react';
+import { Copy, Eye, X, ExternalLink } from 'lucide-react';
+import { openEditorTab } from '../editor-actions';
 import type { CapturedRequest, ReplayResult, RequestData, Settings } from '../../shared/model';
 import { formatBytes, formatTime, rawRequest, rawResponse } from '../../shared/parse';
 import { redactRecord } from '../../shared/security';
@@ -34,6 +35,19 @@ export function RequestDetails({
 }) {
   const [reveal, setReveal] = useState(false),
     [language, setLanguage] = useState<Language>('cURL');
+  const [openError, setOpenError] = useState(''),
+    [opening, setOpening] = useState(false);
+  const openTab = async () => {
+    setOpening(true);
+    setOpenError('');
+    try {
+      await openEditorTab(record, record.request, settings.replayContext);
+    } catch (cause) {
+      setOpenError(cause instanceof Error ? cause.message : 'Could not open the editor.');
+    } finally {
+      setOpening(false);
+    }
+  };
   const r = settings.maskSecrets && !reveal ? redactRecord(record) : record;
   const tabs = [
     'Overview',
@@ -77,6 +91,17 @@ export function RequestDetails({
           topic={tab === 'Replay' ? 'replay' : tab === 'Code' ? 'export' : 'details'}
           label="Help with request details"
         />
+        {tab !== 'Replay' && (
+          <button
+            className="icon-button"
+            aria-label="Open editor in new tab"
+            title="Open editor in new tab"
+            disabled={opening}
+            onClick={() => void openTab()}
+          >
+            <ExternalLink size={15} />
+          </button>
+        )}
         <button className="icon-button" aria-label="Close details" onClick={onClose}>
           <X size={16} />
         </button>
@@ -99,6 +124,11 @@ export function RequestDetails({
           {r.metadata.provider === 'debugger' ? 'CDP' : r.metadata.provider}
         </span>
       </div>
+      {openError && (
+        <p role="alert" className="error-text">
+          {openError}
+        </p>
+      )}
       <TabBar className="tabs detail-tabs" label="Request sections">
         {tabs.map((t) => (
           <button

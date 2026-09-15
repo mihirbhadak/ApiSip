@@ -211,3 +211,41 @@ it('creates named workspaces and selects collections', async () => {
   await user.click(screen.getByText('Authentication'));
   expect(select).toHaveBeenCalledWith('c');
 });
+
+it('opens current editor changes in a new tab and restores an initial draft without resetting on history refresh', async () => {
+  const user = userEvent.setup(),
+    open = vi.fn().mockResolvedValue(undefined),
+    change = vi.fn();
+  const props = {
+    record: fixture(),
+    context: 'extension' as const,
+    onSend: vi.fn(),
+    onSave: vi.fn(),
+    onDraftChange: change,
+    onOpenInTab: open,
+  };
+  const { rerender } = render(
+    <RequestEditor
+      {...props}
+      initialRequest={{ ...fixture().request, url: 'https://example.com/restored' }}
+    />,
+  );
+  expect(screen.getByLabelText('Request URL')).toHaveValue('https://example.com/restored');
+  await user.clear(screen.getByLabelText('Request URL'));
+  await user.type(screen.getByLabelText('Request URL'), 'https://example.com/edited?page=2');
+  rerender(<RequestEditor {...props} record={{ ...fixture(), notes: 'Updated elsewhere' }} />);
+  expect(screen.getByLabelText('Request URL')).toHaveValue('https://example.com/edited?page=2');
+  await user.click(screen.getByRole('button', { name: 'Open in new tab' }));
+  expect(open).toHaveBeenCalledWith(
+    expect.objectContaining({
+      url: 'https://example.com/edited?page=2',
+      query: [{ name: 'page', value: '2' }],
+    }),
+    'extension',
+  );
+  expect(change).toHaveBeenLastCalledWith(
+    expect.objectContaining({ url: 'https://example.com/edited?page=2' }),
+    'extension',
+  );
+  expect(await screen.findByRole('status')).toHaveTextContent('Editor opened');
+});

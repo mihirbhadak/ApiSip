@@ -60,6 +60,18 @@ Settings and counts are reconstructed from IndexedDB after worker restart. Event
 
 ## Filtering and rendering
 
+### Dedicated editor tabs
+
+The same built HTML entry supports `#/editor/<draft-id>`. It mounts `EditorPage` instead of the inspector, reusing `RequestEditor`, `ReplayResults`, theme tokens and the existing typed replay executor. Both root-folder and standalone-dist installations resolve this route relative to their actual HTML entry. Toolbar activation and the typed Open inspector command share a coalesced background action. It finds the dashboard through [runtime.getContexts](https://developer.chrome.com/docs/extensions/reference/api/runtime#method-getContexts), excluding editor routes without the broad tabs permission. Chrome may omit tab URLs before host access is granted, so URL-filtered `tabs.query` is not reliable for discovering our own pages on a fresh install.
+
+IndexedDB version 2 adds a `drafts` store indexed by source request ID through an additive migration. A draft contains an editable request snapshot, replay context, revision and timestamp, without duplicating the source response or replay history. The editor loads only its draft and source record. Capture notifications check existence and settings; replay notifications refresh the relevant history. No request table, search worker or complete body database is mounted in an editor tab.
+
+Draft writes coalesce for 250 ms and commit serially. Revision checks inside read/write transactions reject stale writes from duplicated tabs. Send and Save as new flush pending edits first; before-unload warns while changes remain unsaved. Incomplete URL/body edits may be stored, but requests must pass validation before execution or saving as a new API. Each Open in new tab action creates an independent draft, and failures to create the tab remove that draft. URLs contain only opaque draft identifiers.
+
+Explicit source deletion removes related drafts transactionally. Automatic retention and navigation cleanup protect draft sources, with a second check in the deletion transaction to avoid racing a newly opened editor. Discarding a draft preserves its source and replay history. Replay concurrency is reserved before any asynchronous source lookup, so two editor pages cannot start the same request simultaneously. Backup JSON remains version 1 and excludes drafts; Save as new request creates an exportable saved API.
+
+### Inspector queries
+
 The expression parser produces an AND/OR/NOT tree. Compilation orders inexpensive metadata predicates before body predicates where boolean semantics permit. Regex syntax is deliberately restricted to avoid catastrophic backtracking. Body-dependent filtering hydrates records only after metadata preconditions pass. Debounced search runs outside React in a worker; revision IDs suppress obsolete results. A scheduler coalesces data refreshes without cancelling every in-flight query during sustained traffic. A changed user query preempts older work.
 
 The table renders the visible range plus overscan, with fixed-height rows. React retains summary data and the selected full record, not every response body. Sorting and analytics operate on available metadata. Percentile thresholds avoid presenting P95/P99 from tiny samples. Endpoint grouping is a view; original URLs remain intact.

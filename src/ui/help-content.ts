@@ -98,6 +98,20 @@ export const helpTopics = [
     note: 'Chrome controls forbidden headers. Closed tabs, changed origins, CORS and missing permission can block replay. Incomplete/binary/multipart-file bodies must be replaced before sending. No automatic retry switches contexts.',
   },
   {
+    id: 'editor',
+    title: 'Editor in a new tab',
+    summary: 'Give a request its own editing workspace.',
+    steps: [
+      'In Replay, click Open in new tab to carry over the method, URL, headers, query, body and selected replay context. The icon in the request heading opens the original request in a new editor.',
+      'Wait for Draft saved locally before reloading or closing. Incomplete URLs and unfinished bodies can be saved as drafts; valid requests are required when sending or saving to Saved APIs.',
+      'Send or Ctrl/Cmd + Enter uses the existing replay engine. Responses, headers and comparisons appear beside the editor, and replay history is shared with the original request.',
+      'Open inspector returns to the dashboard while keeping this editor open. Save as new request creates a favorite for export or collections. Reset restores the captured request.',
+      'Each opened editor gets an independent draft. Duplicating the same editor URL shares that draft; conflicting writes are rejected so another tab cannot silently overwrite your changes.',
+      'Discard draft removes only its edits after confirmation. Deleting its source request, session, workspace or history also removes the related drafts.',
+    ],
+    note: 'Drafts stay in IndexedDB and protect their source from automatic cleanup. Save as new request to include edits in an export. Browser replay still requires its original source tab and permissions.',
+  },
+  {
     id: 'export',
     title: 'Copy, code, export and import',
     summary: 'Move debugging evidence into your workflow.',

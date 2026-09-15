@@ -2,7 +2,9 @@
 
 ## Local data
 
-API Catcher stores captured requests, available bodies, replay history, workspaces, sessions, collections, saved filters and settings in IndexedDB inside the extension's Chrome profile. Table preferences use localStorage. A random browser-lifetime identifier uses chrome.storage.session to prevent capture-key collisions.
+API Catcher stores captured requests, available bodies, replay history, editor drafts, workspaces, sessions, collections, saved filters and settings in IndexedDB inside the extension's Chrome profile. Table preferences use localStorage. A random browser-lifetime identifier uses chrome.storage.session to prevent capture-key collisions.
+
+Editor tabs automatically persist edited URLs, headers, bodies and replay context locally, including unfinished edits and credentials. Their URLs contain only a random draft ID. Drafts have the same unencrypted storage boundary as captured history. They are excluded from exports; Save as new request creates an exportable saved API.
 
 There is no telemetry, analytics service, cloud account, remote logging, sync or remote script. Statistics are computed locally. Installing and using the inspector requires no external API.
 
@@ -37,6 +39,6 @@ Browser replay runs a fixed bundled function in an isolated content-script world
 
 ## Retention and deletion
 
-Cleanup runs every five minutes and protects favorites, pins and collection members; those records can exceed configured limits. Storage-budget enforcement estimates payload sizes and is not a hard quota guarantee. Chrome can still deny writes when profile storage is exhausted. Failures appear in diagnostics without logging request payloads.
+Cleanup runs every five minutes and protects favorites, pins, collection members and editor draft sources; those records can exceed configured limits. Drafts remain until discarded or explicitly removed with their source history. Storage-budget enforcement estimates payload sizes and is not a hard quota guarantee. Chrome can still deny writes when profile storage is exhausted. Failures appear in diagnostics without logging request payloads.
 
-Settings offers confirmed deletion of a session's requests, a workspace's requests, all captured history, or all extension data. Workspace/session deletion removes contained history. Collection deletion removes membership, preserving request history. Exported files are never deleted by those actions.
+Settings offers confirmed deletion of a session's requests, a workspace's requests, all captured history, or all extension data. Workspace/session deletion removes contained history. These explicit history deletions also remove related editor drafts; open editors show an unavailable state. Discard draft removes only that draft, preserving the original request and replay results. Collection deletion removes membership, preserving request history. Exported files are never deleted by those actions.

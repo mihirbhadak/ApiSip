@@ -1,8 +1,9 @@
 import { TabBar } from './TabBar';
 import { SearchSelect } from './SearchSelect';
 import { useState } from 'react';
-import { Play, RotateCcw, Save } from 'lucide-react';
+import { Play, RotateCcw, Save, ExternalLink } from 'lucide-react';
 import type { CapturedRequest, ReplayResult, RequestData, Settings } from '../../shared/model';
+import { requestSchema } from '../../shared/model';
 import { header, makeBody, parseUrl, prettyJson } from '../../shared/parse';
 import { redactBody, redactUrl } from '../../shared/security';
 import { PairEditor } from './PairEditor';
@@ -11,19 +12,57 @@ export function RequestEditor({
   context: initialContext,
   onSend,
   onSave,
+  initialRequest,
+  onDraftChange,
+  onOpenInTab,
 }: {
   record: CapturedRequest;
   context: Settings['replayContext'];
   onSend: (request: RequestData, context: Settings['replayContext']) => Promise<ReplayResult>;
-  onSave: (request: RequestData) => void;
+  onSave: (request: RequestData) => void | Promise<void>;
+  initialRequest?: RequestData;
+  onDraftChange?: (request: RequestData, context: Settings['replayContext']) => void;
+  onOpenInTab?: (request: RequestData, context: Settings['replayContext']) => Promise<void>;
 }) {
-  const [draft, setDraft] = useState<RequestData>(() => structuredClone(record.request));
-  const [context, setContext] = useState(initialContext),
+  const [draft, setDraftState] = useState<RequestData>(() =>
+    structuredClone(initialRequest ?? record.request),
+  );
+  const [context, setContextState] = useState(initialContext),
     [tab, setTab] = useState('Headers'),
     [reveal, setReveal] = useState(false);
   const [busy, setBusy] = useState(false),
     [message, setMessage] = useState(''),
     [error, setError] = useState('');
+  const setDraft = (request: RequestData) => {
+    setDraftState(request);
+    onDraftChange?.(request, context);
+  };
+  const setContext = (next: Settings['replayContext']) => {
+    setContextState(next);
+    onDraftChange?.(draft, next);
+  };
+  const [opening, setOpening] = useState(false);
+  const openTab = async () => {
+    if (!onOpenInTab || opening) return;
+    setOpening(true);
+    setError('');
+    try {
+      await onOpenInTab(draft, context);
+      setMessage('Editor opened in a new tab');
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not open the editor tab.');
+    } finally {
+      setOpening(false);
+    }
+  };
+  const save = async () => {
+    setError('');
+    try {
+      await onSave(draft);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not save this request.');
+    }
+  };
   const body = draft.body?.text ?? '',
     masked = redactBody(body, draft.body?.type),
     protectedBody = !reveal && body !== masked;
@@ -42,6 +81,8 @@ export function RequestEditor({
     setError('');
     setMessage('');
     try {
+      if (!requestSchema.safeParse(draft).success)
+        throw new Error('Enter a valid request URL, method and headers before sending.');
       const result = await onSend(draft, context);
       if (result.error) setError(result.error);
       else
@@ -62,12 +103,24 @@ export function RequestEditor({
     <section
       className="request-editor"
       onKeyDown={(e) => {
-        if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+        if (
+          !e.repeat &&
+          !document.querySelector('dialog[open]') &&
+          (e.ctrlKey || e.metaKey) &&
+          e.key === 'Enter'
+        ) {
           e.preventDefault();
           void send();
         }
       }}
     >
+      {onOpenInTab && (
+        <div className="editor-detach-row">
+          <button onClick={() => void openTab()} disabled={opening || busy}>
+            <ExternalLink size={14} /> {opening ? 'Opening...' : 'Open in new tab'}
+          </button>
+        </div>
+      )}
       <div className="section-heading">
         <h3>Request editor</h3>
         <label className="context-label">
@@ -243,7 +296,7 @@ export function RequestEditor({
           <RotateCcw size={13} />
           Reset
         </button>
-        <button onClick={() => onSave(draft)}>
+        <button onClick={() => void save()}>
           <Save size={13} />
           Save as new request
         </button>

@@ -63,6 +63,16 @@ test('loads the project root as an unpacked extension and opens the built inspec
     );
     await mkdir('test-results/visual', { recursive: true });
     await inspector.screenshot({ path: 'test-results/visual/12-root-install.png' });
+    const editor = await context.newPage();
+    editor.on('pageerror', (error) => errors.push(error.message));
+    await editor.goto(inspector.url() + '#/editor/missing-draft');
+    await expect(editor.getByRole('alert')).toContainText('Draft not found');
+    await editor.getByRole('banner').getByRole('button', { name: 'Open inspector' }).click();
+    await expect.poll(() => inspector.evaluate(() => document.hasFocus())).toBe(true);
+    await session.send('Extensions.triggerAction', { id: extensionId, targetId: target!.targetId });
+    await expect.poll(() => inspector.evaluate(() => document.hasFocus())).toBe(true);
+    expect(context.pages().filter((item) => item.url() === inspector.url())).toHaveLength(1);
+    await editor.close();
     expect(errors).toEqual([]);
     // A later click must also wake a stopped worker without a readiness aid.
     await inspector.close();

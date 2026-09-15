@@ -97,7 +97,7 @@ export function useManagement({
       description:
         entity.kind === 'collection'
           ? 'The collection will be removed. Requests remain in history.'
-          : 'Contained requests and bodies will be permanently removed.',
+          : 'Contained requests, bodies and editor drafts will be permanently removed.',
       action: async () => {
         if (entity.kind === 'workspace' && entity.id === settings.workspaceId)
           await updateSettings({ recording: false });
@@ -180,7 +180,7 @@ export function useManagement({
     setConfirmation({
       title: 'Clear ' + scope.toLowerCase() + '?',
       description:
-        'This permanently deletes captured history, including saved requests in that scope. Export a backup first if needed.',
+        'This permanently deletes captured history, including saved requests and related editor drafts in that scope. Export a backup first if needed.',
       action: async () => {
         await updateSettings({ recording: false });
         if (scope === 'All stored data') {

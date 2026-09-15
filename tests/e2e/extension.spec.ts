@@ -48,7 +48,7 @@ async function state() {
 async function records(): Promise<CapturedRequest[]> {
   return inspector.evaluate(async () => {
     const db = await new Promise<IDBDatabase>((resolve, reject) => {
-      const request = indexedDB.open('api-catcher', 1);
+      const request = indexedDB.open('api-catcher');
       request.onsuccess = () => resolve(request.result);
       request.onerror = () => reject(request.error);
     });
@@ -361,6 +361,171 @@ test('edits URL, headers, query and body, replays in both contexts, and compares
   await expect(inspector.getByText('Original → replay diff')).toBeVisible();
   await inspector.screenshot({ path: 'test-results/visual/04-replay-light.png' });
 });
+test('opens a persistent editor tab, replays in both contexts and shares history with the inspector', async () => {
+  const original = (await records()).find((r) => r.request.url.includes('/api/json?original'))!;
+  const [editor] = await Promise.all([
+    context.waitForEvent('page'),
+    inspector.getByRole('button', { name: 'Open in new tab', exact: true }).click(),
+  ]);
+  editor.on('pageerror', (error) => errors.push(error.message));
+  await expect(editor).toHaveURL(/\/inspector\.html#\/editor\/[\w-]+$/);
+  expect(editor.url()).not.toContain('api/json');
+  await expect(editor.getByLabel('Request URL', { exact: true })).toHaveValue(
+    base + '/api/json?edited=2',
+  );
+  await expect(editor.getByRole('combobox', { name: 'Replay context', exact: true })).toHaveValue(
+    'Browser',
+  );
+  await expect(editor.getByRole('table', { name: 'Request list' })).toHaveCount(0);
+  await editor.getByLabel('Request URL', { exact: true }).fill(base + '/api/json?detached=1');
+  await editor
+    .getByLabel(/Request headers value/)
+    .last()
+    .fill('detached');
+  await editor.getByRole('tab', { name: /^Query/ }).click();
+  await editor.getByRole('button', { name: 'Add row', exact: true }).click();
+  await editor
+    .getByLabel(/Query parameters key/)
+    .last()
+    .fill('page');
+  await editor
+    .getByLabel(/Query parameters value/)
+    .last()
+    .fill('42');
+  await editor.getByRole('tab', { name: 'Body', exact: true }).click();
+  await editor
+    .getByLabel('Request body', { exact: true })
+    .fill('{"name":"Detached editor","order":42}');
+  await expect(editor.getByText('Draft saved locally', { exact: true })).toBeVisible();
+  const draftUrl = editor.url();
+  await editor.reload();
+  await expect(editor.getByLabel('Request URL', { exact: true })).toHaveValue(
+    base + '/api/json?detached=1&page=42',
+  );
+  await expect(editor.getByLabel(/Request headers value/).last()).toHaveValue('detached');
+  await editor.getByRole('tab', { name: 'Body', exact: true }).click();
+  await expect(editor.getByLabel('Request body', { exact: true })).toHaveValue(
+    '{"name":"Detached editor","order":42}',
+  );
+  await editor.getByRole('combobox', { name: 'Replay context', exact: true }).click();
+  await editor.getByRole('option', { name: 'Extension', exact: true }).click();
+  await editor.getByRole('button', { name: 'Send', exact: true }).click();
+  await expect(editor.getByText(/Request replayed.*200/)).toBeVisible();
+  let result = (await records()).find((r) => r.id === original.id)!.replayHistory!.at(-1)!;
+  expect(result.context).toBe('extension');
+  const echo = JSON.parse(result.response!.body!.text!);
+  expect(echo.url).toBe('/api/json?detached=1&page=42');
+  expect(echo.headers['x-replayed']).toBe('detached');
+  expect(echo.body).toEqual({ name: 'Detached editor', order: 42 });
+  await expect(editor.getByRole('region', { name: 'Replay results' })).toContainText('Original');
+  await editor.locator('summary').filter({ hasText: 'Response headers' }).click();
+  await expect(editor.getByRole('region', { name: 'Replay results' })).toContainText(
+    'application/json',
+  );
+  await editor.getByRole('region', { name: 'Replay results' }).evaluate((node) => {
+    node.scrollTop = 0;
+  });
+  await editor.screenshot({ path: 'test-results/visual/20-editor-light.png' });
+  const lightA11y = await new AxeBuilder({ page: editor })
+    .withTags(['wcag2a', 'wcag2aa', 'wcag21aa'])
+    .analyze();
+  expect(lightA11y.violations).toEqual([]);
+  await editor.getByRole('combobox', { name: 'Replay context', exact: true }).click();
+  await editor.getByRole('option', { name: 'Browser', exact: true }).click();
+  const previous = (await records()).find((r) => r.id === original.id)!.replayHistory!.length;
+  await editor.getByLabel('Request URL', { exact: true }).press('Control+Enter');
+  await expect
+    .poll(async () => (await records()).find((r) => r.id === original.id)!.replayHistory!.length)
+    .toBe(previous + 1);
+  result = (await records()).find((r) => r.id === original.id)!.replayHistory!.at(-1)!;
+  expect(result.context).toBe('browser');
+  expect(JSON.parse(result.response!.body!.text!).headers.cookie).toContain('lab_session');
+  await expect(editor.getByRole('button', { name: 'Send', exact: true })).toBeEnabled();
+  await editor.getByRole('button', { name: 'Save as new request', exact: true }).click();
+  await expect(editor.getByText('Request saved to Saved APIs')).toBeVisible();
+  expect(
+    (await records()).some(
+      (r) =>
+        r.id !== original.id &&
+        r.isFavorite &&
+        r.request.body?.text === '{"name":"Detached editor","order":42}',
+    ),
+  ).toBe(true);
+  await editor.getByRole('button', { name: 'Open inspector', exact: true }).click();
+  await expect.poll(() => inspector.evaluate(() => document.hasFocus())).toBe(true);
+  await expect(inspector.getByRole('tabpanel')).toContainText('Detached editor');
+  await inspector.getByLabel('Open settings').click();
+  await inspector.getByRole('tab', { name: 'Appearance', exact: true }).click();
+  await choose('Theme', 'Dark');
+  await inspector.getByRole('button', { name: 'Save settings' }).click();
+  await expect(editor.locator('html')).toHaveAttribute('data-theme', 'dark');
+  await editor.bringToFront();
+  await editor.screenshot({ path: 'test-results/visual/21-editor-dark.png' });
+  const darkA11y = await new AxeBuilder({ page: editor })
+    .withTags(['wcag2a', 'wcag2aa', 'wcag21aa'])
+    .analyze();
+  expect(darkA11y.violations).toEqual([]);
+  await editor.setViewportSize({ width: 640, height: 850 });
+  expect(await editor.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
+    640,
+  );
+  await editor.screenshot({ path: 'test-results/visual/22-editor-mobile.png' });
+  await editor.setViewportSize({ width: 1512, height: 982 });
+  // Two real extension pages must not race past the per-source replay reservation.
+  const concurrentCommand = {
+    type: 'replay',
+    id: original.id,
+    context: 'extension',
+    request: { ...original.request, url: base + '/api/slow?ms=500' },
+  };
+  const beforeConcurrent = (await records()).find((r) => r.id === original.id)!.replayHistory!
+    .length;
+  const concurrent = await Promise.all([
+    editor.evaluate((command) => chrome.runtime.sendMessage(command), concurrentCommand),
+    inspector.evaluate((command) => chrome.runtime.sendMessage(command), concurrentCommand),
+  ]);
+  expect(concurrent.filter((result) => result.ok)).toHaveLength(1);
+  expect(concurrent.find((result) => !result.ok)?.error).toContain('already being replayed');
+  expect((await records()).find((r) => r.id === original.id)!.replayHistory).toHaveLength(
+    beforeConcurrent + 1,
+  );
+  await editor.getByRole('button', { name: 'Discard draft', exact: true }).click();
+  await editor.getByRole('dialog').getByRole('button', { name: 'Delete', exact: true }).click();
+  await expect(editor.getByRole('heading', { name: 'Editor unavailable' })).toBeVisible();
+  expect((await records()).find((r) => r.id === original.id)).toBeDefined();
+  // Navigating to the identical hash URL is a same-document navigation. Leave
+  // the document first to verify a genuinely reopened, now-missing draft.
+  await editor.goto('about:blank');
+  await editor.goto(draftUrl);
+  await expect(editor.getByRole('alert')).toContainText('Draft not found');
+  await editor.screenshot({ path: 'test-results/visual/23-editor-missing.png' });
+  await editor.close();
+  await inspector.bringToFront();
+  await inspector.getByRole('tab', { name: 'Overview', exact: true }).click();
+  const [fromDetails] = await Promise.all([
+    context.waitForEvent('page'),
+    inspector.getByRole('button', { name: 'Open editor in new tab', exact: true }).click(),
+  ]);
+  fromDetails.on('pageerror', (error) => errors.push(error.message));
+  expect(fromDetails.url()).not.toBe(draftUrl);
+  await expect(fromDetails.getByLabel('Request URL', { exact: true })).toHaveValue(
+    original.request.url,
+  );
+  await fromDetails.getByRole('button', { name: 'Discard draft', exact: true }).click();
+  await fromDetails
+    .getByRole('dialog')
+    .getByRole('button', { name: 'Delete', exact: true })
+    .click();
+  await expect(fromDetails.getByRole('heading', { name: 'Editor unavailable' })).toBeVisible();
+  await fromDetails.close();
+  await inspector.bringToFront();
+  await inspector.getByLabel('Open settings').click();
+  await inspector.getByRole('tab', { name: 'Appearance', exact: true }).click();
+  await choose('Theme', 'Light');
+  await inspector.getByRole('button', { name: 'Save settings' }).click();
+  expect(errors).toEqual([]);
+});
+
 test('copies cURL and structured data, exports JSON/CSV/Markdown/HAR, and imports a round trip', async () => {
   await inspector.bringToFront();
   await inspector.getByRole('tab', { name: 'Code', exact: true }).click();
@@ -411,6 +576,7 @@ test('copies cURL and structured data, exports JSON/CSV/Markdown/HAR, and import
   await expect.poll(async () => (await state()).count).toBe(before + 1);
 });
 test('persists favorites, collections, workspaces and sessions across inspector reloads', async () => {
+  const previouslySaved = (await records()).filter((record) => record.isFavorite).length;
   await inspector.getByLabel('Close details').click();
   await inspector.getByTestId('request-row').first().click();
   await inspector.getByRole('tab', { name: 'Overview', exact: true }).click();
@@ -427,7 +593,7 @@ test('persists favorites, collections, workspaces and sessions across inspector 
   await expect(inspector.getByText('Requests added to collection', { exact: true })).toBeVisible();
   await inspector.reload();
   await inspector.getByRole('button', { name: 'Saved APIs', exact: true }).click();
-  await expect(inspector.getByTestId('request-row')).toHaveCount(1);
+  await expect(inspector.getByTestId('request-row')).toHaveCount(previouslySaved + 1);
   await inspector.getByRole('button', { name: 'New workspace', exact: true }).click();
   await inspector.getByLabel('Name', { exact: true }).fill('Project A');
   await inspector.getByRole('dialog').getByRole('button', { name: 'Save', exact: true }).click();
@@ -763,7 +929,7 @@ test('remains interactive at 1,000, 5,000 and 10,000 real requests', async () =>
         async () => {
           return inspector.evaluate(async () => {
             const db = await new Promise<IDBDatabase>((resolve, reject) => {
-              const open = indexedDB.open('api-catcher', 1);
+              const open = indexedDB.open('api-catcher');
               open.onsuccess = () => resolve(open.result);
               open.onerror = () => reject(open.error);
             });

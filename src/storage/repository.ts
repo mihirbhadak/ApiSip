@@ -2,6 +2,7 @@ import { getDB, type BodyRow, type RequestRow } from './database';
 import {
   defaultSettings,
   settingsSchema,
+  requestSchema,
   uid,
   type Body,
   type CapturedRequest,
@@ -9,6 +10,7 @@ import {
   type Settings,
 } from '../shared/model';
 import { presets } from '../filters/parser';
+import { draftSourceIds, removeRelatedDrafts } from './drafts';
 
 const descriptor = (body?: Body): Body | undefined =>
   body && { ...body, text: undefined, fields: undefined };
@@ -139,6 +141,34 @@ export async function mutateRecord(
   }
   await tx.done;
 }
+export async function saveRequestCopy(sourceId: string, request: CapturedRequest['request']) {
+  const parsed = requestSchema.safeParse(request);
+  if (!parsed.success)
+    throw new Error('Enter a valid request URL, method and headers before saving.');
+  const db = await getDB(),
+    tx = db.transaction(['requests', 'bodies', 'entities'], 'readwrite');
+  const source = await tx.objectStore('requests').get(sourceId);
+  if (!source || !(await tx.objectStore('entities').count(source.sessionId))) {
+    await tx.done;
+    throw new Error('The source request or session was deleted.');
+  }
+  const record: CapturedRequest = {
+    ...joinRecord(source),
+    id: uid(),
+    timestamp: Date.now(),
+    request: parsed.data,
+    response: undefined,
+    timing: undefined,
+    replayHistory: undefined,
+    isFavorite: true,
+    metadata: { provider: 'import', resourceType: 'Saved request', state: 'complete' },
+  };
+  const [row, body] = splitRecord(record);
+  await tx.objectStore('requests').add(row);
+  await tx.objectStore('bodies').add(body);
+  await tx.done;
+  return record;
+}
 export type CaptureMutation = {
   key: string;
   change: (record?: CapturedRequest) => CapturedRequest | undefined;
@@ -241,9 +271,18 @@ export async function countRows(scope: Scope = {}) {
   if (scope.tabId !== undefined) return db.countFromIndex('requests', 'tabId', scope.tabId);
   return db.count('requests');
 }
-export async function deleteRecords(ids: string[]) {
+export async function deleteRecords(ids: string[], preserveDrafts = false) {
   const db = await getDB(),
-    tx = db.transaction(['requests', 'bodies'], 'readwrite');
+    tx = db.transaction(['requests', 'bodies', 'drafts'], 'readwrite');
+  if (preserveDrafts) {
+    const protectedIds = new Set<string>();
+    let cursor = await tx.objectStore('drafts').index('sourceId').openKeyCursor();
+    while (cursor) {
+      protectedIds.add(cursor.key);
+      cursor = await cursor.continue();
+    }
+    ids = ids.filter((id) => !protectedIds.has(id));
+  } else await removeRelatedDrafts(tx.objectStore('drafts'), new Set(ids));
   for (const id of ids) {
     void tx.objectStore('requests').delete(id);
     void tx.objectStore('bodies').delete(id);
@@ -260,7 +299,7 @@ export async function deleteEntity(id: string) {
   const db = await getDB(),
     entity = await db.get('entities', id);
   if (!entity) return;
-  const tx = db.transaction(['entities', 'requests', 'bodies'], 'readwrite');
+  const tx = db.transaction(['entities', 'requests', 'bodies', 'drafts'], 'readwrite');
   let rows: RequestRow[] = [];
   if (entity.kind === 'workspace') {
     rows = await tx.objectStore('requests').index('workspaceId').getAll(id);
@@ -273,6 +312,7 @@ export async function deleteEntity(id: string) {
     for (const row of all.filter((r) => r.collectionId === id))
       void tx.objectStore('requests').put({ ...row, collectionId: undefined });
   }
+  await removeRelatedDrafts(tx.objectStore('drafts'), new Set(rows.map((row) => row.id)));
   for (const row of rows) {
     void tx.objectStore('requests').delete(row.id);
     void tx.objectStore('bodies').delete(row.id);
@@ -281,10 +321,16 @@ export async function deleteEntity(id: string) {
   await tx.done;
 }
 export async function prune(settings: Settings) {
+  const editing = await draftSourceIds();
   const rows = (await listRows()).sort((a, b) => a.timestamp - b.timestamp);
   const cutoff = settings.retentionDays ? Date.now() - settings.retentionDays * 86400000 : 0;
   const candidates = rows.filter(
-    (r) => !r.isFavorite && !r.isPinned && !r.collectionId && r.metadata.state !== 'pending',
+    (r) =>
+      !r.isFavorite &&
+      !r.isPinned &&
+      !r.collectionId &&
+      !editing.has(r.id) &&
+      r.metadata.state !== 'pending',
   );
   const ids = new Set(candidates.filter((r) => r.timestamp < cutoff).map((r) => r.id));
   let over = rows.length - ids.size - settings.maxRequests;
@@ -302,13 +348,13 @@ export async function prune(settings: Settings) {
     over--;
     estimated -= (row.request.body?.bytes ?? 0) + (row.response?.body?.bytes ?? 0) + 1500;
   }
-  await deleteRecords([...ids]);
+  await deleteRecords([...ids], true);
   return ids.size;
 }
 export async function clearDatabase() {
   const db = await getDB(),
-    tx = db.transaction(['requests', 'bodies', 'entities', 'state'], 'readwrite');
-  for (const store of ['requests', 'bodies', 'entities', 'state'] as const)
+    tx = db.transaction(['requests', 'bodies', 'entities', 'state', 'drafts'], 'readwrite');
+  for (const store of ['requests', 'bodies', 'entities', 'state', 'drafts'] as const)
     void tx.objectStore(store).clear();
   await tx.done;
   return initialize();

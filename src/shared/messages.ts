@@ -10,6 +10,7 @@ export const commandSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('state') }),
   z.object({ type: z.literal('settings'), patch: settingsSchema.partial() }),
   z.object({ type: z.literal('changed') }),
+  z.object({ type: z.literal('open-inspector') }),
   z.object({ type: z.literal('retry-debugger') }),
   z.object({
     type: z.literal('replay'),
@@ -34,6 +35,7 @@ export interface Replies {
   state: RuntimeState;
   settings: Settings;
   changed: null;
+  'open-inspector': null;
   'retry-debugger': null;
   replay: ReplayResult;
 }

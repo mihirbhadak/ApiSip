@@ -60,7 +60,7 @@ Keep Chrome API access in adapters. Domain functions should remain independently
 
 ## Data migrations
 
-The initial IndexedDB schema and JSON backup version are both 1, but they are independent formats. A database change must increment the IndexedDB version and add an additive migration in `storage/database.ts`. A backup format change must introduce explicit version parsing/migration; unknown versions are currently rejected. Do not clear user history to make a migration pass.
+IndexedDB is version 2: its additive migration introduces persistent editor drafts while preserving version-1 history and settings. JSON backup format remains version 1 and does not contain drafts. These are independent formats. A database change must increment the IndexedDB version and add an additive migration in `storage/database.ts`. A backup format change must introduce explicit version parsing/migration; unknown versions are currently rejected. Do not clear user history to make a migration pass. `tests/editor-drafts.test.ts` exercises a real version-1 database upgrade with fake-indexeddb, draft serialization, revision conflicts and deletion/retention behavior.
 
 ## Browser test isolation
 
