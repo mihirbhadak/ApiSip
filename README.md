@@ -4,7 +4,7 @@ A privacy-first Chrome extension to capture, inspect, edit, replay, and load-tes
 
 The extension icon opens a full-page developer tool. Built by [Mihir Bhadak](https://github.com/mihirbhadak).
 
-[Website (domain configuration pending)](https://mihirbhadak.github.io/ApiSip/) · [Download the latest release](https://github.com/mihirbhadak/ApiSip/releases/latest) · [Support ApiSip](https://buymeacoffee.com/mihir_bhadak/apisip)
+[Website & installation guide](https://mihirbhadak.github.io/ApiSip/) · [Download the latest release](https://github.com/mihirbhadak/ApiSip/releases/latest) · [Support ApiSip](https://buymeacoffee.com/mihir_bhadak/apisip)
 
 ![ApiSip capturing local API traffic in Chrome](docs/screenshots/inspector-light.png)
 
@@ -211,4 +211,4 @@ Alt + Shift + A is a Chrome extension command; configure it at `chrome://extensi
 
 See [DEVELOPMENT.md](DEVELOPMENT.md), [ARCHITECTURE.md](ARCHITECTURE.md), and [TESTING.md](TESTING.md). Optional interception/mocking, environment-variable secrets, OpenAPI/Postman import, remote sharing and cloud sync are intentionally outside this implementation.
 
-The public website is a separate buildless static page in [`docs`](docs/README.md), configured for GitHub Pages. Its deployment succeeded, but public access is currently blocked by an inherited custom-domain redirect; see [hosting verification](TESTING.md#hosting-verification). Run `npm run site:dev` for a local preview and `npm run test:site` for its browser checks. Its screenshots use only the bundled local API test server. Website downloads open an optional creator/support dialog; the download itself is never gated.
+The public website is a separate buildless static page in [`docs`](docs/README.md), served over HTTPS by GitHub Pages at <https://mihirbhadak.github.io/ApiSip/>; see [hosting verification](TESTING.md#hosting-verification). Run `npm run site:dev` for a local preview and `npm run test:site` for its browser checks. Its screenshots use only the bundled local API test server. Website downloads open an optional creator/support dialog; the download itself is never gated.

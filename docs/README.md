@@ -2,7 +2,7 @@
 
 The public landing page is a buildless static site configured for GitHub Pages from `main:/docs` at <https://mihirbhadak.github.io/ApiSip/>. HTML contains the complete indexable content; a small local script progressively enhances navigation, screenshot tabs, copying and accessible dialogs. No runtime framework, external fonts, tracking, cookies, or API calls are needed.
 
-**Hosting status, September 16, 2026:** the Pages deployment succeeded, but the account's main Pages site redirects project pages to `mihirbhadak.me`, which currently does not resolve. Public access is pending an owner-approved domain fix or another hosting destination. See [the verification report](../TESTING.md#hosting-verification). Preview locally using the command below; the [extension release download](https://github.com/mihirbhadak/ApiSip/releases/tag/v0.1.1) is already available.
+**Hosting status, September 16, 2026:** the site is live over HTTPS, with automatic HTTP-to-HTTPS redirects. The inherited obsolete custom domain was removed with the owner's approval. Screenshots, responsive layouts, accessibility and the real release download were checked on the public site; see [the verification report](../TESTING.md#hosting-verification).
 
 ## Local development
 

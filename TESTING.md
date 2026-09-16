@@ -31,7 +31,11 @@ Local website tests stub only the external ZIP transfer, so they can run without
 
 ### Hosting verification
 
-The GitHub Pages build and deployment of `main:/docs` succeeded on September 16, 2026. Public-page verification is currently blocked: `https://mihirbhadak.github.io/ApiSip/` returns a redirect to `http://mihirbhadak.me/ApiSip/`, inherited from the account's main Pages site's custom-domain setting. That domain does not currently resolve. The unrelated main site's domain configuration has not been changed; its owner must approve that change or select another host. The GitHub release download remains available. Recheck the live page, HTTPS, assets and download flow after the domain issue is resolved.
+The GitHub Pages site at <https://mihirbhadak.github.io/ApiSip/> was verified live on September 16, 2026. With the owner's explicit approval, the obsolete `mihirbhadak.me` custom-domain setting and corresponding `CNAME` were removed from the account's main Pages repository. Rebuilding the ApiSip Pages site cleared its cached redirect. The public page now returns HTTP 200 over HTTPS; HTTP requests redirect to HTTPS, and GitHub reports HTTPS enforcement enabled for both sites.
+
+A fresh Chrome session verified the public page at 1440, 768, 390 and 320 pixels with zero horizontal overflow and zero axe WCAG 2 A/AA and 2.1 A/AA violations in the checked page states. Styles, JavaScript, all three showcase screenshots, creator photo, favicon and sitemap returned HTTP 200. Screenshot tabs and the image lightbox worked, and the desktop page and download dialog were visually reviewed. Clicking the actual public download CTA fetched the 1,180,961-byte release ZIP with the expected SHA-256 above and displayed the profile/support dialog with the exact coffee link. No page JavaScript errors were observed. Detailed local evidence is in `artifacts/site-qa/real-download.json` and `artifacts/site-qa/live-*.png`.
+
+Lighthouse 13.4.1 against the public HTTPS URL with its mobile lab configuration scored performance 97, accessibility 100, best practices 100 and SEO 100. FCP was 1.2 s, LCP 1.9 s, total blocking time 0 ms and CLS 0. Results are stored locally in `artifacts/website-lighthouse-live.report.*`. This is one measured run against the deployed page; real-user network/device performance and search ranking will vary.
 
 ## ApiSip 0.1.0 public release verification
 
