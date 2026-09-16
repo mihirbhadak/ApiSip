@@ -29,10 +29,10 @@ The website and extension are separate privacy boundaries. Nothing in this integ
 
 5. Update the website-metrics status in `PRIVACY.md`, then commit `website/config.json`, the privacy update and the generated `docs` changes and push `main`. GitHub Pages serves the committed `docs` output; editing source alone does not update the deployed page.
 6. Open the public site in a fresh normal browser tab. Click Download once and look for the page and `download_hero` or `download_nav` event in your GoatCounter dashboard. Localhost visits are deliberately ignored. These manual verification clicks also affect counters.
-7. Test **Turn off website metrics** in the footer. The preference is saved locally. Do Not Track and Global Privacy Control also prevent the vendor script from loading. Blocking the analytics service must never block downloads or feedback.
+7. Test **Turn off website metrics** in the footer. The preference is saved locally. Do Not Track and Global Privacy Control also prevent analytics requests. Blocking the analytics service must never block downloads or feedback.
 8. In GoatCounter settings, keep collection of individual pageview records off if you only need aggregate reporting. Select only the dimensions you actually need. Review the provider's privacy terms for your audience.
 
-The integration loads the provider asynchronously after initial page work. It sends a fixed page path and allowlisted event names, not form contents, arbitrary URL parameters, hash fragments, API data or emails. Referral URLs are reduced to their origin. The service still receives normal connection information such as an IP address; see [GoatCounter's privacy policy](https://www.goatcounter.com/help/privacy) for its processing and aggregation. This is not a promise of zero network metadata or perfect counting.
+The bundled integration sends small asynchronous requests to GoatCounter's [documented counting endpoint](https://www.goatcounter.com/help/pixel) after initial page work; it loads no third-party script. It sends a fixed page path and allowlisted event names, not form contents, arbitrary URL parameters, hash fragments, API data or emails. Referral URLs are reduced to their origin. The service still receives normal connection information such as an IP address; see [GoatCounter's privacy policy](https://www.goatcounter.com/help/privacy) for its processing and aggregation. This is not a promise of zero network metadata or perfect counting.
 
 ### Events you will see
 

@@ -16,6 +16,8 @@ Verified September 16, 2026. The extension source and downloadable 0.1.1 release
 
 GoatCounter integration is prepared but **not active**: the owner chose a setup guide and has not supplied an endpoint. Tests substitute the provider transport and cannot prove an unconfigured analytics account receives data. The guide explains this activation boundary, privacy controls, Search Console ownership verification, GitHub cache-header limitations and the distinction between click events, release download counters and installs.
 
+A final inspection of GoatCounter's upstream script found its implicit `q=location.search` field. Before activation, the integration was changed to use the documented `/count` protocol directly, without loading the third-party script. The regression test now inspects actual outgoing browser request URLs and headers at a stubbed endpoint, ensuring the query string, arbitrary event values, Referer header and cookies are absent. The pre-initialization queue stays bounded at 20 events; blocked requests are contained. All 20 site scenarios, lint and strict TypeScript passed again after this change.
+
 ### Public deployment follow-up
 
 - GitHub Pages deployment [35124627760](https://github.com/mihirbhadak/ApiSip/actions/runs/35124627760) succeeded. The actual public page returned HTTP 200 with the new publisher/social metadata and optimized assets. Its `Cache-Control` remains `max-age=600`.

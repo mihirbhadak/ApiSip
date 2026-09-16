@@ -22,7 +22,7 @@ npm run format:check
 npm run lint
 ```
 
-The Playwright suite covers desktop/mobile layouts, axe accessibility, screenshot navigation, dialogs, automatic installation scrolling, all download links, clipboard success/failure, feedback drafts, no-JavaScript behavior, metadata, image selection and asset budgets. Focused analytics tests substitute only the provider transport and exercise event allowlists, query/referrer sanitization, opt-out, browser privacy signals and blocked scripts. Local UI tests stub the ZIP transfer; the real archive is checked separately during publication.
+The Playwright suite covers desktop/mobile layouts, axe accessibility, screenshot navigation, dialogs, automatic installation scrolling, all download links, clipboard success/failure, feedback drafts, no-JavaScript behavior, metadata, image selection and asset budgets. Focused analytics tests substitute only the provider transport and exercise event allowlists, query/referrer sanitization, opt-out, browser privacy signals and blocked requests. Local UI tests stub the ZIP transfer; the real archive is checked separately during publication.
 
 ## Screenshots and updates
 

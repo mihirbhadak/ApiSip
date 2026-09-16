@@ -41,7 +41,25 @@ function canMeasure() {
 function send(event) {
   if (!enabled || !canMeasure()) return;
   try {
-    window.goatcounter.count({ ...event, referrer });
+    // GoatCounter's documented /count protocol. Never pass location.search (q).
+    // The stock count.js includes q implicitly, so this integration sends its own allowlist.
+    const url = new URL(config.analyticsEndpoint);
+    url.searchParams.set('p', event.path);
+    url.searchParams.set('t', event.title);
+    url.searchParams.set('r', referrer);
+    url.searchParams.set('rnd', String(crypto.getRandomValues(new Uint32Array(1))[0]));
+    if (event.event) {
+      url.searchParams.set('e', 'true');
+      url.searchParams.set('ns', 'true');
+    }
+    if (navigator.webdriver) url.searchParams.set('b', '153');
+    void fetch(url, {
+      mode: 'no-cors',
+      credentials: 'omit',
+      referrerPolicy: 'no-referrer',
+      cache: 'no-store',
+      keepalive: true,
+    }).catch(() => {});
   } catch {
     /* Metrics must never affect the site. */
   }
@@ -59,29 +77,12 @@ function begin() {
   enabled = canMeasure();
   if (!enabled || started) return;
   started = true;
-  window.goatcounter = {
-    no_onload: true,
-    no_events: true,
-    endpoint: config.analyticsEndpoint,
-    path: '/ApiSip/',
-    referrer,
-  };
-  const script = document.createElement('script');
-  script.src = 'https://gc.zgo.at/count.js';
-  script.async = true;
-  script.referrerPolicy = 'no-referrer';
-  script.onload = () => {
-    ready = true;
-    if (!pageCounted) {
-      send({ path: '/ApiSip/', title: 'ApiSip website', event: false });
-      pageCounted = enabled;
-    }
-    for (const event of queue.splice(0)) send(event);
-  };
-  script.onerror = () => {
-    queue.length = 0;
-  };
-  document.head.append(script);
+  ready = true;
+  if (!pageCounted) {
+    send({ path: '/ApiSip/', title: 'ApiSip website', event: false });
+    pageCounted = enabled;
+  }
+  for (const event of queue.splice(0)) send(event);
 }
 export function initializeAnalytics() {
   const control = document.querySelector('[data-analytics-toggle]');

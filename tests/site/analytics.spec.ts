@@ -20,16 +20,19 @@ const html =
 test('configured analytics queues safe events, strips sensitive URL data and supports opt-out', async ({
   page,
 }) => {
-  let providerLoads = 0;
+  const measured: URL[] = [];
+  const headers: Record<string, string>[] = [];
+  const scripts: string[] = [];
+  page.on('request', (request) => {
+    if (request.resourceType() === 'script') scripts.push(request.url());
+  });
   await page.route('https://mihirbhadak.github.io/ApiSip/**', (route) =>
     route.fulfill({ contentType: 'text/html', body: html }),
   );
-  await page.route('https://gc.zgo.at/count.js', (route) => {
-    providerLoads++;
-    return route.fulfill({
-      contentType: 'application/javascript',
-      body: 'window.measured=[];window.goatcounter.count=(event)=>window.measured.push(event);',
-    });
+  await page.route('https://apisip-test-fixture.goatcounter.com/count**', (route) => {
+    measured.push(new URL(route.request().url()));
+    headers.push(route.request().headers());
+    return route.fulfill({ contentType: 'image/gif', body: 'Transport fixture' });
   });
   await page.goto(
     'https://mihirbhadak.github.io/ApiSip/?utm_source=linkedin&utm_campaign=launch&token=do-not-send',
@@ -38,23 +41,33 @@ test('configured analytics queues safe events, strips sensitive URL data and sup
   await page.evaluate(
     'ApiSipMetrics.initializeAnalytics(); ApiSipMetrics.track("download_hero"); ApiSipMetrics.track("private-email@example.com");',
   );
-  await expect.poll(() => page.evaluate('window.measured?.length')).toBe(2);
-  const measured = await page.evaluate<Array<Record<string, unknown>>>('window.measured');
-  expect(measured[0]).toMatchObject({
-    path: '/ApiSip/',
-    event: false,
-    referrer: 'campaign:linkedin/launch',
-  });
-  expect(measured[1]).toMatchObject({ path: 'download_hero', event: true });
-  expect(JSON.stringify(measured)).not.toMatch(/do-not-send|token|private-email/);
+  await expect.poll(() => measured.length).toBe(2);
+  expect(measured.map((url) => url.searchParams.get('p')).sort()).toEqual([
+    '/ApiSip/',
+    'download_hero',
+  ]);
+  expect(
+    measured.find((url) => url.searchParams.get('p') === 'download_hero')?.searchParams.get('e'),
+  ).toBe('true');
+  for (const url of measured) {
+    expect(url.searchParams.get('r')).toBe('campaign:linkedin/launch');
+    expect(url.searchParams.has('q')).toBe(false);
+    expect(
+      [...url.searchParams.keys()].every((key) =>
+        ['p', 't', 'r', 'rnd', 'e', 'ns', 'b'].includes(key),
+      ),
+    ).toBe(true);
+  }
+  expect(JSON.stringify({ measured, headers })).not.toMatch(/do-not-send|token|private-email/);
+  expect(headers.every((header) => !header.referer && !header.cookie)).toBe(true);
   await page.getByRole('button', { name: 'Turn off website metrics' }).click();
   await page.evaluate('ApiSipMetrics.track("coffee_click")');
-  expect(await page.evaluate('window.measured.length')).toBe(2);
+  expect(measured.length).toBe(2);
   expect(await page.evaluate('localStorage.getItem("apisip-website-metrics-disabled")')).toBe('1');
   await page.getByRole('button', { name: 'Turn on website metrics' }).click();
   await page.evaluate('ApiSipMetrics.track("feedback_continue")');
-  expect(await page.evaluate('window.measured.length')).toBe(3);
-  expect(providerLoads).toBe(1);
+  await expect.poll(() => measured.length).toBe(3);
+  expect(scripts).toEqual([]);
 });
 
 for (const preference of ['doNotTrack', 'globalPrivacyControl', 'storedOptOut']) {
@@ -94,7 +107,11 @@ test('blocked analytics never prevents interaction or creates page errors', asyn
   await page.route('https://mihirbhadak.github.io/ApiSip/**', (route) =>
     route.fulfill({ contentType: 'text/html', body: html }),
   );
-  await page.route('https://gc.zgo.at/count.js', (route) => route.abort());
+  let attempts = 0;
+  await page.route('https://apisip-test-fixture.goatcounter.com/count**', (route) => {
+    attempts++;
+    return route.abort();
+  });
   await page.goto('https://mihirbhadak.github.io/ApiSip/');
   await page.addScriptTag({ content: bundle });
   const failed = page.waitForEvent('requestfailed');
@@ -102,6 +119,7 @@ test('blocked analytics never prevents interaction or creates page errors', asyn
     'ApiSipMetrics.initializeAnalytics(); for(let i=0;i<100;i++) ApiSipMetrics.track("download_hero");',
   );
   await failed;
+  await expect.poll(() => attempts).toBe(21); // One pageview plus a bounded pre-initialization queue.
   await page.getByRole('button', { name: 'Turn off website metrics' }).click();
   await expect(page.getByRole('button')).toHaveText('Turn on website metrics');
   expect(errors).toEqual([]);
