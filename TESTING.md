@@ -24,8 +24,14 @@ Verified September 16, 2026. This release adds the static public website and opt
 - Desktop/mobile hero, feature catalogue, creator profile and download dialog were visually reviewed in the browser. Screenshots on the site contain only the bundled loopback application's fixture traffic.
 - The website's application script is about 6.5 KB uncompressed (2.2 KB gzip), with no frontend framework or remote fonts. Screenshot images and the locally bundled portrait have explicit dimensions; offscreen creator images load lazily. These are asset measurements, not a universal load-time guarantee.
 - Extension build: `2026-09-16T07:17:43.715Z`. The ZIP contains 26 verified files (1,180,961 bytes); SHA-256 `15c9bf597b3c611722f70ea4ec3a67e5f3978ced8fe4c1791d397147445da2b9`.
+- A separate Chrome run clicked the locally served website's real download CTA without stubbing requests. GitHub delivered `apisip-0.1.1.zip`; the downloaded bytes matched that SHA-256, the creator/support dialog remained visible, and no page errors occurred. An independent GitHub CLI download matched too.
+- Final Lighthouse 13.4.1 mobile lab audit of the local static server: performance 99, accessibility 100, best practices 100 and SEO 100. FCP 1.2 s, LCP 2.1 s, total blocking time 0 ms and CLS 0.05. These are local lab measurements, not live-site measurements or ranking guarantees. Reports are saved locally under `artifacts/website-lighthouse-final.report.*`.
 
 Local website tests stub only the external ZIP transfer, so they can run without publishing a release or downloading a remote file repeatedly. The real archive is verified separately during publication. Social/payment destinations are checked as links; no contribution is submitted. Website checks do not guarantee search ranking or cover every browser/assistive technology.
+
+### Hosting verification
+
+The GitHub Pages build and deployment of `main:/docs` succeeded on September 16, 2026. Public-page verification is currently blocked: `https://mihirbhadak.github.io/ApiSip/` returns a redirect to `http://mihirbhadak.me/ApiSip/`, inherited from the account's main Pages site's custom-domain setting. That domain does not currently resolve. The unrelated main site's domain configuration has not been changed; its owner must approve that change or select another host. The GitHub release download remains available. Recheck the live page, HTTPS, assets and download flow after the domain issue is resolved.
 
 ## ApiSip 0.1.0 public release verification
 
