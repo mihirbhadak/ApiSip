@@ -157,7 +157,7 @@ export function exportRecords(
     {
       log: {
         version: '1.2',
-        creator: { name: 'ApiSip', version: '0.1.0' },
+        creator: { name: 'ApiSip', version: '0.1.1' },
         entries: rows
           .filter((r) => /^https?:/.test(r.request.url))
           .map((r) => ({

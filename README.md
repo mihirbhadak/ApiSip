@@ -4,6 +4,8 @@ A privacy-first Chrome extension to capture, inspect, edit, replay, and load-tes
 
 The extension icon opens a full-page developer tool. Built by [Mihir Bhadak](https://github.com/mihirbhadak).
 
+[Website & installation guide](https://mihirbhadak.github.io/ApiSip/) · [Download the latest release](https://github.com/mihirbhadak/ApiSip/releases/latest) · [Support ApiSip](https://buymeacoffee.com/mihir_bhadak/apisip)
+
 ![ApiSip capturing local API traffic in Chrome](docs/screenshots/inspector-light.png)
 
 <details>
@@ -73,7 +75,7 @@ After source changes, build again and click **Reload** on the extension card. `n
 
 ### Creator
 
-Built by **Mihir Bhadak**. [GitHub](https://github.com/mihirbhadak), [LinkedIn](https://www.linkedin.com/in/mihirbhadak/), [Instagram](https://www.instagram.com/mihir_bhadak/). His profile photo is bundled locally. Links open only when clicked; no remote social widgets are loaded.
+Built by **Mihir Bhadak**. [GitHub](https://github.com/mihirbhadak), [LinkedIn](https://www.linkedin.com/in/mihirbhadak/), [Instagram](https://www.instagram.com/mihir_bhadak/), [Buy me a coffee](https://buymeacoffee.com/mihir_bhadak/apisip). His profile photo is bundled locally. Links open only when clicked; no remote social or payment widgets are loaded. Support is optional and does not gate features.
 
 ## Capture modes and limitations
 
@@ -208,3 +210,5 @@ Alt + Shift + A is a Chrome extension command; configure it at `chrome://extensi
 ## Development and verification
 
 See [DEVELOPMENT.md](DEVELOPMENT.md), [ARCHITECTURE.md](ARCHITECTURE.md), and [TESTING.md](TESTING.md). Optional interception/mocking, environment-variable secrets, OpenAPI/Postman import, remote sharing and cloud sync are intentionally outside this implementation.
+
+The public website is a separate buildless static page in [`docs`](docs/README.md), published through GitHub Pages. Run `npm run site:dev` for a local preview and `npm run test:site` for its browser checks. Its screenshots use only the bundled local API test server. Website downloads open an optional creator/support dialog; the download itself is never gated.

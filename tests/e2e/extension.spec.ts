@@ -824,6 +824,9 @@ test('shows contextual help, creator links and timed keyboard hints without losi
   await expect(
     inspector.getByRole('dialog').getByRole('link', { name: 'Mihir Bhadak on Instagram' }),
   ).toHaveAttribute('href', 'https://www.instagram.com/mihir_bhadak/');
+  await expect(
+    inspector.getByRole('dialog').getByRole('link', { name: 'Buy Mihir Bhadak a coffee' }),
+  ).toHaveAttribute('href', 'https://buymeacoffee.com/mihir_bhadak/apisip');
   await inspector.screenshot({ path: 'test-results/visual/15-help-creator.png' });
   const helpA11y = await new AxeBuilder({ page: inspector })
     .withTags(['wcag2a', 'wcag2aa', 'wcag21aa'])

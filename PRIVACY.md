@@ -8,6 +8,8 @@ Editor tabs automatically persist edited URLs, headers, bodies and replay contex
 
 There is no telemetry, analytics service, cloud account, remote logging, sync or remote script. Statistics are computed locally. Installing and using the inspector requires no external API.
 
+Creator links, including the optional Buy me a Coffee support link, open an external website only after a click. No payment widget or social tracking script runs in the extension. Those sites have their own privacy policies. Support is optional and does not unlock or limit features.
+
 **Replay sends the edited request to the API URL chosen by the user.** Opening an endpoint also navigates to that site. Copy and export put selected data on the system clipboard or into a local download, where other applications may access it.
 
 **Start run repeatedly sends the reviewed API request according to the configured schedule.** The runner operates entirely within the extension, including when its editor closes. It streams and discards response bodies. Stored reports contain method, target origin, source/workspace/session IDs, numeric configuration, timing aggregates, status counts and bounded numeric/category samples. They exclude full request URLs, headers, cookies, payloads and variable/data-row values. These execution inputs remain in memory only for the run; the original edited API draft follows the persistent storage behavior above. Reports retain the latest 50 runs and export separately from capture backups. Closing Chrome or losing the runner interrupts execution, with no automatic resume or retry.

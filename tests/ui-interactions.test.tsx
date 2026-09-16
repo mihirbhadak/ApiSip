@@ -241,6 +241,10 @@ it('opens contextual help, searches topics and preserves exact creator links', a
   );
   for (const link of screen.getAllByRole('link'))
     expect(link).toHaveAttribute('rel', 'noopener noreferrer');
+  expect(screen.getByRole('link', { name: 'Buy Mihir Bhadak a coffee' })).toHaveAttribute(
+    'href',
+    'https://buymeacoffee.com/mihir_bhadak/apisip',
+  );
   await user.clear(screen.getByRole('textbox'));
   await user.type(screen.getByRole('textbox'), 'zzzzzzz');
   expect(screen.getByText('No matching help topics')).toBeVisible();

@@ -14,7 +14,20 @@ npm audit
 
 `test:authorize` needs one normal Chrome site-access approval in a dedicated test profile. Subsequent runs clone that authorized baseline. See [DEVELOPMENT.md](DEVELOPMENT.md) for isolation, browser selection and cache handling. Build before E2E; the suite asserts that the loaded worker and `dist/build-info.json` identify the same build.
 
-## ApiSip public release verification
+## Website and extension 0.1.1 verification
+
+Verified September 16, 2026. This release adds the static public website and optional creator support links in the extension, with no new extension permissions.
+
+- `npm run check`: lint, strict TypeScript, all 151 automated tests and the production extension build passed.
+- `npm run test:e2e`: all 25 real Chrome extension scenarios passed in 2.8 minutes, including the exact coffee URL in the creator guide, accessible help, genuine capture/replay, persistence and both 10,000-request tests. The timed loopback run had no missed starts.
+- `npm run test:site`: all 12 browser scenarios passed. Coverage includes screenshot tabs/lightbox, mobile navigation, outside/Escape dismissal, installation-guide focus, every download CTA, the optional profile/support dialog, clipboard success/failure, creator links, SEO metadata, no-JavaScript essentials and asset budgets. Axe checks passed at 1440, 768, 390 and 320 pixels and inside the download dialog. No horizontal overflow was found at those widths.
+- Desktop/mobile hero, feature catalogue, creator profile and download dialog were visually reviewed in the browser. Screenshots on the site contain only the bundled loopback application's fixture traffic.
+- The website's application script is about 6.5 KB uncompressed (2.2 KB gzip), with no frontend framework or remote fonts. Screenshot images and the locally bundled portrait have explicit dimensions; offscreen creator images load lazily. These are asset measurements, not a universal load-time guarantee.
+- Extension build: `2026-09-16T07:17:43.715Z`. The ZIP contains 26 verified files (1,180,961 bytes); SHA-256 `15c9bf597b3c611722f70ea4ec3a67e5f3978ced8fe4c1791d397147445da2b9`.
+
+Local website tests stub only the external ZIP transfer, so they can run without publishing a release or downloading a remote file repeatedly. The real archive is verified separately during publication. Social/payment destinations are checked as links; no contribution is submitted. Website checks do not guarantee search ranking or cover every browser/assistive technology.
+
+## ApiSip 0.1.0 public release verification
 
 Verified September 16, 2026 on Windows with the installed Chrome for Testing build and Node.js 26.4.0. ApiSip's visible branding, extension manifest, repository metadata, exports and documentation were updated; persistent database and report-format identifiers remain compatible.
 

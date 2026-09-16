@@ -1,4 +1,4 @@
-import { Github, Linkedin, Instagram } from 'lucide-react';
+import { Github, Linkedin, Instagram, Coffee } from 'lucide-react';
 export function CreatorLinks({ compact = false }: { compact?: boolean }) {
   return (
     <div
@@ -34,6 +34,16 @@ export function CreatorLinks({ compact = false }: { compact?: boolean }) {
       >
         <Instagram size={16} />
         {!compact && 'Instagram'}
+      </a>
+      <a
+        href="https://buymeacoffee.com/mihir_bhadak/apisip"
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label="Buy Mihir Bhadak a coffee"
+        title="Buy me a coffee"
+      >
+        <Coffee size={16} />
+        {!compact && 'Buy me a coffee'}
       </a>
     </div>
   );

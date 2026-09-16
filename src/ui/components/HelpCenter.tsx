@@ -63,7 +63,7 @@ export function HelpDialog({
         {active ? (
           <article className="help-article" aria-label={active.title} key={active.id} tabIndex={0}>
             <div className="help-eyebrow">
-              <BookOpen size={14} /> API CATCHER GUIDE
+              <BookOpen size={14} /> APISIP GUIDE
             </div>
             <h3>{active.title}</h3>
             <p className="muted">{active.summary}</p>

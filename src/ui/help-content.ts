@@ -179,8 +179,9 @@ export const helpTopics = [
     summary: 'ApiSip, by Mihir Bhadak.',
     steps: [
       'A local-first network inspector built for developers who want to capture, understand and replay their API traffic.',
+      'If ApiSip helps your workflow, you can support its development through the optional Buy me a coffee link below. Every feature remains available without a contribution.',
     ],
-    note: 'Social links open external websites only when you click them.',
+    note: 'Social and support links open external websites only when you click them. No payment widget or tracking script is loaded inside the extension.',
   },
 ] as const;
 export type HelpTopic = (typeof helpTopics)[number]['id'];
