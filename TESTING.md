@@ -14,7 +14,21 @@ npm audit
 
 `test:authorize` needs one normal Chrome site-access approval in a dedicated test profile. Subsequent runs clone that authorized baseline. See [DEVELOPMENT.md](DEVELOPMENT.md) for isolation, browser selection and cache handling. Build before E2E; the suite asserts that the loaded worker and `dist/build-info.json` identify the same build.
 
-## Latest verified results
+## ApiSip public release verification
+
+Verified September 16, 2026 on Windows with the installed Chrome for Testing build and Node.js 26.4.0. ApiSip's visible branding, extension manifest, repository metadata, exports and documentation were updated; persistent database and report-format identifiers remain compatible.
+
+- `npm run check`: lint, strict TypeScript, all 151 Vitest tests across 16 files, and production build passed.
+- `npm run test:e2e`: all 25 real Chrome scenarios passed in 2.8 minutes, including root-folder installation, capture, replay, clipboard/export/import, persistence, accessibility, worker recovery and both 10,000-request scenarios. No retries or skips.
+- `npm run format:check`, `git diff --check` and `npm audit`: passed; npm reported zero known vulnerabilities.
+- Build identifier: `2026-09-16T06:52:38.078Z`.
+- Timed loopback run: 10,000 requests started in the configured one-minute window, no missed starts, 60,007.8 ms total elapsed, and a 32,542-byte report. The benchmark uses concurrency 32 and a 1,000 ms start-delay tolerance; the measurement caveats below still apply.
+- Release ZIP: 26 files, 1,180,376 bytes; archive CRCs, manifest references and byte-for-byte agreement with `dist` verified. SHA-256: `3d8964d9e836e792878525676684ea555aab7b7890e9f82800704ecb1858135a`.
+- The README screenshots show real local fixture traffic in the branded light/dark inspector and were visually reviewed.
+
+The built ZIP and checksum are published with [release v0.1.0](https://github.com/mihirbhadak/ApiSip/releases/tag/v0.1.0). Browser profiles, dependencies and temporary test output are excluded from Git. A targeted scan of 272 historical Git blobs found no high-confidence credential patterns; this is not a comprehensive security audit.
+
+## September 15 implementation verification
 
 Verified September 15, 2026 on Windows with Chrome for Testing 153.0.8010.12 and Node.js 26.4.0.
 

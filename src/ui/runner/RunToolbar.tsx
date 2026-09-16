@@ -42,22 +42,14 @@ export function RunToolbar({
         <>
           <button
             onClick={() =>
-              downloadFile(
-                'api-catcher-run-' + report.id + '.json',
-                runJson(report),
-                'application/json',
-              )
+              downloadFile('apisip-run-' + report.id + '.json', runJson(report), 'application/json')
             }
           >
             <Download size={13} /> Report JSON
           </button>
           <button
             onClick={() =>
-              downloadFile(
-                'api-catcher-run-samples-' + report.id + '.csv',
-                runCsv(report),
-                'text/csv',
-              )
+              downloadFile('apisip-run-samples-' + report.id + '.csv', runCsv(report), 'text/csv')
             }
           >
             Sample CSV

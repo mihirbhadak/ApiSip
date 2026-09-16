@@ -1,4 +1,4 @@
-# API Catcher architecture
+# ApiSip architecture
 
 ## Repository assessment
 

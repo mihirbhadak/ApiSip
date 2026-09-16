@@ -157,7 +157,7 @@ export function exportRecords(
     {
       log: {
         version: '1.2',
-        creator: { name: 'API Catcher', version: '0.1.0' },
+        creator: { name: 'ApiSip', version: '0.1.0' },
         entries: rows
           .filter((r) => /^https?:/.test(r.request.url))
           .map((r) => ({
@@ -280,7 +280,7 @@ export function importRecords(text: string, workspaceId: string, sessionId: stri
     const parsed = backupSchema.safeParse(data);
     if (!parsed.success)
       throw new Error(
-        'Invalid backup or unsupported schema version. Expected API Catcher schema version 1.',
+        'Invalid backup or unsupported schema version. Expected ApiSip schema version 1.',
       );
     // New IDs prevent imports from overwriting existing local records.
     if (new Set(parsed.data.entities.map((e) => e.id)).size !== parsed.data.entities.length)
@@ -317,7 +317,7 @@ export function importRecords(text: string, workspaceId: string, sessionId: stri
   }
   const har = harSchema.safeParse(data);
   if (!har.success)
-    throw new Error('This file is neither a valid API Catcher backup nor a supported HAR file.');
+    throw new Error('This file is neither a valid ApiSip backup nor a supported HAR file.');
   const requests = har.data.log.entries.map((entry): CapturedRequest => {
     const parsed = parseUrl(entry.request.url),
       timestamp = Date.parse(entry.startedDateTime);

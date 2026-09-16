@@ -2,7 +2,7 @@
 
 ## Local data
 
-API Catcher stores captured requests, available bodies, replay history, editor drafts, timed run reports, workspaces, sessions, collections, saved filters and settings in IndexedDB inside the extension's Chrome profile. Table preferences use localStorage. A random browser-lifetime identifier uses chrome.storage.session to prevent capture-key collisions.
+ApiSip stores captured requests, available bodies, replay history, editor drafts, timed run reports, workspaces, sessions, collections, saved filters and settings in IndexedDB inside the extension's Chrome profile. Table preferences use localStorage. A random browser-lifetime identifier uses chrome.storage.session to prevent capture-key collisions.
 
 Editor tabs automatically persist edited URLs, headers, bodies and replay context locally, including unfinished edits and credentials. Their URLs contain only a random draft ID. Drafts have the same unencrypted storage boundary as captured history. They are excluded from exports; Save as new request creates an exportable saved API.
 

@@ -64,7 +64,7 @@ const server = http.createServer(async (request, response) => {
   if (url.pathname === '/') {
     response.writeHead(200, { 'content-type': 'text/html' });
     response.end(
-      '<!doctype html><html lang="en"><head><title>API Catcher test lab</title><link rel="icon" href="data:,"></head><body><h1>API Catcher test lab</h1><button id="users">Fetch users</button><button id="batch">10 requests</button><pre id="output">Ready</pre><label>Clipboard scratchpad<textarea aria-label="Clipboard scratchpad"></textarea></label><script>document.querySelector("#users").onclick=async()=>{document.querySelector("#output").textContent=await(await fetch("/api/users")).text()};document.querySelector("#batch").onclick=async()=>{await Promise.all(Array.from({length:10},(_,i)=>fetch("/api/users/"+i)));document.querySelector("#output").textContent="10 requests complete"};</script></body></html>',
+      '<!doctype html><html lang="en"><head><title>ApiSip test lab</title><link rel="icon" href="data:,"></head><body><h1>ApiSip test lab</h1><button id="users">Fetch users</button><button id="batch">10 requests</button><pre id="output">Ready</pre><label>Clipboard scratchpad<textarea aria-label="Clipboard scratchpad"></textarea></label><script>document.querySelector("#users").onclick=async()=>{document.querySelector("#output").textContent=await(await fetch("/api/users")).text()};document.querySelector("#batch").onclick=async()=>{await Promise.all(Array.from({length:10},(_,i)=>fetch("/api/users/"+i)));document.querySelector("#output").textContent="10 requests complete"};</script></body></html>',
     );
     return;
   }

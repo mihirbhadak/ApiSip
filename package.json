@@ -1,9 +1,9 @@
 {
-  "name": "api-catcher",
+  "name": "apisip",
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Local-first Chrome network inspector and request replay tool",
+  "description": "Privacy-first Chrome extension to capture, inspect, replay and load-test APIs.",
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
@@ -48,5 +48,14 @@
     "vite": "^6.3.5",
     "vitest": "^4.1.11",
     "ws": "^8.21.3"
-  }
+  },
+  "author": "Mihir Bhadak",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mihirbhadak/ApiSip.git"
+  },
+  "bugs": {
+    "url": "https://github.com/mihirbhadak/ApiSip/issues"
+  },
+  "homepage": "https://github.com/mihirbhadak/ApiSip#readme"
 }

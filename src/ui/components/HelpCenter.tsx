@@ -72,7 +72,7 @@ export function HelpDialog({
                 <CreatorAvatar />
                 <div>
                   <strong>Mihir Bhadak</strong>
-                  <span>Creator of API Catcher</span>
+                  <span>Creator of ApiSip</span>
                 </div>
               </div>
             )}

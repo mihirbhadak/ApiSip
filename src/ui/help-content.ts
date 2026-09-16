@@ -18,7 +18,7 @@ export const helpTopics = [
     title: 'Getting started',
     summary: 'From your first capture to a replay.',
     steps: [
-      'Open an HTTP(S) webpage, click API Catcher, then choose Start capture and approve Chrome site access.',
+      'Open an HTTP(S) webpage, click ApiSip, then choose Start capture and approve Chrome site access.',
       'Browse the webpage or trigger its API calls. Requests appear live. The icon badge counts the configured capture scope.',
       'Select a request to inspect it. Use the search bar or Filters to narrow the list, then open Replay to edit and send it.',
       'Use the ? beside a section for guidance. Hold Ctrl, Cmd or Alt alone for one second to see shortcuts. Release to hide them.',
@@ -176,7 +176,7 @@ export const helpTopics = [
   {
     id: 'about',
     title: 'About and creator',
-    summary: 'API Catcher, by Mihir Bhadak.',
+    summary: 'ApiSip, by Mihir Bhadak.',
     steps: [
       'A local-first network inspector built for developers who want to capture, understand and replay their API traffic.',
     ],

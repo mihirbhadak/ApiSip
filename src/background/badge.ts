@@ -35,7 +35,7 @@ export class Badge {
     await chrome.action.setBadgeText({ text: badgeText(count) });
     await chrome.action.setBadgeBackgroundColor({ color: s.recording ? '#0d766e' : '#64748b' });
     await chrome.action.setTitle({
-      title: 'API Catcher · ' + count + ' requests · ' + (s.recording ? 'Recording' : 'Paused'),
+      title: 'ApiSip · ' + count + ' requests · ' + (s.recording ? 'Recording' : 'Paused'),
     });
   }
 }

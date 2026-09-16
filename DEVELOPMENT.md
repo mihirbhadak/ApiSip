@@ -28,7 +28,7 @@ The Vite development page helps with UI work; Chrome capture APIs require loadin
 
 ## Extension workflow
 
-1. Build, load the repository root (or the standalone `dist` folder) through `chrome://extensions`, and pin API Catcher. The root manifest is generated from `public/manifest.json`; edit that source manifest, not a generated manifest.
+1. Build, load the repository root (or the standalone `dist` folder) through `chrome://extensions`, and pin ApiSip. The root manifest is generated from `public/manifest.json`; edit that source manifest, not a generated manifest.
 2. Open an HTTP(S) page, click the icon, then start capture.
 3. Chrome requests optional HTTP(S) site access. Response capture is a separate opt-in switch.
 4. Rebuild and reload the extension card after source changes. Reload the inspector too.
@@ -60,6 +60,8 @@ Open `http://127.0.0.1:4177`. The server provides users CRUD, JSON, URL-encoded/
 Keep Chrome API access in adapters. Domain functions should remain independently testable. Message payloads are defined and validated in `shared/messages.ts`; avoid adding untyped message strings.
 
 ## Data migrations
+
+ApiSip was previously named API Catcher. The internal `api-catcher` database name, run-report format identifier and `API_CATCHER_CHROME` test override remain stable for compatibility. Visible branding and download filenames use ApiSip. Reloading the extension from the same installation folder preserves its identity and local history; moving the unpacked folder creates a separate Chrome extension identity.
 
 IndexedDB is version 3: additive migrations introduce persistent editor drafts (v2) and timed run reports (v3), preserving history and settings. JSON backup format remains version 1 and does not contain drafts or timed run reports. Runner report JSON has its own version 1 format. These are independent formats. A database change must increment the IndexedDB version and add an additive migration in `storage/database.ts`. A backup format change must introduce explicit version parsing/migration; unknown versions are currently rejected. Do not clear user history to make a migration pass. `tests/editor-drafts.test.ts` and `tests/runner-storage.test.ts` exercise upgrades from genuine earlier schemas using fake-indexeddb, including preserved draft revisions and settings.
 

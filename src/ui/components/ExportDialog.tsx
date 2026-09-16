@@ -76,7 +76,7 @@ export function ExportDialog({
       const content = exportRecords(format, records, options, includeEntities);
       const extension = format === 'Markdown' ? 'md' : format.toLowerCase();
       downloadFile(
-        'api-catcher-' + new Date().toISOString().slice(0, 10) + '.' + extension,
+        'apisip-' + new Date().toISOString().slice(0, 10) + '.' + extension,
         content,
         format === 'JSON' || format === 'HAR' ? 'application/json' : 'text/plain',
       );

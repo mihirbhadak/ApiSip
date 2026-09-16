@@ -23,10 +23,10 @@ export default function EditorPage({ id }: { id: string }) {
   );
   useEffect(() => {
     document.title = record
-      ? record.request.method + ' - Request editor | API Catcher'
-      : 'Request editor | API Catcher';
+      ? record.request.method + ' - Request editor | ApiSip'
+      : 'Request editor | ApiSip';
     return () => {
-      document.title = 'API Catcher';
+      document.title = 'ApiSip';
     };
   }, [record]);
   return (
@@ -34,7 +34,7 @@ export default function EditorPage({ id }: { id: string }) {
       <header className="editor-page-heading">
         <div className="editor-brand">
           <Activity size={20} />
-          <strong>API Catcher</strong>
+          <strong>ApiSip</strong>
           <span>Request editor</span>
         </div>
         <div className="button-row">

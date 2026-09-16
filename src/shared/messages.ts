@@ -63,7 +63,7 @@ export async function sendCommand<T extends Command['type']>(
     (response.data as RuntimeState).buildId !== __BUILD_ID__
   )
     throw new Error(
-      'The extension worker is from an older build. Reload API Catcher in chrome://extensions, then reload this inspector.',
+      'The extension worker is from an older build. Reload ApiSip in chrome://extensions, then reload this inspector.',
     );
   return response.data;
 }

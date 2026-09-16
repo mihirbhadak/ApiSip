@@ -8,3 +8,10 @@ coverage/
 .tmp/
 artifacts/
 /manifest.json
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx

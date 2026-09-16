@@ -11,7 +11,7 @@ export function InspectorHeader({ controller }: { controller: InspectorControlle
           <span className="brand-mark">
             <Activity size={19} />
           </span>
-          <strong>API Catcher</strong>
+          <strong>ApiSip</strong>
           <span className="version">LOCAL</span>
         </a>
         <div className="header-breadcrumb">

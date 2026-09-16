@@ -1,8 +1,10 @@
 {
   "manifest_version": 3,
-  "name": "API Catcher - Network Inspector",
+  "name": "ApiSip - Network Inspector",
   "version": "0.1.0",
-  "description": "Inspect, organize, compare and replay network requests. Local-first, with optional response capture.",
+  "description": "Capture, inspect, replay and load-test APIs. Advanced filters, analytics and exports. Local-first, with no telemetry.",
+  "author": "Mihir Bhadak",
+  "homepage_url": "https://github.com/mihirbhadak/ApiSip",
   "minimum_chrome_version": "125",
   "permissions": [
     "storage",
@@ -19,7 +21,7 @@
     "type": "module"
   },
   "action": {
-    "default_title": "Open API Catcher",
+    "default_title": "Open ApiSip",
     "default_icon": {
       "16": "icons/16.png",
       "32": "icons/32.png",

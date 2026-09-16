@@ -1,27 +1,48 @@
-# API Catcher
+# ApiSip
 
-A local-first Manifest V3 Chrome extension for inspecting, organizing and replaying HTTP(S) requests. The extension icon opens a full-page developer tool.
+A privacy-first Chrome extension to capture, inspect, edit, replay, and load-test APIs. Includes multi-tab capture, advanced filters, response comparisons, performance analytics, code generation, and HAR/JSON exports. Local-first storage, no telemetry, and no cloud dependency.
+
+The extension icon opens a full-page developer tool. Built by [Mihir Bhadak](https://github.com/mihirbhadak).
+
+![ApiSip capturing local API traffic in Chrome](docs/screenshots/inspector-light.png)
+
+<details>
+<summary>Dark theme</summary>
+
+![ApiSip inspector in dark mode](docs/screenshots/inspector-dark.png)
+
+</details>
+
+## Technology
+
+TypeScript, React 19, Vite, Chrome Manifest V3, IndexedDB with `idb`, Zod, and Lucide icons. Tests use Vitest, React Testing Library, Playwright, and axe. Timed runs and body searches use bundled Web Workers.
+
+## Install a release
+
+Download the extension ZIP from [GitHub Releases](https://github.com/mihirbhadak/ApiSip/releases), extract it, then select the extracted folder with **Load unpacked** at `chrome://extensions` after enabling **Developer mode**. Select the folder containing `manifest.json`; Chrome cannot load the ZIP directly. Chrome 125 or newer is required.
 
 ## Run locally
 
 Requires Node.js 22.12+ and npm.
 
 ```sh
+git clone https://github.com/mihirbhadak/ApiSip.git
+cd ApiSip
 npm ci
 npm run build
 ```
 
 1. Open `chrome://extensions`.
 2. Enable **Developer mode**.
-3. Choose **Load unpacked** and select **`D:\Projects\api-catcher`** (this repository's root). The production build generates a root manifest that points to the built files in `dist`.
+3. Choose **Load unpacked** and select **the cloned `ApiSip` folder** (this repository's root). The production build generates a root manifest that points to the built files in `dist`.
    Alternatively, `dist` is a standalone extension folder suitable for packaging. Use one installation path consistently: Chrome assigns separate extension identities and local history to different folders.
-4. Open an HTTP(S) web page, then click the API Catcher icon.
+4. Open an HTTP(S) web page, then click the ApiSip icon.
 5. Click **Start capture** and grant the requested site access.
 6. Enable **Response capture** if you want response bodies and WebSocket messages, then repeat the requests.
 
 ### Fix "Manifest file is missing or unreadable"
 
-Run `npm run build` from this repository, then retry **Load unpacked** with `D:\Projects\api-catcher`. The build creates both `manifest.json` at the root and the standalone `dist/manifest.json`. Do not load `src` or `public`; they do not contain the complete production extension. Keep `dist` beside the root manifest. If Chrome already has API Catcher installed, use **Reload** on that extension card after rebuilding.
+Run `npm run build` from this repository, then retry **Load unpacked** with the repository root (for example, `D:\Projects\ApiSip` on Windows), or select its built `dist` folder. The build creates both `manifest.json` at the root and the standalone `dist/manifest.json`. Do not load `src` or `public`; they do not contain the complete production extension. Keep `dist` beside the root manifest. If Chrome already has ApiSip installed, use **Reload** on that extension card after rebuilding.
 
 After source changes, build again and click **Reload** on the extension card. `npm run dev` serves the UI for development, but capture and replay require the installed extension.
 
