@@ -1,5 +1,17 @@
 # Privacy and security
 
+## Public website and optional metrics
+
+The website at `https://mihirbhadak.github.io/ApiSip/` is separate from the Chrome extension. It cannot access the extension's captured data. GitHub hosts the website and release files and processes ordinary hosting/download requests under its own policies.
+
+Website analytics are currently **not configured**. The prepared integration supports GoatCounter aggregate page visits, coarse referral origins/campaign labels, approximate location/device summaries and allowlisted clicks. After the owner configures it, the footer discloses the service and offers an opt-out. Do Not Track and Global Privacy Control prevent the script from loading. The only browser preference stored by the integration is the visitor's website-metrics opt-out; no client-generated tracking ID is added. The provider receives connection metadata and applies its own [privacy policy](https://www.goatcounter.com/help/privacy). Form contents, captured API traffic, arbitrary URL query strings and credentials are not part of the integration's event payloads. Analytics failures never gate website functionality. If analytics are enabled, update this status statement at the same time.
+
+The feedback form opens a public GitHub issue draft only when the visitor chooses to continue. The title/body are placed in that draft URL and sent to GitHub at that point; nothing is submitted automatically. GitHub sign-in is required to post. Do not include secrets, private URLs, personal data or captured traffic. This page does not persist the feedback fields itself. Social and support links load their respective external services after interaction.
+
+A scheduled GitHub workflow records public release-asset download counters with observation times, retained in bounded JSON/CSV history. These aggregates contain no identities, IP addresses or per-download referrers. They do not prove completed transfers, installs or unique users. The extension remains free of telemetry.
+
+See [WEBSITE-GUIDE.md](WEBSITE-GUIDE.md) for configuration, event definitions and measurement limits.
+
 ## Local data
 
 ApiSip stores captured requests, available bodies, replay history, editor drafts, timed run reports, workspaces, sessions, collections, saved filters and settings in IndexedDB inside the extension's Chrome profile. Table preferences use localStorage. A random browser-lifetime identifier uses chrome.storage.session to prevent capture-key collisions.

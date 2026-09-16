@@ -1,0 +1,33 @@
+name: Record release downloads
+on:
+  schedule:
+    - cron: '17 0 * * *'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: release-download-history
+  cancel-in-progress: false
+jobs:
+  snapshot:
+    if: github.repository == 'mihirbhadak/ApiSip'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: '24'
+      - name: Collect public release counters
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node scripts/download-stats.mjs
+      - name: Save aggregate history
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add stats/downloads.json stats/downloads.csv
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m 'Record daily aggregate release download counts'
+          git pull --rebase origin main
+          git push origin HEAD:main

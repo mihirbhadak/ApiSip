@@ -26,6 +26,17 @@ test('loads indexable content, local screenshots and working internal links with
   );
   expect(data.name).toBe('ApiSip');
   expect(data.downloadUrl).toBe(release);
+  expect(data.publisher.name).toBe('Mihir Bhadak');
+  expect(data.publisher.url).toBe('https://github.com/mihirbhadak');
+  for (const name of ['twitter:title', 'twitter:description', 'twitter:image', 'twitter:image:alt'])
+    await expect(page.locator(`meta[name="${name}"]`)).toHaveAttribute('content', /\S/);
+  for (const link of await page.locator('a').all())
+    await expect(link).toHaveAttribute('title', /\S/);
+  for (const image of await page.locator('img').all()) {
+    await expect(image).toHaveAttribute('alt', /\S/);
+    await expect(image).toHaveAttribute('title', /\S/);
+    await expect(image).toHaveAttribute('src', /\S/);
+  }
   for (const link of await page.locator('a[href^="#"]').all()) {
     const href = await link.getAttribute('href');
     if (href === '#') continue;
@@ -53,13 +64,16 @@ test('screenshot tabs work with arrows and enlarged images close with Escape and
   await expect(editor).toHaveAttribute('aria-selected', 'true');
   await expect(page.locator('#showcase-image')).toHaveAttribute(
     'src',
-    'screenshots/editor-dark.png',
+    /assets\/web-editor-960\.[a-f0-9]+\.webp$/,
   );
   await page.keyboard.press('End');
   await expect(page.getByRole('tab', { name: '03 Test & measure' })).toBeFocused();
   await page.getByRole('button', { name: 'Take a closer look at the current screenshot' }).click();
   await expect(page.getByRole('dialog', { name: 'Expanded ApiSip screenshot' })).toBeVisible();
-  await expect(page.locator('#expanded-image')).toHaveAttribute('src', /runner-dark\.png$/);
+  await expect(page.locator('#expanded-image')).toHaveAttribute(
+    'src',
+    /web-runner-1512\.[a-f0-9]+\.webp$/,
+  );
   await page.keyboard.press('Escape');
   await expect(page.getByRole('dialog')).toBeHidden();
   await expect(
@@ -101,13 +115,19 @@ test('every download CTA targets the release and opens an optional accessible cr
     );
     await expect(dialog.getByRole('img', { name: 'Mihir Bhadak' })).toBeVisible();
     await expect(dialog.getByRole('button', { name: 'Close download message' })).toBeFocused();
+    await expect(page).toHaveURL(/#install$/);
+    const installTop = await page
+      .locator('#install')
+      .evaluate((element) => element.getBoundingClientRect().top);
+    expect(installTop).toBeGreaterThanOrEqual(0);
+    expect(installTop).toBeLessThan(130);
     const accessibility = await new AxeBuilder({ page })
       .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
       .analyze();
     expect(accessibility.violations).toEqual([]);
     await page.keyboard.press('Escape');
     await expect(dialog).toBeHidden();
-    await expect(link).toBeFocused();
+    await expect(page.locator('#install-title')).toBeFocused();
   }
   await links.first().click();
   await page.getByRole('link', { name: 'Show me the installation guide' }).click();
@@ -126,7 +146,7 @@ test('copy installation address succeeds and provides a useful fallback when den
   await context.grantPermissions(['clipboard-read', 'clipboard-write']);
   await page.goto('./');
   await page.getByRole('button', { name: 'Copy Chrome extensions address' }).click();
-  await expect(page.getByRole('status')).toContainText('Address copied');
+  await expect(page.locator('#toast')).toContainText('Address copied');
   expect(await page.evaluate(() => navigator.clipboard.readText())).toBe('chrome://extensions');
   await page.evaluate(() =>
     Object.defineProperty(navigator.clipboard, 'writeText', {
@@ -135,7 +155,7 @@ test('copy installation address succeeds and provides a useful fallback when den
     }),
   );
   await page.getByRole('button', { name: 'Copy Chrome extensions address' }).click();
-  await expect(page.getByRole('status')).toContainText('Copy wasn’t available');
+  await expect(page.locator('#toast')).toContainText('Copy wasn’t available');
   expect(await page.evaluate(() => window.getSelection()?.toString())).toBe('chrome://extensions');
 });
 
@@ -242,11 +262,85 @@ test('keeps initial assets small and does not ship a frontend framework or remot
       return { name: resource.name, bytes: resource.decodedBodySize };
     }),
   );
-  const script = assets.find((asset) => asset.name.endsWith('/site.js'));
-  const css = assets.find((asset) => asset.name.endsWith('/site.css'));
+  const script = assets.find((asset) => /\/web-site\.[a-f0-9]+\.js$/.test(asset.name));
   expect(script?.bytes).toBeGreaterThan(0);
   expect(script!.bytes).toBeLessThan(12_000);
-  expect(css!.bytes).toBeLessThan(45_000);
+  expect(
+    await page
+      .locator('head style')
+      .evaluate((el) => new TextEncoder().encode(el.textContent ?? '').length),
+  ).toBeLessThan(35_000);
+  expect(assets.filter((asset) => asset.name.endsWith('.css'))).toHaveLength(0);
   expect(assets.filter((asset) => asset.name.endsWith('.js'))).toHaveLength(1);
   expect(assets.every((asset) => asset.name.startsWith('http://127.0.0.1:4178/'))).toBe(true);
+});
+
+test('feedback creates a reviewable GitHub draft and never posts automatically', async ({
+  page,
+  context,
+}) => {
+  await context.route('https://github.com/mihirbhadak/ApiSip/issues/new?**', (route) =>
+    route.fulfill({ contentType: 'text/html', body: '<h1>GitHub draft transport fixture</h1>' }),
+  );
+  await page.goto('./');
+  await page.getByLabel('Short title', { exact: true }).fill('Keep & inspect Unicode: café');
+  await page
+    .getByLabel('Your feedback', { exact: true })
+    .fill('An idea with <script>literal text</script> and an ampersand &.');
+  await page.getByLabel('I understand this feedback').check();
+  const request = context.waitForEvent('request', {
+    predicate: (request) =>
+      request.url().startsWith('https://github.com/mihirbhadak/ApiSip/issues/new?'),
+  });
+  await page.getByRole('button', { name: 'Review on GitHub' }).click();
+  const outgoing = await request;
+  expect(outgoing.method()).toBe('GET');
+  const query = new URL(outgoing.url()).searchParams;
+  expect(query.get('title')).toBe('Keep & inspect Unicode: café');
+  expect(query.get('body')).toContain('<script>literal text</script>');
+  expect(query.get('template')).toBe('feedback.md');
+  await expect(page.locator('#feedback-status')).toContainText('Nothing is posted automatically');
+});
+
+test('mobile uses a small responsive screenshot and social links remain named without visible text', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('./');
+  const image = page.locator('#showcase-image');
+  await expect
+    .poll(() => image.evaluate((image: HTMLImageElement) => image.currentSrc))
+    .toMatch(/capture-480.*webp$/);
+  for (const link of await page.locator('.social-links a').all()) {
+    await expect(link).toHaveAttribute('aria-label', /Mihir Bhadak/);
+    await expect(link.locator('svg')).toHaveAttribute('aria-hidden', 'true');
+    expect((await link.textContent())?.trim()).toBe('');
+  }
+});
+
+test('mobile download dismissal reveals the installation guide and preserves its focus', async ({
+  page,
+  context,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await context.route(release, (route) =>
+    route.fulfill({
+      contentType: 'application/zip',
+      headers: { 'Content-Disposition': 'attachment; filename="fixture.zip"' },
+      body: 'Transport fixture',
+    }),
+  );
+  await page.goto('./');
+  await page.locator('[data-download="hero"]').click();
+  const dialog = page.getByRole('dialog', { name: 'Happy debugging.' });
+  await expect(dialog).toBeVisible();
+  await dialog
+    .getByRole('img', { name: 'Mihir Bhadak', exact: true })
+    .evaluate(async (image: HTMLImageElement) => image.decode());
+  await expect(dialog.getByRole('link', { name: 'GitHub — Mihir Bhadak' })).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(dialog).toBeHidden();
+  await expect(page.locator('#install-title')).toBeFocused();
+  await expect(page.locator('#install-title')).toBeInViewport();
+  await page.screenshot({ path: 'test-results/site/visual/mobile-install-after-download.png' });
 });

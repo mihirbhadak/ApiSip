@@ -1,5 +1,21 @@
 # Verification report
 
+## Website metadata, delivery, feedback and measurement update
+
+Verified September 16, 2026. The extension source and downloadable 0.1.1 release are unchanged by this website update.
+
+- `npm run check` passed: lint, strict TypeScript, 151 unit/component/integration tests and the production extension build. The website build uses an explicit dependency on the existing esbuild 0.25 line plus Sharp for offline image optimization; no new runtime dependency is loaded into the browser.
+- `npm run test:site`: 20 Chrome browser tests passed, including publisher and social-card metadata, alt/title coverage, responsive image selection, social icon names, background installation scrolling, modal close/focus on mobile, native feedback drafts, accessibility at four widths and five focused analytics scenarios.
+- `npm run test:site-tools`: three download-counter tests passed for ZIP selection, pagination, malformed/API-failure rejection, bounded snapshot history and CSV escaping. A real GitHub API collection established the initial aggregate baseline.
+- The generated HTML submitted directly to W3C Nu returned zero messages. The previous public HTML had two errors: an ARIA label on an element with a generic role, and an image without an initial source; both were fixed.
+- Images are generated in 480/960/1512-pixel WebP variants. The smallest response screenshot is 10,786 bytes versus the original 127,663-byte PNG. The 96-pixel creator portrait is 3,688 bytes versus the original 386,178-byte JPEG. The browser selects the appropriate variant for viewport/density and loads the full screenshot only for the lightbox.
+- Generated inline CSS is approximately 29 KB before compression and the deferred application script approximately 9 KB. No external stylesheet blocks initial rendering. Legacy assets are retained so cached previous HTML remains functional.
+- W3C's CSS3-profile service reported unsupported-property messages for SVG paint, pointer events and masking. Those declarations were checked against the W3C specifications and with Chrome `CSS.supports`; each tested value is supported. This is not recorded as a clean CSS-validator result.
+- The requested WMTips analyzer presented a Cloudflare human-verification screen. It was not bypassed, and no WMTips score is claimed. A separate local visible-text count is saved in `artifacts/site-audit/keyword-local.json` and is explicitly not that service's result.
+- Visual review covered the feedback section, desktop/mobile support dialog, social icons and the installation guide after dismissal. No live feedback issue or payment was submitted.
+
+GoatCounter integration is prepared but **not active**: the owner chose a setup guide and has not supplied an endpoint. Tests substitute the provider transport and cannot prove an unconfigured analytics account receives data. The guide explains this activation boundary, privacy controls, Search Console ownership verification, GitHub cache-header limitations and the distinction between click events, release download counters and installs.
+
 ## Reproduce
 
 ```sh

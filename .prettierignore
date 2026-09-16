@@ -7,3 +7,5 @@ package-lock.json
 .tmp
 artifacts/
 /manifest.json
+docs/index.html
+docs/assets/web-*

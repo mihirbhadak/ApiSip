@@ -1,0 +1,5 @@
+{
+  "analyticsEndpoint": "",
+  "searchConsoleVerification": "",
+  "allowedCampaigns": ["launch", "profile", "release-0-1-1"]
+}

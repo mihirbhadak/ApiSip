@@ -1,0 +1,1347 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#0b100f" />
+    <title>ApiSip — Capture, replay &amp; test APIs in Chrome</title>
+    <meta
+      name="description"
+      content="Your browser's local-first API workspace. Capture network traffic, inspect responses, replay requests and run timed API tests. Free Chrome extension by Mihir Bhadak."
+    />
+    <meta name="author" content="Mihir Bhadak" />
+    <meta name="robots" content="index,follow,max-image-preview:large" />
+    <link rel="canonical" href="https://mihirbhadak.github.io/ApiSip/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="ApiSip" />
+    <meta property="og:title" content="ApiSip — Your APIs. In full focus." />
+    <meta
+      property="og:description"
+      content="Capture, inspect, replay and load-test APIs. One Chrome extension. Local-first. No telemetry."
+    />
+    <meta property="og:url" content="https://mihirbhadak.github.io/ApiSip/" />
+    <meta
+      property="og:image"
+      content="https://mihirbhadak.github.io/ApiSip/screenshots/inspector-light.png"
+    />
+    <meta
+      property="og:image:alt"
+      content="ApiSip inspecting API requests from its local test application"
+    />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="site.css" />
+    <script src="site.js" defer=""></script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "ApiSip",
+        "applicationCategory": "DeveloperApplication",
+        "operatingSystem": "Chrome 125+",
+        "browserRequirements": "Requires Chrome 125 or newer with extension support",
+        "softwareVersion": "0.1.1",
+        "url": "https://mihirbhadak.github.io/ApiSip/",
+        "downloadUrl": "https://github.com/mihirbhadak/ApiSip/releases/download/v0.1.1/apisip-0.1.1.zip",
+        "description": "A local-first Chrome extension to capture, inspect, replay and load-test APIs.",
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "USD"
+        },
+        "author": {
+          "@type": "Person",
+          "name": "Mihir Bhadak",
+          "url": "https://github.com/mihirbhadak",
+          "sameAs": [
+            "https://github.com/mihirbhadak",
+            "https://www.linkedin.com/in/mihirbhadak/",
+            "https://www.instagram.com/mihir_bhadak/"
+          ],
+          "@id": "https://github.com/mihirbhadak"
+        },
+        "screenshot": "https://mihirbhadak.github.io/ApiSip/screenshots/inspector-light.png",
+        "publisher": {
+          "@type": "Person",
+          "name": "Mihir Bhadak",
+          "url": "https://github.com/mihirbhadak",
+          "sameAs": [
+            "https://github.com/mihirbhadak",
+            "https://www.linkedin.com/in/mihirbhadak/",
+            "https://www.instagram.com/mihir_bhadak/"
+          ],
+          "@id": "https://github.com/mihirbhadak"
+        },
+        "mainEntityOfPage": {
+          "@type": "WebPage",
+          "@id": "https://mihirbhadak.github.io/ApiSip/",
+          "name": "ApiSip — Chrome API inspector",
+          "publisher": {
+            "@type": "Person",
+            "name": "Mihir Bhadak",
+            "url": "https://github.com/mihirbhadak",
+            "sameAs": [
+              "https://github.com/mihirbhadak",
+              "https://www.linkedin.com/in/mihirbhadak/",
+              "https://www.instagram.com/mihir_bhadak/"
+            ],
+            "@id": "https://github.com/mihirbhadak"
+          }
+        }
+      }
+    </script>
+    <meta name="publisher" content="Mihir Bhadak" />
+    <meta name="referrer" content="strict-origin-when-cross-origin" />
+    <meta name="twitter:title" content="ApiSip — Capture, replay &amp; test APIs in Chrome" />
+    <meta
+      name="twitter:description"
+      content="A free, local-first Chrome API inspector by Mihir Bhadak. Capture requests, edit and replay APIs, and run timed tests."
+    />
+    <meta
+      name="twitter:image"
+      content="https://mihirbhadak.github.io/ApiSip/screenshots/response-light.png"
+    />
+    <meta
+      name="twitter:image:alt"
+      content="ApiSip showing a JSON API response from its bundled local demo server."
+    />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:locale" content="en_US" />
+    <link rel="author" href="https://github.com/mihirbhadak" />
+  </head>
+  <body>
+    <a class="skip-link" href="#main" title="Skip navigation and read the main content"
+      >Skip to content</a
+    >
+    <svg class="icon-definitions" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14m-6-6 6 6-6 6"></path></symbol>
+      <symbol id="i-up" viewBox="0 0 24 24"><path d="M6 18 18 6M6 6h12v12"></path></symbol>
+      <symbol id="i-download" viewBox="0 0 24 24">
+        <path d="M12 3v12m-5-5 5 5 5-5M5 16v5h14v-5"></path>
+      </symbol>
+      <symbol id="i-github" viewBox="0 0 24 24">
+        <path
+          d="M9 19c-4 1-4-2-6-2m12 5v-4c0-1-.3-2-1-2 4-.4 7-2 7-7 0-2-.7-3-2-4 .2-1 0-3-1-4-2 0-3 1-4 2a15 15 0 0 0-5 0C8 2 6 1 4 1c-1 1-1 3-1 4-1 1-2 2-2 4 0 5 3 7 7 7-.7.5-1 1-1 2v4"
+          transform="translate(2 1) scale(.85)"
+        ></path>
+      </symbol>
+      <symbol id="i-coffee" viewBox="0 0 24 24">
+        <path
+          d="M4 8h13v8a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4V8Zm13 1h2a3 3 0 0 1 0 6h-2M7 2v3m4-3v3m4-3v3M2 23h19"
+        ></path>
+      </symbol>
+      <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"></path></symbol>
+      <symbol id="i-close" viewBox="0 0 24 24"><path d="m6 6 12 12M6 18 18 6"></path></symbol>
+      <symbol id="i-copy" viewBox="0 0 24 24">
+        <rect x="8" y="8" width="12" height="13" rx="2"></rect>
+        <path d="M15 8V3H3v13h5"></path>
+      </symbol>
+      <symbol id="i-scan" viewBox="0 0 24 24">
+        <path d="M8 3H3v5m13-5h5v5M3 16v5h5m13-5v5h-5M2 12h5l3-5 4 10 3-5h5"></path>
+      </symbol>
+      <symbol id="i-sliders" viewBox="0 0 24 24">
+        <path d="M4 3v8m0 4v6M12 3v2m0 4v12m8-18v12m0 4v2M1 11h6m2-6h6m2 10h6"></path>
+      </symbol>
+      <symbol id="i-replay" viewBox="0 0 24 24">
+        <path d="M4 8a9 9 0 1 1-1 7M4 2v6h6m0 0 6 4-6 4V8Z"></path>
+      </symbol>
+      <symbol id="i-chart" viewBox="0 0 24 24">
+        <path d="M3 3v18h18M7 17v-6m5 6V7m5 10V4"></path>
+      </symbol>
+      <symbol id="i-folder" viewBox="0 0 24 24"><path d="M3 5h7l3 3h8v12H3V5Z"></path></symbol>
+      <symbol id="i-code" viewBox="0 0 24 24">
+        <path d="m7 6-6 6 6 6m10-12 6 6-6 6M14 3l-4 18"></path>
+      </symbol>
+      <symbol id="i-shield" viewBox="0 0 24 24">
+        <path d="M12 2 3 6v6c0 5 9 10 9 10s9-5 9-10V6l-9-4Z"></path>
+        <path d="m8 12 3 3 5-6"></path>
+      </symbol>
+      <symbol id="i-expand" viewBox="0 0 24 24">
+        <path d="M8 3H3v5m13-5h5v5M3 16v5h5m13-5v5h-5"></path>
+      </symbol>
+      <symbol id="i-menu" viewBox="0 0 24 24"><path d="M3 6h18M3 12h18M3 18h18"></path></symbol>
+      <symbol id="i-linkedin" viewBox="0 0 24 24">
+        <rect x="3" y="3" width="18" height="18" rx="2"></rect>
+        <path d="M7 10v7m0-10v.01M11 17v-7m0 3a3 3 0 0 1 6 0v4"></path>
+      </symbol>
+      <symbol id="i-instagram" viewBox="0 0 24 24">
+        <rect x="3" y="3" width="18" height="18" rx="5"></rect>
+        <circle cx="12" cy="12" r="4"></circle>
+        <path d="M17.5 6.5h.01"></path>
+      </symbol>
+    </svg>
+
+    <header class="site-header">
+      <nav class="nav-shell" aria-label="Main navigation">
+        <a
+          class="logo"
+          href="#"
+          aria-label="ApiSip home"
+          title="Return to the top of the ApiSip page"
+          ><span class="logo-icon"
+            ><svg class="icon" aria-hidden="true"><use href="#i-scan"></use></svg></span
+          >ApiSip<span class="logo-period">.</span></a
+        >
+        <button
+          class="menu-toggle icon-button"
+          aria-expanded="false"
+          aria-controls="nav-links"
+          aria-label="Open navigation"
+        >
+          <svg class="icon" aria-hidden="true"><use href="#i-menu"></use></svg>
+        </button>
+        <div class="nav-links" id="nav-links">
+          <a href="#features" title="Explore ApiSip features">Features</a
+          ><a href="#workflow" title="Learn the capture, inspect and replay workflow"
+            >How it works</a
+          ><a href="#why" title="Compare ApiSip with DevTools and API clients">Why ApiSip</a
+          ><a
+            href="#install"
+            data-event="install_open"
+            title="Read the Chrome extension installation guide"
+            >Install</a
+          >
+        </div>
+        <div class="nav-actions">
+          <a
+            class="icon-button nav-github"
+            href="https://github.com/mihirbhadak/ApiSip"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="ApiSip on GitHub"
+            title="ApiSip on GitHub (opens a new tab)"
+            ><svg class="icon" aria-hidden="true"><use href="#i-github"></use></svg
+          ></a>
+          <a
+            class="button button-small button-primary"
+            data-download="nav"
+            href="https://github.com/mihirbhadak/ApiSip/releases/download/v0.1.1/apisip-0.1.1.zip"
+            target="_blank"
+            rel="noopener noreferrer"
+            title="Download the ApiSip 0.1.1 extension ZIP for Chrome"
+            >Download <svg class="icon" aria-hidden="true"><use href="#i-download"></use></svg
+          ></a>
+        </div>
+      </nav>
+    </header>
+
+    <main id="main">
+      <section class="hero container" aria-labelledby="hero-title">
+        <div class="hero-grid" aria-hidden="true"></div>
+        <div class="eyebrow hero-eyebrow">
+          <span class="status-dot"></span> YOUR BROWSER'S API WORKSPACE
+          <span class="version-pill">v0.1.1</span>
+        </div>
+        <h1 id="hero-title">
+          Your APIs.<br /><span class="focus-text">In full focus<span class="cursor">.</span></span>
+        </h1>
+        <p class="hero-description">
+          Capture live traffic. Replay the tricky bits. Put your API through its paces. All in one
+          local-first Chrome extension.
+        </p>
+        <div class="hero-actions">
+          <a
+            class="button button-primary"
+            data-download="hero"
+            href="https://github.com/mihirbhadak/ApiSip/releases/download/v0.1.1/apisip-0.1.1.zip"
+            target="_blank"
+            rel="noopener noreferrer"
+            title="Download the ApiSip 0.1.1 extension ZIP for Chrome"
+            ><svg class="icon" aria-hidden="true"><use href="#i-download"></use></svg> Download for
+            Chrome <span class="button-note">FREE</span></a
+          >
+          <a
+            class="button button-secondary"
+            href="https://github.com/mihirbhadak/ApiSip"
+            target="_blank"
+            rel="noopener noreferrer"
+            title="Explore the source (opens a new tab)"
+            ><svg class="icon" aria-hidden="true"><use href="#i-github"></use></svg> Explore the
+            source <svg class="icon small" aria-hidden="true"><use href="#i-up"></use></svg
+          ></a>
+        </div>
+        <p class="hero-note">
+          No account. No native app. No telemetry.
+          <a
+            href="#install"
+            data-event="install_open"
+            title="Read the Chrome extension installation guide"
+            >Install unpacked in Chrome 125+ <span aria-hidden="true">↗</span></a
+          >
+        </p>
+
+        <div class="product-stage" id="showcase" data-reveal="">
+          <div class="stage-chrome">
+            <div class="window-dots" aria-hidden="true"><i></i><i></i><i></i></div>
+            <span>apisip / your local workspace</span
+            ><span class="stage-local"><span class="status-dot"></span> ON YOUR DEVICE</span>
+          </div>
+          <div class="showcase-tabs" role="tablist" aria-label="Explore ApiSip screenshots">
+            <button
+              id="tab-capture"
+              role="tab"
+              aria-selected="true"
+              aria-controls="showcase-panel"
+              data-shot="capture"
+            >
+              <span>01</span> Capture &amp; inspect
+            </button>
+            <button
+              id="tab-editor"
+              role="tab"
+              aria-selected="false"
+              aria-controls="showcase-panel"
+              tabindex="-1"
+              data-shot="editor"
+            >
+              <span>02</span> Edit &amp; replay
+            </button>
+            <button
+              id="tab-runner"
+              role="tab"
+              aria-selected="false"
+              aria-controls="showcase-panel"
+              tabindex="-1"
+              data-shot="runner"
+            >
+              <span>03</span> Test &amp; measure
+            </button>
+          </div>
+          <div id="showcase-panel" role="tabpanel" aria-labelledby="tab-capture">
+            <button
+              class="screenshot-button"
+              id="expand-screenshot"
+              aria-label="Take a closer look at the current screenshot"
+            >
+              <img
+                id="showcase-image"
+                src="screenshots/response-light.png"
+                width="1512"
+                height="982"
+                fetchpriority="high"
+                alt="ApiSip displaying a JSON response from its local test API at 127.0.0.1:4177"
+                title="ApiSip displaying a JSON response from its local test API at 127.0.0.1:4177"
+              />
+              <span class="image-expand"
+                ><svg class="icon" aria-hidden="true"><use href="#i-expand"></use></svg> Take a
+                closer look</span
+              >
+            </button>
+          </div>
+          <div class="stage-caption">
+            <p id="showcase-caption">
+              Live requests, readable responses, and the details that matter.
+            </p>
+            <span>REAL EXTENSION · LOCAL DEMO DATA</span>
+          </div>
+        </div>
+        <p class="screenshot-note">
+          Screenshots use only our local test app at <code>127.0.0.1:4177</code>. No third-party API
+          traffic or customer data.
+        </p>
+        <div class="promise-strip">
+          <span
+            ><svg class="icon" aria-hidden="true"><use href="#i-shield"></use></svg> Local-first by
+            default</span
+          ><span
+            ><svg class="icon" aria-hidden="true"><use href="#i-code"></use></svg> Public source on
+            GitHub</span
+          ><span
+            ><svg class="icon" aria-hidden="true"><use href="#i-chart"></use></svg> Bounded run
+            analytics</span
+          ><span><kbd>⌘</kbd><kbd>K</kbd> Keyboard-first workflow</span>
+        </div>
+      </section>
+
+      <section id="features" class="section container" aria-labelledby="features-title">
+        <div class="section-heading" data-reveal="">
+          <div>
+            <p class="eyebrow"><span class="section-number">01 /</span> THE TOOLKIT</p>
+            <h2 id="features-title">
+              Less switching.<br /><span class="muted-heading">More figuring it out.</span>
+            </h2>
+          </div>
+          <p>
+            Your next API investigation starts with the request already in front of you. Keep the
+            whole workflow together.
+          </p>
+        </div>
+        <div class="feature-grid">
+          <article class="feature" data-reveal="">
+            <div class="feature-top">
+              <svg class="icon" aria-hidden="true"><use href="#i-scan"></use></svg
+              ><span>01 — OBSERVE</span>
+            </div>
+            <h3>Catch what's happening.</h3>
+            <p>
+              Watch one tab or all supported tabs. Follow requests live, with an icon badge that
+              keeps count while you browse.
+            </p>
+            <ul>
+              <li>Methods, headers, uploads, statuses &amp; errors</li>
+              <li>Opt-in response bodies &amp; CDP timings</li>
+              <li>GraphQL details &amp; bounded WebSocket messages</li>
+            </ul>
+            <a href="#workflow" title="Learn the capture, inspect and replay workflow"
+              >Start from real traffic <span aria-hidden="true">↗</span></a
+            >
+          </article>
+          <article class="feature" data-reveal="">
+            <div class="feature-top">
+              <svg class="icon" aria-hidden="true"><use href="#i-sliders"></use></svg
+              ><span>02 — UNDERSTAND</span>
+            </div>
+            <h3>Find the signal.</h3>
+            <p>
+              Search URLs, headers and bodies. Build nested AND, OR and NOT filters, then save the
+              useful ones for next time.
+            </p>
+            <ul>
+              <li>Errors, slow requests &amp; large responses</li>
+              <li>Pretty/raw bodies, query, cookies &amp; timing</li>
+              <li>GraphQL operations, tags &amp; notes</li>
+            </ul>
+            <code class="code-chip">status &gt;= 400 AND method = POST</code>
+          </article>
+          <article class="feature" data-reveal="">
+            <div class="feature-top">
+              <svg class="icon" aria-hidden="true"><use href="#i-replay"></use></svg
+              ><span>03 — ITERATE</span>
+            </div>
+            <h3>Tweak. Send. Compare.</h3>
+            <p>
+              Open a request in its own editor tab. Change the URL, query, headers or body and
+              inspect what changed in the response.
+            </p>
+            <ul>
+              <li>Browser or extension replay context</li>
+              <li>Autosaved drafts &amp; replay history</li>
+              <li>Structural JSON and request/response diffs</li>
+            </ul>
+            <span class="shortcut-line"><kbd>Ctrl / ⌘</kbd><kbd>↵</kbd> Send from the editor</span>
+          </article>
+          <article class="feature" data-reveal="">
+            <div class="feature-top">
+              <svg class="icon" aria-hidden="true"><use href="#i-chart"></use></svg
+              ><span>04 — MEASURE</span>
+            </div>
+            <h3>Set the pace. See the limits.</h3>
+            <p>
+              Schedule X requests over a start window. Vary the data, control concurrency and see
+              how your API responds.
+            </p>
+            <ul>
+              <li>Ramp-up, timeouts &amp; failure limits</li>
+              <li>Body/header variables &amp; cycling data rows</li>
+              <li>Latency, delay, throughput &amp; outcome reports</li>
+            </ul>
+            <a href="#performance" title="Inside timed runs"
+              >Inside timed runs <span aria-hidden="true">↗</span></a
+            >
+          </article>
+          <article class="feature" data-reveal="">
+            <div class="feature-top">
+              <svg class="icon" aria-hidden="true"><use href="#i-folder"></use></svg
+              ><span>05 — KEEP</span>
+            </div>
+            <h3>A home for the good finds.</h3>
+            <p>
+              Keep projects in workspaces, investigations in sessions, and reusable requests in
+              collections. Your history stays local.
+            </p>
+            <ul>
+              <li>Saved APIs, favorites, pins &amp; tags</li>
+              <li>Virtualized tables for large histories</li>
+              <li>Configurable columns, grouping &amp; retention</li>
+            </ul>
+            <span class="feature-footnote">IndexedDB storage. On your device.</span>
+          </article>
+          <article class="feature" data-reveal="">
+            <div class="feature-top">
+              <svg class="icon" aria-hidden="true"><use href="#i-code"></use></svg
+              ><span>06 — TAKE IT WITH YOU</span>
+            </div>
+            <h3>From request to code.</h3>
+            <p>
+              Copy a field, a whole request or a runnable snippet. Export the investigation in a
+              format that fits your next step.
+            </p>
+            <ul>
+              <li>cURL, fetch, Python, Go &amp; more</li>
+              <li>JSON, CSV, Markdown, HAR &amp; text</li>
+              <li>Validated JSON/HAR import; masked exports</li>
+            </ul>
+            <span class="shortcut-line"><kbd>Ctrl / ⌘</kbd><kbd>⇧</kbd><kbd>C</kbd> Copy cURL</span>
+          </article>
+        </div>
+        <div class="everyday-strip" data-reveal="">
+          <p>The little things,<br /><strong>already thought through.</strong></p>
+          <ul>
+            <li>Light / dark / system themes</li>
+            <li>Searchable dropdowns</li>
+            <li>Command palette</li>
+            <li>Select all &amp; bulk actions</li>
+            <li>Resizable panels</li>
+            <li>Context menus</li>
+            <li>Searchable help</li>
+            <li>Hold Ctrl / Alt for shortcuts</li>
+          </ul>
+        </div>
+        <details class="catalog">
+          <summary>Explore the complete feature list <span aria-hidden="true">+</span></summary>
+          <div class="catalog-grid">
+            <div>
+              <h3>Inspection &amp; discovery</h3>
+              <p>
+                Request/response headers, duplicate headers where exposed, query values, safe
+                JSON/text/XML/HTML views, form fields, raw representations, body search,
+                MIME/resource types, status distributions, endpoint grouping, slowest endpoints and
+                largest responses.
+              </p>
+            </div>
+            <div>
+              <h3>Your workspace</h3>
+              <p>
+                Multiple workspaces and sessions, archives, saved request definitions, collections,
+                tags, notes, favorites, pins, sorting, configurable columns, multiselect, saved
+                filters, navigation-aware capture, persistent editor drafts and local diagnostics.
+              </p>
+            </div>
+            <div>
+              <h3>Replay &amp; reporting</h3>
+              <p>
+                Editable methods, URLs, query parameters, headers and bodies. Browser/extension
+                contexts, explicit errors, replay history, JSON comparison, scoped exports with
+                options for headers/bodies/cookies, backup import, individual copy actions and
+                clipboard feedback.
+              </p>
+            </div>
+            <div>
+              <h3>Code &amp; control</h3>
+              <p>
+                cURL, Bash, Windows CMD, PowerShell, JavaScript fetch/Axios, TypeScript fetch,
+                Python requests/httpx, Go, Java, C#, PHP, Ruby, Rust and HTTPie. Keyboard
+                navigation, command palette, configurable badge scopes, body limits, retention and
+                confirmed deletion.
+              </p>
+            </div>
+          </div>
+          <a
+            class="text-link"
+            href="https://github.com/mihirbhadak/ApiSip#readme"
+            target="_blank"
+            rel="noopener noreferrer"
+            title="Read the full product documentation (opens a new tab)"
+            >Read the full product documentation <span aria-hidden="true">↗</span></a
+          >
+        </details>
+      </section>
+
+      <section id="workflow" class="workflow-section section" aria-labelledby="workflow-title">
+        <div class="container">
+          <div class="section-heading" data-reveal="">
+            <div>
+              <p class="eyebrow"><span class="section-number">02 /</span> FROM REQUEST TO ANSWER</p>
+              <h2 id="workflow-title">
+                Follow the request.<br /><span class="muted-heading"
+                  >Keep your train of thought.</span
+                >
+              </h2>
+            </div>
+            <p>
+              A practical loop for finding a broken endpoint, checking a fix, or handing someone a
+              reproducible request.
+            </p>
+          </div>
+          <ol class="workflow-steps">
+            <li data-reveal="">
+              <span class="step-index">01</span>
+              <h3>Browse &amp; capture</h3>
+              <p>
+                Open your app. Start capture in ApiSip and choose the current tab or all tabs. Turn
+                on response capture when you need bodies.
+              </p>
+              <span class="step-tag"><span class="status-dot"></span> Recording</span>
+            </li>
+            <li data-reveal="">
+              <span class="step-index">02</span>
+              <h3>Find the request</h3>
+              <p>
+                Search an endpoint or choose Errors. Inspect its headers, payload, response and
+                available timings to understand the failure.
+              </p>
+              <code class="step-tag">/api/users</code>
+            </li>
+            <li data-reveal="">
+              <span class="step-index">03</span>
+              <h3>Make a change</h3>
+              <p>
+                Choose Replay, then Open in new tab. Adjust a header, query value or body. Pick a
+                replay context and send.
+              </p>
+              <span class="step-tag"><kbd>Ctrl / ⌘</kbd> + Enter</span>
+            </li>
+            <li data-reveal="">
+              <span class="step-index">04</span>
+              <h3>Verify &amp; keep it</h3>
+              <p>
+                Compare the response with the original. Save the request, copy cURL, export a
+                redacted report, or start a timed run.
+              </p>
+              <span class="step-tag"
+                ><svg class="icon small" aria-hidden="true"><use href="#i-check"></use></svg> Ready
+                for next time</span
+              >
+            </li>
+          </ol>
+          <div class="use-cases">
+            <span>YOUR NEXT USE CASE</span>
+            <p>Debug a 401.</p>
+            <p>Reproduce a checkout error.</p>
+            <p>Validate a backend fix.</p>
+            <p>Measure a slow endpoint.</p>
+          </div>
+        </div>
+      </section>
+
+      <section
+        id="performance"
+        class="section container performance-section"
+        aria-labelledby="performance-title"
+      >
+        <div class="performance-copy" data-reveal="">
+          <p class="eyebrow"><span class="section-number">03 /</span> PUT IT THROUGH ITS PACES</p>
+          <h2 id="performance-title">
+            A thousand questions.<br /><span class="mint-text">A clear report.</span>
+          </h2>
+          <p>
+            Define a request count and a start window. ApiSip spaces the attempts, limits
+            concurrency and measures the results inside your extension.
+          </p>
+          <div class="run-example" aria-label="Example timed-run configuration" role="group">
+            <div><span>REQUESTS</span><strong>10,000</strong></div>
+            <span class="run-divider">/</span>
+            <div>
+              <span>START WINDOW</span><strong>60<span>s</span></strong>
+            </div>
+            <svg class="icon" aria-hidden="true"><use href="#i-arrow"></use></svg>
+            <div>
+              <span>PLANNED AVERAGE</span><strong>166.67<span>/s</span></strong>
+            </div>
+          </div>
+          <p class="fine-print">
+            Example configuration, not a guaranteed rate. A start window controls when requests
+            begin; responses may finish later. Missed slots are reported.
+          </p>
+          <a
+            class="text-link"
+            href="https://github.com/mihirbhadak/ApiSip/blob/main/TESTING.md"
+            target="_blank"
+            rel="noopener noreferrer"
+            title="See the actual 10,000-request test (opens a new tab)"
+            >See the actual 10,000-request test
+            <svg class="icon small" aria-hidden="true"><use href="#i-up"></use></svg
+          ></a>
+        </div>
+        <div class="performance-detail" data-reveal="">
+          <div class="detail-label">
+            <span class="status-dot"></span> DESIGNED TO KEEP WORK BOUNDED
+          </div>
+          <ul class="measure-list">
+            <li>
+              <span>01</span>
+              <div>
+                <h3>Metrics with context</h3>
+                <p>
+                  Attempt duration, time to exposed headers, body-read time, start delay, timer lag,
+                  throughput and status distributions.
+                </p>
+              </div>
+            </li>
+            <li>
+              <span>02</span>
+              <div>
+                <h3>More than an average</h3>
+                <p>
+                  Min, mean, max, standard deviation and approximate P50/P95/P99 when enough samples
+                  exist. See errors, timeouts and cancellations separately.
+                </p>
+              </div>
+            </li>
+            <li>
+              <span>03</span>
+              <div>
+                <h3>Keep the data you need</h3>
+                <p>
+                  A dedicated worker streams and discards response bodies. Fixed histograms, capped
+                  samples and once-a-second UI updates keep reports bounded.
+                </p>
+              </div>
+            </li>
+            <li>
+              <span>04</span>
+              <div>
+                <h3>Stay in control</h3>
+                <p>
+                  Set concurrency, ramp-up, timeouts, variables and failure limits. Stop from the
+                  editor or dashboard. No automatic retries or catch-up floods.
+                </p>
+              </div>
+            </li>
+          </ul>
+          <p class="fine-print">
+            Fetch-level timings include browser overhead. DNS/TLS, server-only timing and exact wire
+            bytes are not available. CPU and memory use vary with the workload.
+          </p>
+        </div>
+      </section>
+
+      <section id="why" class="section container" aria-labelledby="why-title">
+        <div class="section-heading" data-reveal="">
+          <div>
+            <p class="eyebrow">
+              <span class="section-number">04 /</span> A DIFFERENT STARTING POINT
+            </p>
+            <h2 id="why-title">
+              The browser is<br /><span class="muted-heading">already in your workflow.</span>
+            </h2>
+          </div>
+          <p>
+            ApiSip brings capture, reusable requests and paced testing into one extension. Pick the
+            tool that fits the investigation.
+          </p>
+        </div>
+        <div class="comparison-wrap" data-reveal="">
+          <table class="comparison">
+            <caption class="sr-only">
+              Where ApiSip fits alongside Chrome DevTools and dedicated API clients
+            </caption>
+            <thead>
+              <tr>
+                <th scope="col">Your workspace</th>
+                <th scope="col">A useful starting point</th>
+                <th scope="col">Reach for it when…</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <th scope="row">Chrome DevTools <span>Network panel</span></th>
+                <td>Inspect a page's network activity alongside the browser's debugging tools.</td>
+                <td>You need deep browser diagnostics and page-level investigation.</td>
+              </tr>
+              <tr>
+                <th scope="row">Dedicated API clients <span>For example, Postman</span></th>
+                <td>Build and send API requests in a dedicated API workspace.</td>
+                <td>Your work centers on API definitions and that client's wider ecosystem.</td>
+              </tr>
+              <tr class="apisip-row">
+                <th scope="row">
+                  <span class="comparison-brand"
+                    >ApiSip <span class="mini-label">BROWSER NATIVE</span></span
+                  ><span>This extension</span>
+                </th>
+                <td>
+                  Capture supported tab traffic, open it in an editor, replay it and run paced
+                  tests.
+                </td>
+                <td>
+                  You want a local capture-to-test workflow with sessions, collections and exports.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="comparison-sources">
+          Workflow comparison, not an exhaustive feature ranking.
+          <a
+            href="https://developer.chrome.com/docs/devtools/network/reference"
+            target="_blank"
+            rel="noopener noreferrer"
+            title="DevTools reference (opens a new tab)"
+            >DevTools reference ↗</a
+          ><a
+            href="https://learning.postman.com/docs/sending-requests/requests/"
+            target="_blank"
+            rel="noopener noreferrer"
+            title="Postman request workflow (opens a new tab)"
+            >Postman request workflow ↗</a
+          >
+        </p>
+        <div class="privacy-band" data-reveal="">
+          <svg class="icon" aria-hidden="true"><use href="#i-shield"></use></svg>
+          <div>
+            <h3>Your traffic stays your business.</h3>
+            <p>
+              Local storage. No account. No telemetry or cloud sync. Secrets are masked in the
+              interface and excluded from exports by default. Captured data is not encrypted; review
+              it before sharing.
+            </p>
+          </div>
+          <a
+            class="text-link"
+            href="https://github.com/mihirbhadak/ApiSip/blob/main/PRIVACY.md"
+            target="_blank"
+            rel="noopener noreferrer"
+            title="Privacy details (opens a new tab)"
+            >Privacy details
+            <svg class="icon small" aria-hidden="true"><use href="#i-up"></use></svg
+          ></a>
+        </div>
+      </section>
+
+      <section id="install" class="section install-section" aria-labelledby="install-title">
+        <div class="container install-layout">
+          <div class="install-intro" data-reveal="">
+            <p class="eyebrow"><span class="section-number">05 /</span> GET SET UP</p>
+            <h2 id="install-title">
+              One small install.<br /><span class="mint-text">A better debugging day.</span>
+            </h2>
+            <p>
+              ApiSip is currently distributed as an unpacked Chrome extension. No store account,
+              native helper or subscription required.
+            </p>
+            <a
+              class="button button-primary"
+              data-download="install"
+              href="https://github.com/mihirbhadak/ApiSip/releases/download/v0.1.1/apisip-0.1.1.zip"
+              target="_blank"
+              rel="noopener noreferrer"
+              title="Download the ApiSip 0.1.1 extension ZIP for Chrome"
+              >Download ApiSip
+              <svg class="icon" aria-hidden="true"><use href="#i-download"></use></svg
+            ></a>
+            <p class="fine-print">
+              v0.1.1 · Chrome 125+ · ZIP download<br />Keep the extracted folder in a permanent
+              location.
+            </p>
+            <a
+              class="text-link"
+              href="https://github.com/mihirbhadak/ApiSip#run-locally"
+              target="_blank"
+              rel="noopener noreferrer"
+              title="Prefer to build from source? (opens a new tab)"
+              >Prefer to build from source?
+              <svg class="icon small" aria-hidden="true"><use href="#i-up"></use></svg
+            ></a>
+          </div>
+          <ol class="install-steps">
+            <li data-reveal="">
+              <span class="install-number">1</span>
+              <div>
+                <h3>Download &amp; extract</h3>
+                <p>
+                  Download the extension ZIP and extract it to a folder. Use the release asset, not
+                  GitHub's source-code ZIP.
+                </p>
+              </div>
+            </li>
+            <li data-reveal="">
+              <span class="install-number">2</span>
+              <div>
+                <h3>Open Chrome's extensions page</h3>
+                <p>
+                  Paste this address into Chrome, then enable <strong>Developer mode</strong> in the
+                  top-right corner.
+                </p>
+                <div class="copy-field">
+                  <code>chrome://extensions</code
+                  ><button
+                    class="icon-button"
+                    id="copy-extensions"
+                    aria-label="Copy Chrome extensions address"
+                  >
+                    <svg class="icon" aria-hidden="true"><use href="#i-copy"></use></svg>
+                  </button>
+                </div>
+              </div>
+            </li>
+            <li data-reveal="">
+              <span class="install-number">3</span>
+              <div>
+                <h3>Load the extension</h3>
+                <p>
+                  Click <strong>Load unpacked</strong>. Choose the extracted folder containing
+                  <code>manifest.json</code>. Pin ApiSip from Chrome's extensions menu.
+                </p>
+              </div>
+            </li>
+            <li data-reveal="">
+              <span class="install-number">4</span>
+              <div>
+                <h3>Open your app &amp; start capturing</h3>
+                <p>
+                  Open an HTTP(S) webpage, click ApiSip and choose <strong>Start capture</strong>.
+                  Grant site access. Enable <strong>Response capture</strong> if you need supported
+                  bodies and WebSocket messages.
+                </p>
+              </div>
+            </li>
+          </ol>
+        </div>
+      </section>
+
+      <section id="faq" class="section container faq-section" aria-labelledby="faq-title">
+        <div class="faq-heading" data-reveal="">
+          <p class="eyebrow"><span class="section-number">06 /</span> THE USEFUL DETAILS</p>
+          <h2 id="faq-title">Before your<br /><span class="muted-heading">first sip.</span></h2>
+          <p>Clear answers. Chrome's limits included.</p>
+          <a
+            class="text-link"
+            href="https://github.com/mihirbhadak/ApiSip/issues"
+            target="_blank"
+            rel="noopener noreferrer"
+            title="Report an issue (opens a new tab)"
+            >Report an issue
+            <svg class="icon small" aria-hidden="true"><use href="#i-up"></use></svg
+          ></a>
+        </div>
+        <div class="faq-list">
+          <details>
+            <summary>
+              Is ApiSip free? Do I need an account?<span aria-hidden="true">+</span>
+            </summary>
+            <p>
+              All included features are free to use without an account or subscription. The source
+              is public on GitHub. Supporting the creator is optional and never gates downloads or
+              features.
+            </p>
+          </details>
+          <details>
+            <summary>
+              Does this capture every browser request?<span aria-hidden="true">+</span>
+            </summary>
+            <p>
+              No. ApiSip observes supported traffic after capture starts and site access is granted.
+              Chrome-internal pages, other extensions, inaccessible targets and some worker/cache
+              traffic are excluded or incomplete. Passive capture cannot read response bodies.
+              Optional debugger capture adds bodies and timings where Chrome exposes them.
+            </p>
+          </details>
+          <details>
+            <summary>
+              Why does Chrome show a debugging notice?<span aria-hidden="true">+</span>
+            </summary>
+            <p>
+              Response capture uses Chrome's debugger API. Chrome displays a notice while it is
+              attached. DevTools, another debugger or enterprise policies can interrupt attachment.
+              You can turn response capture off and continue using passive request metadata.
+            </p>
+          </details>
+          <details>
+            <summary>
+              How do the two replay contexts differ?<span aria-hidden="true">+</span>
+            </summary>
+            <p>
+              Browser replay uses the original tab's cookie and CORS context and requires that tab
+              to remain available at the expected origin. Extension replay uses granted host access
+              and omits ambient page cookies. Both obey fetch restrictions; headers such as Cookie,
+              Origin and Host cannot be reproduced freely. Errors and omitted headers are shown.
+            </p>
+          </details>
+          <details>
+            <summary>
+              Can I send 10,000 requests in a minute?<span aria-hidden="true">+</span>
+            </summary>
+            <p>
+              You can schedule 10,000 starts in a one-minute window. A local Chrome test completed
+              that configuration with no missed starts, but it is not a guarantee for your API or
+              computer. Concurrency, response time, rate limits and browser scheduling affect
+              results. The runner reports missed slots, uses no automatic retries, and runs in
+              extension context without ambient page cookies.
+            </p>
+          </details>
+          <details>
+            <summary>
+              Where are my captures and credentials stored?<span aria-hidden="true">+</span>
+            </summary>
+            <p>
+              In the extension's local IndexedDB storage. There is no cloud sync or telemetry.
+              Display masking is not encryption: credentials can remain in local captures and editor
+              drafts. Use the retention and deletion controls, and review exports before sharing.
+              Timed-run reports omit request bodies, credentials and variable values.
+            </p>
+          </details>
+          <details>
+            <summary>
+              Chrome says the manifest is missing. What now?<span aria-hidden="true">+</span>
+            </summary>
+            <p>
+              Extract the release ZIP first, then choose the folder that contains manifest.json. Do
+              not select the ZIP, a parent folder, src or public. If you cloned the source
+              repository instead, run npm ci and npm run build, then load its dist folder or
+              repository root. The README has the full build guide.
+            </p>
+          </details>
+          <details>
+            <summary>
+              How do I update without losing local history?<span aria-hidden="true">+</span>
+            </summary>
+            <p>
+              Keep the same unpacked installation folder. Close or stop active timed runs, replace
+              the built files with the new release, and click Reload on ApiSip's card at
+              chrome://extensions. Reload open inspector/editor tabs too. Moving the folder gives
+              Chrome a separate extension identity. Export important history before updating; drafts
+              and timed reports have separate storage/export behavior.
+            </p>
+          </details>
+          <details>
+            <summary>
+              Does it work on every browser and operating system?<span aria-hidden="true">+</span>
+            </summary>
+            <p>
+              ApiSip targets desktop Chrome 125+ using bundled browser APIs, with no OS-specific
+              companion program. Automated extension testing currently covers Chrome for Testing on
+              Windows. Other operating systems and Chromium browsers have not been fully verified.
+              Firefox, Safari and mobile Chrome are not supported builds.
+            </p>
+          </details>
+        </div>
+      </section>
+
+      <section class="feedback-section container" id="feedback" aria-labelledby="feedback-title">
+        <div class="feedback-intro">
+          <p class="eyebrow">MAKE THE NEXT SIP BETTER</p>
+          <h2 id="feedback-title">
+            Your feedback.<br /><span class="mint-text">A better tool for everyone.</span>
+          </h2>
+          <p>
+            Found a bug, have an idea, or want to share how you use ApiSip? Tell Mihir what would
+            help.
+          </p>
+          <p class="fine-print">
+            Feedback is public on GitHub and requires a GitHub account. Review it there before
+            posting. Never include passwords, tokens, private URLs or captured API data.
+          </p>
+          <a
+            class="text-link"
+            href="https://github.com/mihirbhadak/ApiSip/issues/new/choose"
+            target="_blank"
+            rel="noopener noreferrer"
+            data-event="feedback_open"
+            title="Report a bug or suggest a feature (opens a new tab)"
+            >Report a bug or suggest a feature
+            <svg class="icon small" aria-hidden="true"><use href="#i-up"></use></svg
+          ></a>
+        </div>
+        <form
+          id="feedback-form"
+          action="https://github.com/mihirbhadak/ApiSip/issues/new"
+          method="get"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <input type="hidden" name="template" value="feedback.md" />
+          <label for="feedback-title-input">Short title</label
+          ><input
+            id="feedback-title-input"
+            name="title"
+            maxlength="100"
+            required=""
+            placeholder="What would make ApiSip better?"
+            autocomplete="off"
+          />
+          <label for="feedback-body">Your feedback</label
+          ><textarea
+            id="feedback-body"
+            name="body"
+            rows="5"
+            maxlength="1200"
+            required=""
+            placeholder="Describe what happened, what you expected, or your idea. Please leave out sensitive data."
+          ></textarea>
+          <label class="feedback-consent"
+            ><input type="checkbox" required="" /> I understand this feedback will be public if I
+            submit it on GitHub.</label
+          >
+          <button class="button button-primary" type="submit">
+            Review on GitHub
+            <svg class="icon small" aria-hidden="true"><use href="#i-up"></use></svg>
+          </button>
+          <p id="feedback-status" class="fine-print" role="status">
+            Nothing is posted automatically. This form opens a GitHub draft.
+          </p>
+        </form>
+      </section>
+      <section class="creator-section container" aria-labelledby="creator-title" data-reveal="">
+        <div class="creator-identity">
+          <img
+            src="assets/mihir-bhadak.jpg"
+            width="96"
+            height="96"
+            alt="Mihir Bhadak, creator of ApiSip"
+            loading="lazy"
+            decoding="async"
+            title="Mihir Bhadak, creator of ApiSip"
+          />
+          <div>
+            <p class="eyebrow">BUILT BY A DEVELOPER, FOR DEVELOPERS</p>
+            <h2 id="creator-title">Hi, I'm Mihir.</h2>
+            <p>
+              I built ApiSip to keep API investigation close to the browser. If it makes your
+              debugging day a little easier, a coffee is a lovely way to support the project.
+            </p>
+            <div class="social-links">
+              <a
+                href="https://github.com/mihirbhadak"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="GitHub — Mihir Bhadak"
+                title="Visit Mihir Bhadak on GitHub (opens a new tab)"
+                class="social-icon"
+                data-event="social_github"
+                ><svg class="icon" aria-hidden="true"><use href="#i-github"></use></svg></a
+              ><a
+                href="https://www.linkedin.com/in/mihirbhadak/"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="LinkedIn — Mihir Bhadak"
+                title="Visit Mihir Bhadak on LinkedIn (opens a new tab)"
+                class="social-icon"
+                data-event="social_linkedin"
+                ><svg class="icon" aria-hidden="true"><use href="#i-linkedin"></use></svg></a
+              ><a
+                href="https://www.instagram.com/mihir_bhadak/"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Instagram — Mihir Bhadak"
+                title="Visit Mihir Bhadak on Instagram (opens a new tab)"
+                class="social-icon"
+                data-event="social_instagram"
+                ><svg class="icon" aria-hidden="true"><use href="#i-instagram"></use></svg
+              ></a>
+            </div>
+          </div>
+        </div>
+        <a
+          class="button button-coffee"
+          href="https://buymeacoffee.com/mihir_bhadak/apisip"
+          target="_blank"
+          rel="noopener noreferrer"
+          data-event="coffee_click"
+          title="Buy me a coffee (opens a new tab)"
+          ><svg class="icon" aria-hidden="true"><use href="#i-coffee"></use></svg> Buy me a coffee
+          <svg class="icon small" aria-hidden="true"><use href="#i-up"></use></svg
+        ></a>
+      </section>
+
+      <section class="final-cta container" aria-labelledby="cta-title">
+        <p class="eyebrow">YOUR NEXT REQUEST IS WAITING.</p>
+        <h2 id="cta-title">
+          Make sense of<br /><span class="mint-text">what's on the wire.</span>
+        </h2>
+        <a
+          class="button button-primary"
+          data-download="footer"
+          href="https://github.com/mihirbhadak/ApiSip/releases/download/v0.1.1/apisip-0.1.1.zip"
+          target="_blank"
+          rel="noopener noreferrer"
+          title="Download the ApiSip 0.1.1 extension ZIP for Chrome"
+          >Get ApiSip for Chrome
+          <svg class="icon" aria-hidden="true"><use href="#i-download"></use></svg
+        ></a>
+        <p class="fine-print">Free. Local-first. Ready for your next debugging session.</p>
+      </section>
+    </main>
+
+    <footer class="site-footer container">
+      <div>
+        <a
+          class="logo"
+          href="#"
+          aria-label="ApiSip home"
+          title="Return to the top of the ApiSip page"
+          ><span class="logo-icon"
+            ><svg class="icon" aria-hidden="true"><use href="#i-scan"></use></svg></span
+          >ApiSip<span class="logo-period">.</span></a
+        >
+        <p>Capture. Inspect. Replay. Understand.</p>
+        <small>© 2026 Mihir Bhadak. Made with care.</small>
+      </div>
+      <div class="footer-links">
+        <a
+          href="#install"
+          data-event="install_open"
+          title="Read the Chrome extension installation guide"
+          >Installation</a
+        ><a
+          href="https://github.com/mihirbhadak/ApiSip#readme"
+          target="_blank"
+          rel="noopener noreferrer"
+          title="Documentation (opens a new tab)"
+          >Documentation ↗</a
+        ><a
+          href="https://github.com/mihirbhadak/ApiSip/blob/main/PRIVACY.md"
+          target="_blank"
+          rel="noopener noreferrer"
+          title="Privacy (opens a new tab)"
+          >Privacy ↗</a
+        ><a
+          href="https://github.com/mihirbhadak/ApiSip/releases"
+          target="_blank"
+          rel="noopener noreferrer"
+          title="Releases (opens a new tab)"
+          >Releases ↗</a
+        ><a
+          href="https://github.com/mihirbhadak/ApiSip/issues"
+          target="_blank"
+          rel="noopener noreferrer"
+          title="Issues (opens a new tab)"
+          >Issues ↗</a
+        ><a
+          href="https://buymeacoffee.com/mihir_bhadak/apisip"
+          target="_blank"
+          rel="noopener noreferrer"
+          data-event="coffee_click"
+          title="Support ApiSip (opens a new tab)"
+          >Support ApiSip ↗</a
+        >
+        <a href="#feedback" data-event="feedback_open" title="Share public feedback about ApiSip"
+          >Give feedback</a
+        >
+      </div>
+      <p class="footer-note">
+        <span data-analytics-notice=""
+          >No website tracking is active. The extension contains no telemetry.</span
+        >
+        GitHub hosts this page and downloads; external sites use their own privacy policies.
+        <button type="button" class="text-link" data-analytics-toggle="" hidden="">
+          Turn off website metrics
+        </button>
+      </p>
+    </footer>
+
+    <dialog
+      id="download-dialog"
+      class="download-dialog"
+      aria-labelledby="download-title"
+      aria-describedby="download-description"
+    >
+      <div class="dialog-shell">
+        <button
+          class="icon-button dialog-close"
+          data-close=""
+          aria-label="Close download message"
+          autofocus=""
+        >
+          <svg class="icon" aria-hidden="true"><use href="#i-close"></use></svg></button
+        ><span class="modal-mark"
+          ><svg class="icon" aria-hidden="true"><use href="#i-download"></use></svg
+        ></span>
+        <p class="eyebrow">THANKS FOR TRYING APISIP</p>
+        <h2 id="download-title">Happy debugging.</h2>
+        <p id="download-description">
+          Your download should start shortly. Extract the ZIP, then load the folder in Chrome.
+        </p>
+        <a
+          class="text-link"
+          data-install-link=""
+          href="#install"
+          data-event="install_open"
+          title="Read the Chrome extension installation guide"
+          >Show me the installation guide
+          <svg class="icon small" aria-hidden="true"><use href="#i-arrow"></use></svg
+        ></a>
+        <div class="modal-creator">
+          <img
+            src="assets/mihir-bhadak.jpg"
+            width="72"
+            height="72"
+            alt="Mihir Bhadak"
+            loading="lazy"
+            decoding="async"
+            title="Mihir Bhadak"
+          />
+          <div><strong>Mihir Bhadak</strong><span>Creator of ApiSip</span></div>
+        </div>
+        <p class="modal-message">
+          If ApiSip helps you find that elusive bug, you can buy me a coffee. It's completely
+          optional—every feature is yours either way.
+        </p>
+        <a
+          class="button button-coffee"
+          href="https://buymeacoffee.com/mihir_bhadak/apisip"
+          target="_blank"
+          rel="noopener noreferrer"
+          data-event="coffee_click"
+          title="Buy me a coffee (opens a new tab)"
+          ><svg class="icon" aria-hidden="true"><use href="#i-coffee"></use></svg> Buy me a coffee
+          <svg class="icon small" aria-hidden="true"><use href="#i-up"></use></svg
+        ></a>
+        <div class="social-links modal-socials">
+          <a
+            href="https://github.com/mihirbhadak"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="GitHub — Mihir Bhadak"
+            title="Visit Mihir Bhadak on GitHub (opens a new tab)"
+            class="social-icon"
+            data-event="social_github"
+            ><svg class="icon" aria-hidden="true"><use href="#i-github"></use></svg></a
+          ><a
+            href="https://www.linkedin.com/in/mihirbhadak/"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="LinkedIn — Mihir Bhadak"
+            title="Visit Mihir Bhadak on LinkedIn (opens a new tab)"
+            class="social-icon"
+            data-event="social_linkedin"
+            ><svg class="icon" aria-hidden="true"><use href="#i-linkedin"></use></svg></a
+          ><a
+            href="https://www.instagram.com/mihir_bhadak/"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Instagram — Mihir Bhadak"
+            title="Visit Mihir Bhadak on Instagram (opens a new tab)"
+            class="social-icon"
+            data-event="social_instagram"
+            ><svg class="icon" aria-hidden="true"><use href="#i-instagram"></use></svg
+          ></a>
+        </div>
+        <p class="download-fallback">
+          Didn't start?
+          <a
+            href="https://github.com/mihirbhadak/ApiSip/releases/download/v0.1.1/apisip-0.1.1.zip"
+            target="_blank"
+            rel="noopener noreferrer"
+            data-event="download_retry"
+            title="Download the ApiSip 0.1.1 extension ZIP for Chrome"
+            >Download again</a
+          >
+          or
+          <a
+            href="https://github.com/mihirbhadak/ApiSip/releases/tag/v0.1.1"
+            target="_blank"
+            rel="noopener noreferrer"
+            title="view the release (opens a new tab)"
+            >view the release</a
+          >.
+        </p>
+      </div>
+    </dialog>
+    <dialog
+      id="screenshot-dialog"
+      class="screenshot-dialog"
+      aria-label="Expanded ApiSip screenshot"
+    >
+      <button
+        class="icon-button dialog-close"
+        data-close=""
+        aria-label="Close screenshot"
+        autofocus=""
+      >
+        <svg class="icon" aria-hidden="true"><use href="#i-close"></use></svg></button
+      ><img
+        id="expanded-image"
+        width="1512"
+        height="982"
+        alt="Expanded ApiSip response inspector showing only local demo API data"
+        src="screenshots/response-light.png"
+        title="Expanded ApiSip response inspector showing only local demo API data"
+      />
+      <p>Local test application data only. Press Escape to close.</p>
+    </dialog>
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  </body>
+</html>
