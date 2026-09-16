@@ -19,6 +19,23 @@
           "count": 9
         }
       ]
+    },
+    {
+      "observedAt": "2026-09-16T16:52:13.980Z",
+      "assets": [
+        {
+          "id": 567388763,
+          "release": "v0.1.0",
+          "name": "apisip-0.1.0.zip",
+          "count": 1
+        },
+        {
+          "id": 567431254,
+          "release": "v0.1.1",
+          "name": "apisip-0.1.1.zip",
+          "count": 9
+        }
+      ]
     }
   ]
 }
