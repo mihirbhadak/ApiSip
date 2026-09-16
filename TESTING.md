@@ -16,6 +16,17 @@ Verified September 16, 2026. The extension source and downloadable 0.1.1 release
 
 GoatCounter integration is prepared but **not active**: the owner chose a setup guide and has not supplied an endpoint. Tests substitute the provider transport and cannot prove an unconfigured analytics account receives data. The guide explains this activation boundary, privacy controls, Search Console ownership verification, GitHub cache-header limitations and the distinction between click events, release download counters and installs.
 
+### Public deployment follow-up
+
+- GitHub Pages deployment [35124627760](https://github.com/mihirbhadak/ApiSip/actions/runs/35124627760) succeeded. The actual public page returned HTTP 200 with the new publisher/social metadata and optimized assets. Its `Cache-Control` remains `max-age=600`.
+- The public URL checked by W3C Nu returned **zero messages**. The CSS3-profile service returned the same eight unsupported-property messages documented above; it is not reported as a clean CSS validation.
+- A fresh Chrome session checked the public page at 1440, 768, 390 and 320 pixels with no overflow or axe violations in the tested states. Showcase tabs, real release download, support dialog, installation scrolling and focus all worked. The downloaded ZIP again matched SHA-256 `15c9bf597b3c611722f70ea4ec3a67e5f3978ced8fe4c1791d397147445da2b9`. No page JavaScript errors occurred.
+- [Record release downloads run 35124607783](https://github.com/mihirbhadak/ApiSip/actions/runs/35124607783) succeeded on GitHub's hosted runner and committed a second real snapshot. This verifies workflow execution, API access and history persistence; future scheduled runs still depend on GitHub's scheduling and repository settings.
+- Fresh Lighthouse 13.4.1 mobile lab audit against the deployed HTTPS site: **100 performance, 100 accessibility, 100 best practices, 100 SEO**. FCP 1.3 s, LCP 1.4 s, total blocking time 10 ms, CLS 0.05. The render-blocking insight had no requests. Cache-lifetime estimated waste was 33,632.5 bytes (32.8 KiB); image-delivery estimated waste was 27,768 bytes (27.1 KiB). The audit selected the 960-pixel screenshot for its higher-density emulated mobile screen; normal 1× mobile selection was independently tested at 480 pixels. We retain higher-density variants for readable UI text, so an image-sizing estimate can remain.
+- The fresh PageSpeed API request returned HTTP 429 with an exhausted shared daily quota. The Lighthouse result above is **not** misrepresented as a new Google-hosted PageSpeed report. The user's older report is historical and needs a new run in PageSpeed to reflect this deployment.
+
+Local artifacts: `artifacts/site-audit/lighthouse-after.report.*`, `html-live-after.txt`, `css-live-after.txt`, `pagespeed-api-after.json`, `visual/*`, and `artifacts/site-qa/real-download.json`. Scores and measurements are one lab run, not a guarantee for every visitor.
+
 ## Reproduce
 
 ```sh
