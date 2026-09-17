@@ -16,6 +16,10 @@ The final build is `2026-09-17T06:28:46.730Z`. Its repeat passed the first 24 sc
 
 `scripts/package-extension.py` verified all 30 packaged files, both installation manifests, HTML/icon/worker assets and 95 source-map source entries. The ZIP is 1,198,338 bytes; SHA-256: `1e248e384d9efab05ddf8f0eec78fed55f67a6ed0fd876cec37dc04ff885f09e`. That exact ZIP was extracted into a new folder and loaded by a fresh Chrome profile; the onboarding, optional permission/API absence, response default, accessibility and Chrome error-list checks passed. The earlier 27-test full run and later targeted checks are retained as distinct verification attempts.
 
+### Public 0.1.2 delivery verification
+
+[GitHub Pages deployment 35190716305](https://github.com/mihirbhadak/ApiSip/actions/runs/35190716305) succeeded for the updated installation page. A real Chrome download from the public website returned `apisip-0.1.2.zip` with the exact 1,198,338-byte size and SHA-256 above. The creator/support dialog opened, Escape exposed and focused the installation guide, and the configured coffee link was correct. Public assets returned HTTP 200. Tested 1440/768/390/320-pixel layouts had no horizontal overflow, no axe violations and no page JavaScript errors. Report: `artifacts/site-qa/real-download.json`. This is a delivery/interaction verification, not a new Lighthouse or external-validator score.
+
 Historical reports below describe their own release/build, not this one.
 
 ## GoatCounter activation, September 17, 2026
