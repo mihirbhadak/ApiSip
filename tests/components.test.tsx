@@ -42,6 +42,23 @@ describe('request table', () => {
     expect(onToggle).toHaveBeenCalledWith('0');
   });
 });
+it('explains captured pseudo-headers in existing editor drafts without deleting them', () => {
+  const record = fixture();
+  const initialRequest = structuredClone(record.request);
+  initialRequest.headers.unshift({ name: ':authority', value: 'example.test' });
+  render(
+    <RequestEditor
+      record={record}
+      initialRequest={initialRequest}
+      context="extension"
+      onSend={vi.fn()}
+      onSave={vi.fn()}
+    />,
+  );
+  expect(screen.getByText(/pseudo-headers.*kept for inspection/)).toBeVisible();
+  expect(screen.getByLabelText('Request headers key 1')).toHaveValue(':authority');
+  expect(initialRequest.headers[0]!.name).toBe(':authority');
+});
 it('builds nested filters and reports malformed expressions', async () => {
   const user = userEvent.setup(),
     onApply = vi.fn();

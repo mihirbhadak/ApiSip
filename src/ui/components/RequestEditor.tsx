@@ -5,7 +5,7 @@ import { Play, RotateCcw, Save, ExternalLink } from 'lucide-react';
 import type { CapturedRequest, ReplayResult, RequestData, Settings } from '../../shared/model';
 import { requestSchema } from '../../shared/model';
 import { header, makeBody, parseUrl, prettyJson } from '../../shared/parse';
-import { redactBody, redactUrl } from '../../shared/security';
+import { isHttpPseudoHeader, redactBody, redactUrl } from '../../shared/security';
 import { PairEditor } from './PairEditor';
 export function RequestEditor({
   record,
@@ -169,6 +169,13 @@ export function RequestEditor({
         Browser uses the source tab’s cookies and CORS rules. Extension omits ambient cookies.
         Chrome controls Cookie, Origin, Host and other restricted headers.
       </p>
+      {draft.headers.some((h) => isHttpPseudoHeader(h.name)) && (
+        <p className="notice small">
+          Captured HTTP/2 and HTTP/3 pseudo-headers (such as :authority, :method, :path and :scheme)
+          are kept for inspection and omitted when sending. Edit the URL and method above to change
+          the replay target.
+        </p>
+      )}
       <TabBar className="tabs" label="Editor sections">
         {['Headers', 'Query', 'Body'].map((t) => (
           <button key={t} className={tab === t ? 'active' : ''} onClick={() => setTab(t)}>

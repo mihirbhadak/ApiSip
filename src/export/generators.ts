@@ -1,5 +1,5 @@
 import type { RequestData } from '../shared/model';
-import { redactRequest, safeHttpUrl, prepareHeaders } from '../shared/security';
+import { redactRequest, safeHttpUrl, prepareHeaders, isHttpPseudoHeader } from '../shared/security';
 export const languages = [
   'cURL',
   'Bash cURL',
@@ -302,7 +302,9 @@ export function generateCode(
     ...source,
     method: source.method.toUpperCase(),
     headers: source.headers.filter(
-      (h) => !/^(content-length|transfer-encoding|connection)$/i.test(h.name),
+      (h) =>
+        !isHttpPseudoHeader(h.name) &&
+        !/^(content-length|transfer-encoding|connection)$/i.test(h.name),
     ),
   };
   if (['GET', 'HEAD'].includes(r.method)) r.body = undefined;

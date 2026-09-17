@@ -40,6 +40,10 @@ const request = (): RequestData => ({
   headers: [
     { name: 'Content-Type', value: 'application/json' },
     { name: 'X-Test', value: 'quotes "double" and apostrophe\' and percent % literal' },
+    { name: ':authority', value: 'stale.example.test' },
+    { name: ':method', value: 'GET' },
+    { name: ':path', value: '/stale' },
+    { name: ':scheme', value: 'https' },
   ],
   body: makeBody('{"name":"Mihir","nested":{"id":2}}', 'application/json'),
 });

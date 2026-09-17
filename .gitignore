@@ -15,3 +15,6 @@ artifacts/
 *.key
 *.p12
 *.pfx
+# Public, loopback-only test credentials; never trusted by the OS or shipped in the extension.
+!/tests/fixtures/localhost-cert.pem
+!/tests/fixtures/localhost-key.pem

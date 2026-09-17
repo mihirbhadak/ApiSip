@@ -25,6 +25,8 @@ npm audit
 
 `npm run check` runs lint, TypeScript, unit/component/integration tests, then the production build. Browser E2E is a separate step and uses the **current dist build**. Rebuild before running it.
 
+Set `API_CATCHER_HEADLESS=1` to run the same extension tests in Chrome's full headless mode without desktop input interference (`$env:API_CATCHER_HEADLESS='1'` in PowerShell). No assertions or permission checks are skipped; the tests still load the real extension using Playwright's `chromium` channel and clone the previously authorized isolated test profile. Leave it unset for visible browser QA. The HTTP/2 regression starts a loopback HTTPS server with the [public test certificate](tests/fixtures/README.md), without changing system trust.
+
 `python scripts/package-extension.py` verifies manifest/HTML assets, source-map source freshness and every ZIP byte, then writes a versioned ZIP and SHA-256 file under `artifacts/`. Requires Python 3.9+. Always build and test first; select the extracted ZIP root in Chrome, not its `assets` subfolder.
 
 The Vite development page helps with UI work; Chrome capture APIs require loading the repository root or `dist` as an unpacked extension after building. There is no popup. The toolbar icon opens or focuses `inspector.html`.

@@ -97,6 +97,7 @@ Neither mode captures literally all browser networking. Chrome-internal pages, o
 - Bodies can be evicted, omitted, streamed indefinitely, inaccessible, or larger than CDP's buffer. Unavailability and truncation are displayed explicitly.
 - Body limits are 1, 5, 10 or 25 MB. Unlimited capture is deliberately unavailable.
 - Multipart upload file content and original wire boundaries may be missing. Incomplete/binary/multipart bodies must be replaced before replay or reproducible code generation.
+- Captured HTTP/2 and HTTP/3 pseudo-headers (`:authority`, `:method`, `:path`, `:scheme`, `:protocol`, `:status`) stay visible in captured data but are omitted from replay, timed runs and code snippets. Edit the request URL and method instead; the HTTP client generates protocol fields. Existing saved editor drafts use this behavior without recapturing.
 - WebSocket capture keeps up to 200 messages per connection and 16 KB per payload; it does not replay WebSocket conversations.
 - Header duplicates are preserved when exposed. Extra-info ordering across redirects can be ambiguous, so primary-event headers are used for those hops.
 - Raw mode reconstructs exposed fields; it cannot reproduce HTTP/2 frames or the exact bytes sent on the network.

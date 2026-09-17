@@ -145,13 +145,23 @@ export function safeHttpUrl(value: string): URL {
     throw new Error('Remove URL credentials and use an Authorization header.');
   return url;
 }
+// Protocol metadata exposed by CDP is not an HTTP field accepted by fetch/Headers.
+// Keep the capture intact; clients derive these fields from the edited URL/method.
+export const isHttpPseudoHeader = (name: string) =>
+  /^:(authority|method|path|scheme|status|protocol)$/.test(name);
+
 export function prepareHeaders(headers: Pair[]) {
   const forbidden =
     /^(accept-charset|accept-encoding|access-control-request-.*|connection|content-length|cookie2?|date|dnt|expect|host|keep-alive|origin|referer|set-cookie|te|trailer|transfer-encoding|upgrade|via|proxy-.*|sec-.*)$/i;
   const omitted: string[] = [];
+  const pseudo: string[] = [];
   const permitted = headers.filter((h) => {
     if (/\r|\n|\0/.test(h.name + h.value))
       throw new Error('Header names and values cannot contain line breaks.');
+    if (isHttpPseudoHeader(h.name)) {
+      pseudo.push(h.name);
+      return false;
+    }
     if (!/^[!#$%&'*+.^_`|~0-9A-Za-z-]+$/.test(h.name))
       throw new Error('Invalid header name: ' + h.name);
     if (forbidden.test(h.name)) {
@@ -160,14 +170,18 @@ export function prepareHeaders(headers: Pair[]) {
     }
     return true;
   });
-  return {
-    headers: permitted,
-    warnings: omitted.length
-      ? [
-          'Browser-controlled headers omitted: ' +
-            omitted.join(', ') +
-            '. Cookies follow the selected context.',
-        ]
-      : [],
-  };
+  const warnings: string[] = [];
+  if (pseudo.length)
+    warnings.push(
+      'HTTP/2 and HTTP/3 pseudo-headers omitted: ' +
+        [...new Set(pseudo)].join(', ') +
+        '. Chrome derives protocol fields from the edited URL and method.',
+    );
+  if (omitted.length)
+    warnings.push(
+      'Browser-controlled headers omitted: ' +
+        omitted.join(', ') +
+        '. Cookies follow the selected context.',
+    );
+  return { headers: permitted, warnings };
 }

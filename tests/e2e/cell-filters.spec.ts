@@ -17,7 +17,7 @@ test('cell context actions and double-click filter real captured traffic', async
   const context = await chromium.launchPersistentContext(profile, {
     channel: 'chromium',
     executablePath: process.env.API_CATCHER_CHROME,
-    headless: false,
+    headless: process.env.API_CATCHER_HEADLESS === '1',
     viewport: { width: 1512, height: 982 },
     args: ['--disable-extensions-except=' + resolve('dist'), '--load-extension=' + resolve('dist')],
   });

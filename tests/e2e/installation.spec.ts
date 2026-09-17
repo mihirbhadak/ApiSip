@@ -10,7 +10,7 @@ test('loads the project root as an unpacked extension and opens the built inspec
   const context = await chromium.launchPersistentContext(profile, {
     channel: 'chromium',
     executablePath: process.env.API_CATCHER_CHROME,
-    headless: false,
+    headless: process.env.API_CATCHER_HEADLESS === '1',
     viewport: { width: 1512, height: 982 },
     args: [
       '--enable-unsafe-extension-debugging',

@@ -1,5 +1,19 @@
 # Verification report
 
+## 0.1.5 HTTP/2 replay headers — September 17, 2026
+
+Fixed `Invalid header name: :authority` at the shared outbound-header boundary. Captured protocol fields are retained in history/drafts but omitted from replay, timed runs and all 16 code generators. Ordinary invalid names and CR/LF/NUL injection still fail validation; warning text never includes header values. Existing editor drafts work without a data migration or recapture.
+
+- The new regression suite first reproduced the error in 18 cases, then passed after the fix. All **218 unit/component/integration tests**, lint, strict TypeScript, formatting and the production build passed. Executable snippet tests now include captured pseudo-headers and verify real local HTTP requests.
+- A real loopback HTTPS/HTTP/2 server produced `:authority`, `:method`, `:path` and `:scheme` through Chrome capture. The test opens a separate editor, edits URL/method, reloads its saved draft, replays in both contexts and verifies the server received the edited request, body and application header. Original capture headers remain unchanged. Both responses were HTTP 200; warning visibility, axe accessibility and page errors passed. The editor screenshot was visually inspected. HTTP/3 shares the field handling but was not separately exercised over QUIC.
+- All **23 website tests** passed with the 0.1.5 download URLs.
+- The exact release ZIP was extracted into a new folder and passed fresh-profile Chrome onboarding, including real manifest loading, permission defaults, response-capture defaults and accessibility checks.
+- The full real-extension Chrome suite passed **all 29 scenarios in one run** with `API_CATCHER_HEADLESS=1`, including capture, both replay contexts, clipboard/export, persistence, permission failures, worker/browser restarts and timed runs. The final 10,000-request timed run took 60,012.2 ms with zero missed slots and a 32,802-byte report; the 10,000-capture search took 840 ms. These local measurements are not throughput guarantees.
+
+An earlier headed full-suite attempt failed on row selection with unexpected Alt-key hints visible, then reported a closed browser context during a later runner scenario. The root cause of that desktop interaction was not established. The HTTP/2 regression itself passed in both headed attempts. The complete suite was rerun with the real extension in Chrome's supported full headless mode to isolate it from desktop input; no assertions, timeouts, permission checks or request counts were weakened, and no scenarios were skipped.
+
+Build: `2026-09-17T10:28:41.336Z`. ZIP: 30 files, 1,205,736 bytes; SHA-256 `79270d66d1206cafa643f070a4c7baeff295342f11dbf3f04c80559387189a50`. Packaging verified every archived byte, both manifest layouts and 96 source-map entries against source. The loopback test certificate/key are public test fixtures and are excluded from the extension package; no system trust changes are made.
+
 ## 0.1.4 website URL — September 17, 2026
 
 The extension homepage now uses `https://mihirbhadak.github.io/ApiSip/`, matching the repository website field, package homepage, README and page canonical URL. Verified HTTP 200 from the public site. The source, root build, standalone build and packaged manifests all contain this URL and version 0.1.4.

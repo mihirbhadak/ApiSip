@@ -17,7 +17,7 @@ test('response capture, XHR suggestions, Enter, deletion and update notices work
   const context = await chromium.launchPersistentContext(profile, {
     channel: 'chromium',
     executablePath: process.env.API_CATCHER_CHROME,
-    headless: false,
+    headless: process.env.API_CATCHER_HEADLESS === '1',
     viewport: { width: 1280, height: 950 },
     args: ['--disable-extensions-except=' + resolve('dist'), '--load-extension=' + resolve('dist')],
   });

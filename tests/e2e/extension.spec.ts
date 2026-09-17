@@ -126,7 +126,7 @@ test.beforeAll(async () => {
   context = await chromium.launchPersistentContext(profile, {
     channel: 'chromium',
     executablePath: process.env.API_CATCHER_CHROME,
-    headless: false,
+    headless: process.env.API_CATCHER_HEADLESS === '1',
     viewport: { width: 1512, height: 982 },
     args: [
       '--enable-unsafe-extension-debugging',
@@ -995,7 +995,7 @@ test('restores workspaces, sessions, records and capture after a full browser re
   context = await chromium.launchPersistentContext(profile, {
     channel: 'chromium',
     executablePath: process.env.API_CATCHER_CHROME,
-    headless: false,
+    headless: process.env.API_CATCHER_HEADLESS === '1',
     viewport: { width: 1512, height: 982 },
     args: [
       '--enable-unsafe-extension-debugging',

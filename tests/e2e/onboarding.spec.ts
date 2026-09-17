@@ -11,7 +11,7 @@ test('fresh installation opens permission setup without subscribing to webReques
     {
       channel: 'chromium',
       executablePath: process.env.API_CATCHER_CHROME,
-      headless: false,
+      headless: process.env.API_CATCHER_HEADLESS === '1',
       viewport: { width: 1280, height: 1000 },
       args: [
         '--enable-unsafe-extension-debugging',
