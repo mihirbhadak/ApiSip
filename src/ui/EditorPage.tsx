@@ -10,6 +10,7 @@ import { HelpCenter } from './components/HelpCenter';
 import { ConfirmDialog } from './components/Dialog';
 import type { RequestData } from '../shared/model';
 import { RunnerPanel } from './runner/RunnerPanel';
+import { openTestLab } from './lab/actions';
 
 export default function EditorPage({ id }: { id: string }) {
   const editor = useEditorPage(id);
@@ -40,6 +41,18 @@ export default function EditorPage({ id }: { id: string }) {
           <span>Request editor</span>
         </div>
         <div className="button-row">
+          {!fatal && record && draft && (
+            <button
+              onClick={() =>
+                task(async () => {
+                  const request = await editor.prepareRun();
+                  await openTestLab({ ...record, request });
+                })
+              }
+            >
+              Create test
+            </button>
+          )}
           {!fatal && draft && (
             <button
               onClick={() =>

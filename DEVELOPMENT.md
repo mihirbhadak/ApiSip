@@ -49,18 +49,19 @@ Open `http://127.0.0.1:4177`. The server provides users CRUD, JSON, URL-encoded/
 
 ## Code layout
 
-| Directory        | Responsibility                                                                                 |
-| ---------------- | ---------------------------------------------------------------------------------------------- |
-| `src/background` | Chrome event registration, scope, commands, badge and lifecycle                                |
-| `src/capture`    | Provider contract, webRequest observer, CDP adapter and event sequencing                       |
-| `src/storage`    | IndexedDB schema, transactional repositories and atomic imports                                |
-| `src/shared`     | Domain schemas, parsing, redaction, diffing and statistics                                     |
-| `src/filters`    | Expression parser and compiled predicate engine                                                |
-| `src/replay`     | Context selection, fixed fetch executor and result normalization                               |
-| `src/runner`     | Paced scheduler, worker host, templates, streamed measurements, bounded statistics and reports |
-| `src/export`     | Versioned formats and code generators                                                          |
-| `src/ui`         | React inspector, search worker, controller and focused components                              |
-| `tests`          | Domain, components, repositories, executable snippets, browser tests and local server          |
+| Directory        | Responsibility                                                                                     |
+| ---------------- | -------------------------------------------------------------------------------------------------- |
+| `src/background` | Chrome event registration, scope, commands, badge and lifecycle                                    |
+| `src/capture`    | Provider contract, webRequest observer, CDP adapter and event sequencing                           |
+| `src/storage`    | IndexedDB schema, transactional repositories and atomic imports                                    |
+| `src/shared`     | Domain schemas, parsing, redaction, diffing and statistics                                         |
+| `src/filters`    | Expression parser and compiled predicate engine                                                    |
+| `src/replay`     | Context selection, fixed fetch executor and result normalization                                   |
+| `src/runner`     | Paced scheduler, worker host, templates, streamed measurements, bounded statistics and reports     |
+| `src/lab`        | Test definitions, assertions, JSON Pointer extraction, sequential execution, transport and reports |
+| `src/export`     | Versioned formats and code generators                                                              |
+| `src/ui`         | React inspector, search worker, controller and focused components                                  |
+| `tests`          | Domain, components, repositories, executable snippets, browser tests and local server              |
 
 Keep Chrome API access in adapters. Domain functions should remain independently testable. Message payloads are defined and validated in `shared/messages.ts`; avoid adding untyped message strings.
 
@@ -68,7 +69,13 @@ Keep Chrome API access in adapters. Domain functions should remain independently
 
 ApiSip was previously named API Catcher. The internal `api-catcher` database name, run-report format identifier and `API_CATCHER_CHROME` test override remain stable for compatibility. Visible branding and download filenames use ApiSip. Reloading the extension from the same installation folder preserves its identity and local history; moving the unpacked folder creates a separate Chrome extension identity.
 
-IndexedDB is version 3: additive migrations introduce persistent editor drafts (v2) and timed run reports (v3), preserving history and settings. JSON backup format remains version 1 and does not contain drafts or timed run reports. Runner report JSON has its own version 1 format. These are independent formats. A database change must increment the IndexedDB version and add an additive migration in `storage/database.ts`. A backup format change must introduce explicit version parsing/migration; unknown versions are currently rejected. Do not clear user history to make a migration pass. `tests/editor-drafts.test.ts` and `tests/runner-storage.test.ts` exercise upgrades from genuine earlier schemas using fake-indexeddb, including preserved draft revisions and settings.
+IndexedDB is version 4: additive migrations introduce persistent editor drafts (v2), timed run reports (v3), and Test lab suites/environments/reports (v4), preserving history and settings. JSON capture backup format remains version 1 and excludes drafts, timed runs and lab data. Runner report JSON and Test lab suite JSON have their own version-1 formats. These are independent formats. A database change must increment the IndexedDB version and add an additive migration in `storage/database.ts`. A backup format change must introduce explicit version parsing/migration; unknown versions are currently rejected. Do not clear user history to make a migration pass. `tests/editor-drafts.test.ts` and `tests/runner-storage.test.ts` exercise upgrades from genuine earlier schemas using fake-indexeddb, including preserved draft revisions and settings.
+
+## Working on Test lab
+
+See [TEST-LAB.md](TEST-LAB.md) for a two-step example against the real local API server. `src/lab/engine.ts` receives a transport; assertions/templates stay testable without Chrome. `src/lab/transport.ts` is the page-owned Chrome/fetch adapter. `src/storage/lab.ts` owns transactions and revisions. React only holds the selected suite and compact library/report data. Do not add executable scripts to assertions or persist extracted response values in reports.
+
+Run `npx vitest run tests/lab.test.ts tests/lab-storage.test.ts tests/lab-components.test.tsx tests/lab-transport.test.ts` for focused checks, then build and run `npx playwright test tests/e2e/test-lab.spec.ts`. The browser test uses genuine CDP capture, real extension fetch and the test server's bounded `/api/suite-stats` ledger to verify typed chaining, omissions, stop behavior and inert review/import. The lab page deliberately requires an open tab; do not conflate its interruption behavior with the separate offscreen timed runner.
 
 ## Working on the timed runner
 

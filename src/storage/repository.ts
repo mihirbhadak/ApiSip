@@ -308,9 +308,15 @@ export async function deleteEntity(id: string) {
   const db = await getDB(),
     entity = await db.get('entities', id);
   if (!entity) return;
-  const tx = db.transaction(['entities', 'requests', 'bodies', 'drafts', 'runs'], 'readwrite');
+  const tx = db.transaction(
+    ['entities', 'requests', 'bodies', 'drafts', 'runs', 'suites', 'environments', 'suiteReports'],
+    'readwrite',
+  );
   let rows: RequestRow[] = [];
   if (entity.kind === 'workspace') {
+    for (const store of ['suites', 'environments', 'suiteReports'] as const)
+      for (const item of await tx.objectStore(store).index('workspaceId').getAll(id))
+        void tx.objectStore(store).delete(item.id);
     rows = await tx.objectStore('requests').index('workspaceId').getAll(id);
     const children = await tx.objectStore('entities').index('workspaceId').getAll(id);
     for (const child of children) void tx.objectStore('entities').delete(child.id);
@@ -370,7 +376,20 @@ export async function clearDatabasePreservingCapture() {
 }
 async function resetDatabase(preserveCapture: boolean) {
   const db = await getDB(),
-    tx = db.transaction(['requests', 'bodies', 'entities', 'state', 'drafts', 'runs'], 'readwrite');
+    tx = db.transaction(
+      [
+        'requests',
+        'bodies',
+        'entities',
+        'state',
+        'drafts',
+        'runs',
+        'suites',
+        'environments',
+        'suiteReports',
+      ],
+      'readwrite',
+    );
   const current = settingsSchema.parse(
     (await tx.objectStore('state').get('settings')) ?? defaultSettings,
   );
@@ -386,7 +405,17 @@ async function resetDatabase(preserveCapture: boolean) {
         }
       : {}),
   };
-  for (const store of ['requests', 'bodies', 'entities', 'state', 'drafts', 'runs'] as const)
+  for (const store of [
+    'requests',
+    'bodies',
+    'entities',
+    'state',
+    'drafts',
+    'runs',
+    'suites',
+    'environments',
+    'suiteReports',
+  ] as const)
     void tx.objectStore(store).clear();
   // Capture sees either the old destination or the new one, never absent/paused settings.
   await tx.objectStore('state').put(settings, 'settings');

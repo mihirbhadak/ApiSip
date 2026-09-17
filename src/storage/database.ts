@@ -2,6 +2,7 @@ import { openDB, type DBSchema, type IDBPDatabase } from 'idb';
 import type { Body, CapturedRequest, Entity, ReplayResult, Settings } from '../shared/model';
 import type { EditorDraft } from '../shared/editor';
 import type { RunReport } from '../runner/model';
+import type { TestSuite, Environment, SuiteReport } from '../lab/model';
 export type RequestRow = CapturedRequest & {
   domain: string;
   method: string;
@@ -16,6 +17,13 @@ export type BodyRow = {
   messages?: CapturedRequest['metadata']['messages'];
 };
 export interface InspectorDB extends DBSchema {
+  suites: { key: string; value: TestSuite; indexes: { workspaceId: string } };
+  environments: { key: string; value: Environment; indexes: { workspaceId: string } };
+  suiteReports: {
+    key: string;
+    value: SuiteReport;
+    indexes: { workspaceId: string; suiteId: string };
+  };
   requests: {
     key: string;
     value: RequestRow;
@@ -42,8 +50,17 @@ export interface InspectorDB extends DBSchema {
 }
 let database: Promise<IDBPDatabase<InspectorDB>> | undefined;
 export function getDB() {
-  database ??= openDB<InspectorDB>('api-catcher', 3, {
+  database ??= openDB<InspectorDB>('api-catcher', 4, {
     upgrade(db, oldVersion) {
+      if (oldVersion < 4) {
+        for (const name of ['suites', 'environments'] as const) {
+          const store = db.createObjectStore(name, { keyPath: 'id' });
+          store.createIndex('workspaceId', 'workspaceId');
+        }
+        const reports = db.createObjectStore('suiteReports', { keyPath: 'id' });
+        reports.createIndex('workspaceId', 'workspaceId');
+        reports.createIndex('suiteId', 'suiteId');
+      }
       if (oldVersion < 1) {
         const requests = db.createObjectStore('requests', { keyPath: 'id' });
         for (const index of [

@@ -35,8 +35,10 @@ export function FloatingPanel({
     if (!element || !trigger) return;
     window.dispatchEvent(new Event('api-catcher:close-popovers'));
     element.showPopover?.();
+    let anchorRect = trigger.getBoundingClientRect();
     const position = () => {
       const rect = trigger.getBoundingClientRect();
+      anchorRect = rect;
       const width = Math.min(Math.max(rect.width, 220), window.innerWidth - 24);
       const below = window.innerHeight - rect.bottom - 12;
       const above = rect.top - 12;
@@ -51,7 +53,12 @@ export function FloatingPanel({
     const observer = new ResizeObserver(position);
     observer.observe(element);
     const scroll = (event: Event) => {
-      if (event.target instanceof Node && !element.contains(event.target)) close.current();
+      if (event.target instanceof Node && !element.contains(event.target)) {
+        const rect = trigger.getBoundingClientRect();
+        // Focus/scrollIntoView can deliver an already-completed scroll event after opening.
+        // Close only when the anchor actually moved away from the positioned panel.
+        if (rect.top !== anchorRect.top || rect.left !== anchorRect.left) close.current();
+      }
     };
     document.addEventListener('scroll', scroll, true);
     const outside = (event: Event) => {

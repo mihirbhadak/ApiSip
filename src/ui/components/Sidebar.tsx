@@ -3,6 +3,7 @@ import { CreatorLinks } from './CreatorLinks';
 import { CreatorAvatar } from './CreatorAvatar';
 import { ActionMenu } from './ActionMenu';
 import { SearchSelect } from './SearchSelect';
+import { openTestLab } from '../lab/actions';
 import {
   Activity,
   Bookmark,
@@ -82,6 +83,13 @@ export function Sidebar({
         New workspace
       </button>
       <nav aria-label="Inspector views">
+        <button
+          onClick={() => task(() => openTestLab())}
+          title="Build reusable API checks, workflows and environments"
+        >
+          <Layers size={15} />
+          Test lab <span>NEW</span>
+        </button>
         <button
           aria-label="Requests"
           className={view === 'requests' ? 'active' : ''}

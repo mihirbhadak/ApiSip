@@ -30,6 +30,16 @@ Creator links, including the optional Buy me a Coffee support link, open an exte
 
 The added `offscreen` permission hosts a dedicated Web Worker using Chrome's supported WORKERS reason. It does not read other tabs, files or system performance counters. The host is closed when idle. Timed fetches require granted host access, omit ambient cookies, keep a fixed origin and block redirects. Cancelling a fetch cannot undo work an API already received. Revoking site access stops the run.
 
+## Test lab, passive security and AI context (0.2.0)
+
+Reusable test suites, environments and compact suite reports live in local IndexedDB. Suites copy request definitions independently of captures, including retained header/body values and inclusion choices. Environments may contain credentials and are **not encrypted**. UI masking does not make a secrets vault. Definitions save explicitly; environments save from their dialog. Reports retain names, destination origins, timestamps, status/duration and check outcomes, but no response bodies, header values or extracted variables. Extracted scalars exist in memory for that run only.
+
+**Start suite** sends sequential requests to the reviewed API destinations after permission checks. Opening, importing, saving and reviewing a suite sends no API traffic. Fetch omits ambient cookies, rejects redirects and does not retry. Each response read is capped at 1 MiB and each step at 25 seconds. Closing/reloading the tab interrupts execution. Checkpoints never restart requests automatically. Cancellation cannot reverse changes the server already received.
+
+Each workspace retains up to 100 suites, 30 environments and 25 reports. Suite JSON exports mask known secrets and omit environments; reports export separately as JSON/JUnit. These records are not included in general capture backups or workspace duplication. Deleting captured history leaves suite copies intact. Deleting the workspace/all stored data removes its lab data; deleting a suite removes its reports. Exported files and clipboard contents remain outside extension deletion.
+
+Passive security review reads captured evidence only, never sends probes, and provides review prompts rather than vulnerability certification. The **Prepare AI / bug-report context** action creates a redacted editable preview. Only **Copy reviewed context** writes to the clipboard. No AI provider or MCP service receives a request from this feature. Custom secret formats may survive redaction, so review the preview before sharing it with another tool.
+
 ## Defaults
 
 - Capture is paused until explicitly started.

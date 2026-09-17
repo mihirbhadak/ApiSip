@@ -12,6 +12,8 @@ import { Headers } from './Headers';
 import { BodyViewer } from './BodyViewer';
 import { RequestOverview } from './RequestOverview';
 import { ReplayPanel } from './ReplayPanel';
+import { SecurityReview } from '../lab/SecurityReview';
+import { openTestLab } from '../lab/actions';
 export function RequestDetails({
   record,
   settings,
@@ -107,6 +109,20 @@ export function RequestDetails({
         </button>
       </div>
       <div className="detail-meta">
+        <button
+          disabled={opening}
+          onClick={() => {
+            setOpening(true);
+            setOpenError('');
+            void openTestLab(record)
+              .catch((cause: unknown) =>
+                setOpenError(cause instanceof Error ? cause.message : 'Could not create test.'),
+              )
+              .finally(() => setOpening(false));
+          }}
+        >
+          Create test
+        </button>
         <span
           className={
             r.metadata.error || (r.response?.status ?? 0) >= 400 ? 'status-error' : 'status-success'
@@ -291,6 +307,7 @@ export function RequestDetails({
         )}
         {tab === 'Security' && (
           <>
+            <SecurityReview record={record} />
             <h3>Connection & privacy</h3>
             <p>
               Transport: <strong>{new URL(r.request.url).protocol}</strong>

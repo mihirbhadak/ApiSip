@@ -76,6 +76,7 @@ export function PairEditor({
             placeholder={valuePlaceholder}
           />
           <button
+            type="button"
             className="icon-button danger-text"
             aria-label={'Delete ' + label + ' row ' + (i + 1)}
             onClick={() => onChange(pairs.filter((_, index) => index !== i))}
@@ -84,7 +85,11 @@ export function PairEditor({
           </button>
         </div>
       ))}
-      <button className="text-button" onClick={() => onChange([...pairs, { name: '', value: '' }])}>
+      <button
+        type="button"
+        className="text-button"
+        onClick={() => onChange([...pairs, { name: '', value: '' }])}
+      >
         <Plus size={14} />
         Add row
       </button>

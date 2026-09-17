@@ -1,5 +1,21 @@
 export const helpTopics = [
   {
+    id: 'lab',
+    title: 'Test lab: checks, workflows and environments',
+    summary: 'Turn captured requests into repeatable tests with guided review.',
+    steps: [
+      'Choose Test lab in the sidebar or command palette. Create test in request details or an editor copies that request into an independent suite. Nothing is sent until Review suite, then Start suite.',
+      'Add checks for status, response headers, JSON values, response text and duration. JSON selectors use JSON Pointer: /user/id or /items/0/name. Escape a slash in a key with ~1 and a tilde with ~0. Equality supports scalar values. Use type to check objects or arrays.',
+      'Add steps from captures or create a blank request. Extract an existing scalar JSON/header value after a passing step, name it userId, then use {{userId}} in a later path, header or quoted JSON value. Whole JSON placeholders preserve extracted numeric/boolean/null types. Forward references and duplicate variable names are rejected.',
+      'Environments store text constants locally. A blank override keeps captured origins. An override changes only origins, retaining paths and queries. To prevent forwarding credentials accidentally, static credential headers must be replaced with environment placeholders or excluded when changing origin.',
+      'Save with Ctrl/Cmd + S. Review with Ctrl/Cmd + Enter. The review lists every destination and any omitted headers. Runs use extension context, no ambient cookies, no redirects/retries, a 25-second timeout and a 1 MB response limit. Keep the Test lab tab open; closing/reloading interrupts execution.',
+      'Every check must pass. Missing, binary, truncated or invalid JSON bodies produce inconclusive checks and fail the step. Extracted values and response bodies are not stored in reports. Reports keep the latest 25 runs per workspace; export JSON or JUnit XML.',
+      'Suite exports mask recognized secrets and omit environments. Imports create a separate suite in the current workspace and never run automatically. Replace redacted values before running. General history backups do not include Test lab data; export suites separately.',
+      'Security in request details performs passive checks on one capture. Findings are review prompts, not confirmed vulnerabilities. Prepare AI / bug-report context gives editable, redacted text to review and copy; no AI service is connected or contacted.',
+    ],
+    note: 'Suite definitions and environments may contain credentials and are stored unencrypted. Capture deletion does not delete independent suites; deleting a workspace or all stored data does. Up to 100 suites and 30 environments per workspace; 30 sequential steps and 50 checks per step. No request is automatically replayed after interruption.',
+  },
+  {
     id: 'runner',
     title: 'Timed API runs',
     summary: 'Paced requests, variables and local performance measurements.',

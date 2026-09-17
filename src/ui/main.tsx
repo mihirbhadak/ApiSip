@@ -3,6 +3,8 @@ import { createRoot } from 'react-dom/client';
 import App from './App';
 import EditorPage from './EditorPage';
 import SetupPage from './SetupPage';
+import { lazy, Suspense } from 'react';
+const LabPage = lazy(() => import('./lab/LabPage'));
 import { UpdateNotice } from './components/UpdateNotice';
 import { editorRoute } from '../shared/editor';
 import './styles.css';
@@ -32,6 +34,12 @@ function RootView() {
   }, []);
   const draftId = editorRoute(hash);
   if (hash === '#/setup') return <SetupPage />;
+  if (hash === '#/lab' || hash.startsWith('#/lab/'))
+    return (
+      <Suspense fallback={<main className="empty-state">Loading Test lab…</main>}>
+        <LabPage initialId={hash.split('/')[2]} />
+      </Suspense>
+    );
   return (
     <>
       {draftId === undefined ? <App /> : <EditorPage key={draftId} id={draftId} />}

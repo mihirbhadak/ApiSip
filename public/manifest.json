@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "ApiSip - Network Inspector",
-  "version": "0.1.6",
+  "version": "0.2.0",
   "description": "Capture, inspect, replay and load-test APIs. Advanced filters, analytics and exports. Local-first, with no telemetry.",
   "author": "Mihir Bhadak",
   "homepage_url": "https://mihirbhadak.github.io/ApiSip/",

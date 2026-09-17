@@ -1,4 +1,5 @@
 import { useTheme } from './use-theme';
+import { openTestLab } from './lab/actions';
 import { openHelp } from './components/HelpButton';
 import { shortcuts } from './shortcuts';
 import { requestCaptureAccess } from '../shared/permissions';
@@ -281,6 +282,24 @@ export function useInspectorController() {
     shortcuts.find((shortcut) => shortcut.action === action)?.keys;
   const commands: PaletteCommand[] = [
     {
+      name: 'Open Test lab: suites, workflows and environments',
+      run: () => task(() => openTestLab()),
+    },
+    {
+      name: 'Create test from selected request',
+      run: () => {
+        if (record) task(() => openTestLab(record));
+        else notify('Select a request first');
+      },
+    },
+    {
+      name: 'Security review of selected request',
+      run: () => {
+        if (record) setDetailTab('Security');
+        else notify('Select a request first');
+      },
+    },
+    {
       name: 'Search requests',
       shortcut: keyFor('search'),
       run: () => searchInput.current?.focus(),
@@ -339,6 +358,8 @@ export function useInspectorController() {
   const recordActions =
     record && record.id === context?.recordId
       ? [
+          { name: 'Create test suite', run: () => task(() => openTestLab(record)) },
+          { name: 'Review security / prepare AI context', run: () => setDetailTab('Security') },
           { name: 'Replay / open editor', run: () => setDetailTab('Replay') },
           {
             name: 'Copy URL',

@@ -34,54 +34,75 @@ beforeEach(async () => {
   await clearDatabase();
   await saveRecords([fixture()]);
 });
-it('migrates version-two history and editor drafts without clearing existing data', async () => {
-  await closeDB();
-  await deleteDB('api-catcher');
-  const legacy = await openDB('api-catcher', 2, {
-    upgrade(db) {
-      for (const name of ['requests', 'bodies', 'entities', 'state', 'drafts']) {
-        const store = db.createObjectStore(name, name === 'state' ? undefined : { keyPath: 'id' });
-        const indexes =
-          name === 'requests'
-            ? [
-                'workspaceId',
-                'sessionId',
-                'timestamp',
-                'tabId',
-                'method',
-                'status',
-                'domain',
-                'captureKey',
-              ]
-            : name === 'entities'
-              ? ['workspaceId', 'kind']
-              : name === 'drafts'
-                ? ['sourceId']
-                : [];
-        for (const index of indexes) store.createIndex(index, index);
-      }
-    },
-  });
-  const [row, body] = splitRecord(fixture());
-  await legacy.put('requests', row);
-  await legacy.put('bodies', body);
-  await legacy.put('drafts', {
-    id: 'old-draft',
-    sourceId: 'test-1',
-    request: fixture().request,
-    context: 'browser',
-    revision: 4,
-    updatedAt: 1,
-  });
-  await legacy.put('state', { ...defaultSettings, theme: 'dark' }, 'settings');
-  legacy.close();
-  const upgraded = await getDB();
-  expect(upgraded.version).toBe(3);
-  expect(upgraded.objectStoreNames.contains('runs')).toBe(true);
-  expect(await getDraft('old-draft')).toMatchObject({ revision: 4, request: fixture().request });
-  expect((await upgraded.get('state', 'settings'))?.theme).toBe('dark');
-  expect(await upgraded.count('requests')).toBe(1);
-});
+it.each([2, 3])(
+  'migrates version-%i history, drafts and available timed reports without clearing data',
+  async (version) => {
+    await closeDB();
+    await deleteDB('api-catcher');
+    const legacy = await openDB('api-catcher', version, {
+      upgrade(db) {
+        for (const name of [
+          'requests',
+          'bodies',
+          'entities',
+          'state',
+          'drafts',
+          ...(version === 3 ? ['runs'] : []),
+        ]) {
+          const store = db.createObjectStore(
+            name,
+            name === 'state' ? undefined : { keyPath: 'id' },
+          );
+          const indexes =
+            name === 'requests'
+              ? [
+                  'workspaceId',
+                  'sessionId',
+                  'timestamp',
+                  'tabId',
+                  'method',
+                  'status',
+                  'domain',
+                  'captureKey',
+                ]
+              : name === 'entities'
+                ? ['workspaceId', 'kind']
+                : name === 'runs'
+                  ? ['sourceId', 'createdAt', 'state']
+                  : name === 'drafts'
+                    ? ['sourceId']
+                    : [];
+          for (const index of indexes) store.createIndex(index, index);
+        }
+      },
+    });
+    const [row, body] = splitRecord(fixture());
+    await legacy.put('requests', row);
+    await legacy.put('bodies', body);
+    await legacy.put('drafts', {
+      id: 'old-draft',
+      sourceId: 'test-1',
+      request: fixture().request,
+      context: 'browser',
+      revision: 4,
+      updatedAt: 1,
+    });
+    await legacy.put('state', { ...defaultSettings, theme: 'dark' }, 'settings');
+    const previousRun = { ...report(), state: 'completed' };
+    if (version === 3) await legacy.put('runs', previousRun);
+    legacy.close();
+    const upgraded = await getDB();
+    expect(upgraded.version).toBe(4);
+    expect(upgraded.objectStoreNames.contains('suites')).toBe(true);
+    expect(upgraded.objectStoreNames.contains('environments')).toBe(true);
+    expect(upgraded.objectStoreNames.contains('suiteReports')).toBe(true);
+    expect(upgraded.objectStoreNames.contains('runs')).toBe(true);
+    expect(await getDraft('old-draft')).toMatchObject({ revision: 4, request: fixture().request });
+    expect((await upgraded.get('state', 'settings'))?.theme).toBe('dark');
+    expect(await upgraded.count('requests')).toBe(1);
+    if (version === 3) expect(await upgraded.get('runs', previousRun.id)).toEqual(previousRun);
+  },
+);
 it('persists checkpoints, recovers interruption honestly and never resumes traffic', async () => {
   const r = report();
   await beginRun(r);

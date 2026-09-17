@@ -1,6 +1,7 @@
 import http from 'node:http';
 import { WebSocketServer } from 'ws';
 const loadRuns = new Map();
+const suiteCalls = new Map();
 const server = http.createServer(async (request, response) => {
   const url = new URL(request.url, 'http://127.0.0.1:4177');
   const chunks = [];
@@ -11,6 +12,26 @@ const server = http.createServer(async (request, response) => {
     return;
   }
   const raw = Buffer.concat(chunks).toString('utf8');
+  if (url.pathname === '/api/suite-stats') {
+    response.writeHead(200, { 'content-type': 'application/json' });
+    response.end(JSON.stringify(suiteCalls.get(url.searchParams.get('id')) ?? []));
+    return;
+  }
+  if (url.searchParams.has('suite-run')) {
+    const key = url.searchParams.get('suite-run');
+    if (!suiteCalls.has(key)) {
+      if (suiteCalls.size >= 30) suiteCalls.delete(suiteCalls.keys().next().value);
+      suiteCalls.set(key, []);
+    }
+    const calls = suiteCalls.get(key);
+    if (calls.length < 100)
+      calls.push({
+        url: url.pathname + url.search,
+        method: request.method,
+        raw,
+        headers: request.headers,
+      });
+  }
   const headers = {
     'content-type': 'application/json; charset=utf-8',
     'cache-control': 'no-store',

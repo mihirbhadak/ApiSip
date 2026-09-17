@@ -66,6 +66,8 @@ After source changes, build again and click **Reload** on the extension card. `n
 - Persistent workspaces, sessions, collections, editable saved requests, tags and notes.
 - Request editor with query/header/body editing, browser-context and extension-context replay, history and structural JSON comparison. Open an editor in its own tab with persistent, automatically saved drafts.
 - Timed API runs in the extension: paced starts, optional ramp-up, bounded concurrency, body/header variables, streamed measurements, live charts, failure limits and saved reports.
+- Test lab: reusable multi-step suites, response assertions, scalar extraction/chaining, local environments, stop-on-failure, saved checkpoints, JSON and JUnit reports.
+- Passive security review of captured evidence and an editable, redacted context preview for copying to an AI tool or bug report. No AI account or remote AI call is required.
 - cURL/Bash/CMD, PowerShell, JavaScript fetch/Axios, TypeScript fetch, Python requests/httpx, Go, Java, C#, PHP, Ruby, Rust and HTTPie generators.
 - JSON, CSV, Markdown, HAR and text exports; versioned JSON/HAR imports; sensitive values excluded by default.
 - Local statistics, status/type/domain/latency distributions, endpoint grouping and slow/large-request lists.
@@ -123,6 +125,26 @@ Automatic selection prefers the browser context when a source tab exists. Reques
 5. **Open inspector** returns to the dashboard. Replay results are shared with the original request there. **Discard draft** removes only that draft after confirmation.
 
 Each click opens an independent draft. Duplicating an existing browser tab shares its draft; conflicting saves are rejected with a reload action. Only a random draft ID appears in the tab URL. Drafts and their source requests are protected from automatic retention and navigation cleanup. Explicitly deleting their source request, session, workspace or history removes the related drafts. Drafts are not included in exports; save a request copy first. Browser-context replay still requires the original source tab and origin to remain available.
+
+## Test lab: repeatable API checks
+
+Open **Test lab** from the sidebar, or choose **Create test** on a captured request, its context menu, or an editor draft. The command palette also finds these actions. The lab opens in a separate tab with an independent request copy.
+
+1. Add checks for status, response headers, JSON values, response text or duration. For JSON, use a pointer such as `/users/0/id`. Missing/truncated/unparseable bodies produce **inconclusive**, never a false pass.
+2. Extract a scalar value into a name such as `userId`. Use `{{userId}}` in a later URL/header or a quoted JSON placeholder: `{"id":"{{userId}}"}`. A complete JSON placeholder preserves the extracted number/boolean/null type.
+3. Optionally create a local environment for text variables and a staging-origin override. Review credential headers before changing destinations. Environments are stored locally, unencrypted.
+4. **Save suite** (Ctrl/Cmd + S), then **Review suite** (Ctrl/Cmd + Enter). Review sends nothing; **Start suite** sends the sequential requests to the listed destinations. Tests default to stopping at the first failed/inconclusive step.
+5. Read step outcomes/timings and export JSON or JUnit. **Stop suite** cancels in-flight fetches and prevents later steps; it cannot undo server changes already received.
+
+Keep the lab tab open while running. It uses extension-context fetch with granted website access, no ambient cookies, no redirects/retries, a 25-second timeout per step and a 1 MiB response-read limit. It retains compact results, not response bodies or extracted values. Closing/reloading interrupts execution; saved checkpoints never automatically resume.
+
+Suite definitions export/import separately from general history backups; exports redact known secrets and omit environments. Workspace duplication copies capture history, not the Test lab library. Clearing captured history preserves these independent suites; deleting their workspace or all stored data removes them. See the [complete Test lab guide](TEST-LAB.md) for limits, examples and troubleshooting.
+
+### Passive security and sharing
+
+In request details, open **Security**, or use **Review security / prepare AI context** from the context menu/palette. Checks highlight HTTP, credential-like URL parameters, exposed cookie flags, wildcard credentialed-CORS configuration, stack traces and credential-like response fields. These are evidence for manual review, not proof of vulnerability or a security certification. No probes are sent.
+
+**Prepare AI / bug-report context** opens a redacted, editable preview. Review it, then explicitly copy it. It never sends captured traffic to an AI provider. Unknown secret formats may still need manual removal. Live AI providers and MCP are future work; see [ROADMAP.md](ROADMAP.md).
 
 ## Timed API testing
 
@@ -229,6 +251,6 @@ Alt + Shift + A is a Chrome extension command; configure it at `chrome://extensi
 
 ## Development and verification
 
-See [DEVELOPMENT.md](DEVELOPMENT.md), [ARCHITECTURE.md](ARCHITECTURE.md), and [TESTING.md](TESTING.md). Optional interception/mocking, environment-variable secrets, OpenAPI/Postman import, remote sharing and cloud sync are intentionally outside this implementation.
+See [DEVELOPMENT.md](DEVELOPMENT.md), [ARCHITECTURE.md](ARCHITECTURE.md), and [TESTING.md](TESTING.md). [ROADMAP.md](ROADMAP.md) separates shipped features from planned mocking, secret-vault/auth flows, OpenAPI/Postman import, live AI/MCP, remote sharing and cloud sync.
 
 The public website is authored in `website` and built into [`docs`](docs/README.md), served over HTTPS by GitHub Pages at <https://mihirbhadak.github.io/ApiSip/>; see [hosting verification](TESTING.md#hosting-verification). Run `npm run site:dev` for a local preview and `npm run test:site` for its browser checks. Its screenshots use only the bundled local API test server. Website downloads open an optional creator/support dialog and move the background to the installation guide; the download itself is never gated. See the [website analytics, feedback and search guide](WEBSITE-GUIDE.md) for setup. Optional website metrics are separate from the telemetry-free extension.

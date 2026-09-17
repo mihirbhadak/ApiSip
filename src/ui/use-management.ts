@@ -97,7 +97,10 @@ export function useManagement({
       description:
         entity.kind === 'collection'
           ? 'The collection will be removed. Requests remain in history.'
-          : 'Contained requests, bodies, editor drafts and timed run reports will be permanently removed.',
+          : 'Contained requests, bodies, editor drafts and timed run reports will be permanently removed.' +
+            (entity.kind === 'workspace'
+              ? ' Its test suites, environments and suite reports will also be deleted.'
+              : ''),
       action: async () => {
         if (entity.kind === 'workspace' && entity.id === settings.workspaceId) {
           const remaining = await listEntities();
@@ -187,7 +190,11 @@ export function useManagement({
     setConfirmation({
       title: 'Clear ' + scope.toLowerCase() + '?',
       description:
-        'This permanently deletes captured history, including saved requests and related editor drafts and timed run reports in that scope. Export a backup first if needed.',
+        'This permanently deletes captured history, including saved requests and related editor drafts and timed run reports in that scope. ' +
+        (scope === 'All stored data'
+          ? 'It also removes all test suites, environments and suite reports. '
+          : '') +
+        'Export history and test suites separately first if needed.',
       action: async () => {
         if (scope === 'All stored data') {
           await clearDatabasePreservingCapture();
