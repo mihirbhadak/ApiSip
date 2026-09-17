@@ -21,6 +21,7 @@ import {
   type ColumnConfig,
 } from './components/RequestTable';
 import type { PaletteCommand } from './components/CommandPalette';
+import { appendCellFilter, type CellFilter } from './request-cell-filter';
 type Modal =
   'runs' | '' | 'filters' | 'export' | 'settings' | 'commands' | 'columns' | 'collection';
 export function useInspectorController() {
@@ -62,7 +63,12 @@ export function useInspectorController() {
   const [group, setGroup] = useState('none'),
     [groupValue, setGroupValue] = useState(''),
     [panelWidth, setPanelWidth] = useState(48);
-  const [context, setContext] = useState<{ x: number; y: number }>(),
+  const [context, setContext] = useState<{
+      x: number;
+      y: number;
+      recordId: string;
+      filter?: CellFilter;
+    }>(),
     [toast, setToast] = useState(''),
     [operationError, setOperationError] = useState('');
   const searchInput = useRef<HTMLInputElement>(null),
@@ -85,6 +91,15 @@ export function useInspectorController() {
       setOperationError(e instanceof Error ? e.message : 'The operation failed.'),
     );
   }, []);
+  const addCellFilter = (filter: CellFilter) => {
+    try {
+      setExpression(appendCellFilter(expression, filter.node));
+      setOperationError('');
+      notify('Filter added: ' + filter.label);
+    } catch (error) {
+      setOperationError(error instanceof Error ? error.message : 'Could not add this filter.');
+    }
+  };
   const changed = useCallback(async () => {
     await sendCommand({ type: 'changed' });
     await refresh();
@@ -321,56 +336,63 @@ export function useInspectorController() {
       setContext(undefined);
     },
   });
-  const contextActions = record
-    ? [
-        { name: 'Replay / open editor', run: () => setDetailTab('Replay') },
-        {
-          name: 'Copy URL',
-          run: () => copy((settings.maskSecrets ? redactRecord(record) : record).request.url),
-        },
-        { name: 'Copy cURL', run: copyCurl },
-        {
-          name: 'Copy everything',
-          run: () =>
-            copy(JSON.stringify(settings.maskSecrets ? redactRecord(record) : record, null, 2)),
-        },
-        { name: 'Save request', run: () => updateRecord({ isFavorite: true }) },
-        { name: 'Add tags / notes', run: () => setDetailTab('Overview') },
-        { name: 'Add to collection', run: () => setModal('collection') },
-        { name: 'Pin / unpin', run: () => updateRecord({ isPinned: !record.isPinned }) },
-        {
-          name: 'Export',
-          run: () => {
-            setSelected(new Set([record.id]));
-            setModal('export');
+  const recordActions =
+    record && record.id === context?.recordId
+      ? [
+          { name: 'Replay / open editor', run: () => setDetailTab('Replay') },
+          {
+            name: 'Copy URL',
+            run: () => copy((settings.maskSecrets ? redactRecord(record) : record).request.url),
           },
-        },
-        { name: 'Compare replays', run: () => setDetailTab('Replay') },
-        {
-          name: 'Open URL in new tab',
-          run: () =>
-            task(async () => {
-              if (!/^https?:/.test(record.request.url))
-                throw new Error('Only HTTP(S) URLs can be opened.');
-              await chrome.tabs.create({ url: record.request.url });
-            }),
-        },
-        {
-          name: 'Delete request',
-          run: () =>
-            management.setConfirmation({
-              title: 'Delete request?',
-              description:
-                'This removes the request, its drafts, replay history and timed run reports. An active timed run for this request will stop.',
-              action: async () => {
-                await deleteRecords([record.id]);
-                setRecordId(undefined);
-                await changed();
-              },
-            }),
-        },
-      ]
-    : [];
+          { name: 'Copy cURL', run: copyCurl },
+          {
+            name: 'Copy everything',
+            run: () =>
+              copy(JSON.stringify(settings.maskSecrets ? redactRecord(record) : record, null, 2)),
+          },
+          { name: 'Save request', run: () => updateRecord({ isFavorite: true }) },
+          { name: 'Add tags / notes', run: () => setDetailTab('Overview') },
+          { name: 'Add to collection', run: () => setModal('collection') },
+          { name: 'Pin / unpin', run: () => updateRecord({ isPinned: !record.isPinned }) },
+          {
+            name: 'Export',
+            run: () => {
+              setSelected(new Set([record.id]));
+              setModal('export');
+            },
+          },
+          { name: 'Compare replays', run: () => setDetailTab('Replay') },
+          {
+            name: 'Open URL in new tab',
+            run: () =>
+              task(async () => {
+                if (!/^https?:/.test(record.request.url))
+                  throw new Error('Only HTTP(S) URLs can be opened.');
+                await chrome.tabs.create({ url: record.request.url });
+              }),
+          },
+          {
+            name: 'Delete request',
+            run: () =>
+              management.setConfirmation({
+                title: 'Delete request?',
+                description:
+                  'This removes the request, its drafts, replay history and timed run reports. An active timed run for this request will stop.',
+                action: async () => {
+                  await deleteRecords([record.id]);
+                  setRecordId(undefined);
+                  await changed();
+                },
+              }),
+          },
+        ]
+      : [];
+  const contextActions = [
+    ...(context?.filter
+      ? [{ name: 'Add filter: ' + context.filter.label, run: () => addCellFilter(context.filter!) }]
+      : []),
+    ...recordActions,
+  ];
   return {
     captureShortcut,
     search,
@@ -436,6 +458,7 @@ export function useInspectorController() {
     clear,
     commands,
     contextActions,
+    addCellFilter,
   };
 }
 export type InspectorController = ReturnType<typeof useInspectorController>;

@@ -37,7 +37,6 @@ export function InspectorOverlays({ controller }: { controller: InspectorControl
     recordId,
     management,
     context,
-    record,
     contextActions,
     setContext,
     toast,
@@ -172,7 +171,7 @@ export function InspectorOverlays({ controller }: { controller: InspectorControl
           }}
         />
       )}
-      {context && record && record.id === recordId && (
+      {context && context.recordId === recordId && contextActions.length > 0 && (
         <RequestMenu
           position={context}
           actions={contextActions}

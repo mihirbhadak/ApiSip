@@ -107,6 +107,13 @@ test.beforeAll(async () => {
   const build = JSON.parse(await readFile('dist/build-info.json', 'utf8'));
   const state = await inspector.evaluate(() => chrome.runtime.sendMessage({ type: 'state' }));
   expect(state.data.buildId).toBe(build.buildId);
+  // Clearing history preserves recording. Start this runner fixture from a known paused state.
+  if (state.data.settings.recording) {
+    await inspector.getByRole('button', { name: 'Recording', exact: true }).click();
+    await expect(
+      inspector.getByRole('button', { name: 'Start capture', exact: true }),
+    ).toBeVisible();
+  }
   await inspector.getByLabel('Open settings').click();
   await inspector.getByRole('tab', { name: 'Privacy & storage', exact: true }).click();
   await inspector.getByRole('button', { name: 'Clear all stored data', exact: true }).click();
@@ -124,6 +131,21 @@ test.beforeAll(async () => {
   const page = await context.newPage();
   await page.goto(base);
   await page.bringToFront();
+  // Tab activation and its persisted capture target are asynchronous. Establish the source
+  // before switching to the inspector and emitting the single request used by this fixture.
+  const sourceTab = await inspector.evaluate(async () => {
+    const [tab] = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
+    return { id: tab?.id, url: tab?.url };
+  });
+  expect(sourceTab.url).toBe(base + '/');
+  expect(sourceTab.id).toBeDefined();
+  await expect
+    .poll(
+      async () =>
+        (await inspector.evaluate(() => chrome.runtime.sendMessage({ type: 'state' }))).data
+          .settings.activeTabId,
+    )
+    .toBe(sourceTab.id);
   await inspector.bringToFront();
   if (await inspector.getByRole('button', { name: 'Start capture', exact: true }).count())
     await inspector.getByRole('button', { name: 'Start capture', exact: true }).click();
@@ -136,7 +158,38 @@ test.beforeAll(async () => {
     });
   });
   await inspector.getByLabel('Search APIs').fill('runner-source');
-  await expect(inspector.getByTestId('request-row')).toHaveCount(1);
+  try {
+    await expect(inspector.getByTestId('request-row')).toHaveCount(1);
+  } catch (error) {
+    console.log(
+      'Runner capture setup',
+      await inspector.evaluate(async () => {
+        const { data } = await chrome.runtime.sendMessage({ type: 'state' });
+        return {
+          settings: {
+            recording: data.settings.recording,
+            provider: data.settings.provider,
+            scope: data.settings.scope,
+            activeTabId: data.settings.activeTabId,
+            sessionId: data.settings.sessionId,
+          },
+          count: data.count,
+          tabCount: data.tabCount,
+          sessionCount: data.sessionCount,
+          hostsGranted: data.hostsGranted,
+          diagnostics: data.diagnostics,
+          tabs: (await chrome.tabs.query({})).map(({ id, active, url }) => ({
+            id,
+            active,
+            origin: url ? new URL(url).origin : undefined,
+          })),
+        };
+      }),
+    );
+    console.log('Runner source stored', Boolean(await capturedSource()), 'UI errors', errors);
+    await inspector.screenshot({ path: 'test-results/visual/runner-capture-setup-failure.png' });
+    throw error;
+  }
   await inspector.getByTestId('request-row').click();
   await inspector.getByRole('tab', { name: 'Replay', exact: true }).click();
   [editor] = await Promise.all([

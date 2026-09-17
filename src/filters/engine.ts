@@ -24,6 +24,9 @@ export const fields = [
   'favorite',
   'pinned',
   'operationName',
+  'protocol',
+  'frameId',
+  'cache',
 ] as const;
 export const operators = [
   '=',
@@ -106,6 +109,12 @@ function values(r: CapturedRequest, field: string): unknown[] {
       return [r.isPinned];
     case 'operationName':
       return [r.metadata.operationName];
+    case 'protocol':
+      return [r.request.protocol];
+    case 'frameId':
+      return [r.frameId];
+    case 'cache':
+      return [r.metadata.fromCache];
     default:
       throw new Error('Unknown filter field: ' + field);
   }

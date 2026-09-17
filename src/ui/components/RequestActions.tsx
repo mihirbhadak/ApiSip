@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Folder, Plus } from 'lucide-react';
 import type { Entity } from '../../shared/model';
 import { allColumns, defaultColumns, type ColumnConfig } from './RequestTable';
@@ -122,8 +122,19 @@ export function RequestMenu({
   actions: { name: string; run: () => void }[];
   onClose: () => void;
 }) {
+  const menu = useRef<HTMLDivElement>(null);
+  const previousFocus = useRef(document.activeElement as HTMLElement | null);
+  const [origin, setOrigin] = useState(position);
+  useLayoutEffect(() => {
+    const bounds = menu.current?.getBoundingClientRect();
+    if (bounds)
+      setOrigin({
+        x: Math.max(6, Math.min(position.x, window.innerWidth - bounds.width - 6)),
+        y: Math.max(6, Math.min(position.y, window.innerHeight - bounds.height - 6)),
+      });
+  }, [position, actions.length]);
   useEffect(() => {
-    const previous = document.activeElement as HTMLElement | null;
+    const previous = previousFocus.current;
     return () => previous?.focus();
   }, []);
   return (
@@ -136,12 +147,13 @@ export function RequestMenu({
       }}
     >
       <div
+        ref={menu}
         className="context-menu"
         role="menu"
         aria-label="Request actions"
         style={{
-          left: Math.max(0, Math.min(position.x, window.innerWidth - 235)),
-          top: Math.max(0, Math.min(position.y, window.innerHeight - 380)),
+          left: origin.x,
+          top: origin.y,
         }}
         onKeyDown={(e) => {
           if (e.key === 'Escape') {

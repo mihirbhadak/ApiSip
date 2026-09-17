@@ -3,6 +3,7 @@ import { ArrowDown, ArrowUp, Pin, Star } from 'lucide-react';
 import type { CapturedRequest } from '../../shared/model';
 import { formatBytes, formatTime } from '../../shared/parse';
 import { redactUrl, redactText } from '../../shared/security';
+import { requestCellFilter, type CellFilter } from '../request-cell-filter';
 export const allColumns = [
   'Method',
   'URL',
@@ -53,7 +54,7 @@ export function columnValue(r: CapturedRequest, c: Column): string | number {
     case 'Protocol':
       return r.request.protocol ?? '';
     case 'MIME':
-      return r.metadata.mimeType ?? '';
+      return r.metadata.mimeType ?? r.response?.contentType ?? '';
     case 'Tab':
       return r.tabId ?? -1;
     case 'Frame':
@@ -118,6 +119,7 @@ export function RequestTable({
   onToggle,
   onToggleAll,
   onContext,
+  onAddFilter,
   columns,
   onColumns,
   sort,
@@ -131,7 +133,8 @@ export function RequestTable({
   onSelect: (r: CapturedRequest) => void;
   onToggle: (id: string) => void;
   onToggleAll: (checked: boolean) => void;
-  onContext: (r: CapturedRequest, x: number, y: number) => void;
+  onContext: (r: CapturedRequest, x: number, y: number, column?: Column) => void;
+  onAddFilter: (filter: CellFilter) => void;
   columns: ColumnConfig[];
   onColumns: (columns: ColumnConfig[]) => void;
   sort: { column: Column; desc: boolean };
@@ -144,6 +147,14 @@ export function RequestTable({
     [height, setHeight] = useState(600);
   const [unseen, setUnseen] = useState(0),
     previous = useRef(rows.length);
+  const [activeColumn, setActiveColumn] = useState<Column>('URL');
+  const selectionTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const cancelSelection = () => clearTimeout(selectionTimer.current);
+  useEffect(() => () => clearTimeout(selectionTimer.current), []);
+  const eventColumn = (target: EventTarget) => {
+    const name = (target as Element).closest('[data-column]')?.getAttribute('data-column');
+    return columns.find((column) => column.name === name)?.name;
+  };
   useEffect(() => {
     const element = viewport.current;
     if (!element) return;
@@ -202,6 +213,41 @@ export function RequestTable({
           const target = e.target as HTMLElement;
           if (target !== e.currentTarget && target.matches('input, button, [role="separator"]'))
             return;
+          cancelSelection();
+          const column = eventColumn(e.target);
+          const focusedRow = rows.find((item) => item.id === focused);
+          if (
+            e.key === 'Enter' &&
+            !e.ctrlKey &&
+            !e.metaKey &&
+            !e.altKey &&
+            !e.shiftKey &&
+            column &&
+            focusedRow
+          ) {
+            const filter = requestCellFilter(focusedRow, column, mask);
+            if (filter) {
+              e.preventDefault();
+              e.stopPropagation();
+              onAddFilter(filter);
+            }
+            return;
+          }
+          if (['ArrowLeft', 'ArrowRight'].includes(e.key) && focusedRow) {
+            e.preventDefault();
+            const index = columns.findIndex((item) => item.name === (column ?? activeColumn));
+            const next =
+              columns[
+                Math.max(0, Math.min(columns.length - 1, index + (e.key === 'ArrowRight' ? 1 : -1)))
+              ];
+            if (next) {
+              setActiveColumn(next.name);
+              e.currentTarget
+                .querySelector<HTMLElement>(`[aria-selected="true"] [data-column="${next.name}"]`)
+                ?.focus();
+            }
+            return;
+          }
           if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'a') {
             e.preventDefault();
             e.stopPropagation();
@@ -218,7 +264,7 @@ export function RequestTable({
             if (row) {
               e.preventDefault();
               const rect = e.currentTarget.getBoundingClientRect();
-              onContext(row, rect.left + 80, rect.top + 75);
+              onContext(row, rect.left + 80, rect.top + 75, column);
             }
             return;
           }
@@ -242,6 +288,12 @@ export function RequestTable({
               (next * rowHeight < scroll || next * rowHeight > scroll + height - 80)
             )
               viewport.current.scrollTop = next * rowHeight;
+            if (column)
+              requestAnimationFrame(() => {
+                viewport.current
+                  ?.querySelector<HTMLElement>(`[aria-selected="true"] [data-column="${column}"]`)
+                  ?.focus();
+              });
           }
         }}
       >
@@ -333,11 +385,25 @@ export function RequestTable({
                 width: '100%',
                 height: rowHeight,
               }}
-              onClick={() => onSelect(r)}
+              onClick={(e) => {
+                cancelSelection();
+                const column = eventColumn(e.target);
+                // Opening details changes the table width. Keep the first click's cell in place
+                // long enough for a double-click; keyboard and already-open details stay instant.
+                if (column && requestCellFilter(r, column, mask) && e.detail > 0) {
+                  if (e.detail > 1) return;
+                  if (!focused) {
+                    selectionTimer.current = setTimeout(() => onSelect(r), 400);
+                    return;
+                  }
+                }
+                onSelect(r);
+              }}
               onContextMenu={(e) => {
                 e.preventDefault();
+                cancelSelection();
                 onSelect(r);
-                onContext(r, e.clientX, e.clientY);
+                onContext(r, e.clientX, e.clientY, eventColumn(e.target));
               }}
             >
               <span role="cell">
@@ -373,6 +439,18 @@ export function RequestTable({
               {columns.map((c) => (
                 <span
                   role="cell"
+                  data-column={c.name}
+                  tabIndex={focused === r.id && activeColumn === c.name ? 0 : -1}
+                  onFocus={() => setActiveColumn(c.name)}
+                  onDoubleClick={(e) => {
+                    cancelSelection();
+                    const filter = requestCellFilter(r, c.name, mask);
+                    if (filter) {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      onAddFilter(filter);
+                    }
+                  }}
                   title={
                     mask
                       ? c.name === 'URL' || c.name === 'Initiator'

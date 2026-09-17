@@ -856,6 +856,9 @@ kbd {
 .table-row > span:first-child {
   padding-left: 11px;
 }
+.table-row.selected .url-domain {
+  color: var(--accent-text);
+}
 .table-row .star {
   color: var(--muted);
   min-width: 20px;
@@ -1592,6 +1595,9 @@ kbd {
   padding: 5px;
   display: flex;
   flex-direction: column;
+  max-height: calc(100vh - 12px);
+  max-width: calc(100vw - 12px);
+  overflow-y: auto;
 }
 .context-menu button {
   border: 0;
@@ -1599,6 +1605,9 @@ kbd {
   justify-content: flex-start;
   min-height: 28px;
   font-size: 11px;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  text-align: left;
 }
 .context-menu button:hover {
   background: var(--surface-hover);

@@ -4,6 +4,7 @@ import { Analytics } from './Analytics';
 import { RequestTable } from './RequestTable';
 import { RequestDetails } from './RequestDetails';
 import type { InspectorController } from '../use-inspector-controller';
+import { requestCellFilter } from '../request-cell-filter';
 export function TrafficPanes({ controller }: { controller: InspectorController }) {
   const {
     view,
@@ -36,6 +37,7 @@ export function TrafficPanes({ controller }: { controller: InspectorController }
     setRecordId,
     saveDraft,
     refresh,
+    addCellFilter,
   } = controller;
   return (
     <>
@@ -73,7 +75,15 @@ export function TrafficPanes({ controller }: { controller: InspectorController }
                     return next;
                   })
                 }
-                onContext={(_r, x, y) => setContext({ x, y })}
+                onContext={(r, x, y, column) =>
+                  setContext({
+                    x,
+                    y,
+                    recordId: r.id,
+                    filter: column ? requestCellFilter(r, column, settings.maskSecrets) : undefined,
+                  })
+                }
+                onAddFilter={addCellFilter}
                 columns={columns}
                 onColumns={setColumns}
                 sort={sort}

@@ -51,6 +51,7 @@ const defaults: Record<string, string[]> = {
   size: ['1024', '102400', '1048576'],
   favorite: ['true', 'false'],
   pinned: ['true', 'false'],
+  cache: ['true', 'false'],
   requestBody: ['error', 'query', 'variables'],
   responseBody: ['error', 'message', 'data'],
 };
@@ -93,6 +94,9 @@ export function buildFilterSuggestions(records: CapturedRequest[]): FilterSugges
     add('mimeType', record.metadata.mimeType ?? record.response?.contentType);
     add('size', record.response?.size);
     add('tabId', record.tabId);
+    add('frameId', record.frameId);
+    add('protocol', record.request.protocol);
+    add('cache', record.metadata.fromCache);
     add('timestamp', record.timestamp);
     add('pageUrl', record.pageUrl && redactUrl(record.pageUrl));
     add('initiator', record.initiator && redactUrl(record.initiator));

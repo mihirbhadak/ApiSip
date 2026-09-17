@@ -189,6 +189,7 @@ it('selects all filtered rows including unrendered ones and exposes partial sele
           onToggle={(id) => setSelected(new Set([id]))}
           onToggleAll={(checked) => setSelected(new Set(checked ? rows.map((row) => row.id) : []))}
           onContext={vi.fn()}
+          onAddFilter={vi.fn()}
           columns={defaultColumns}
           onColumns={vi.fn()}
           sort={{ column: 'Timestamp', desc: true }}

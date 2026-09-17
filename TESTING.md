@@ -1,5 +1,17 @@
 # Verification report
 
+## 0.1.3 cell filtering — September 17, 2026
+
+- Lint, strict TypeScript, **191 unit/component/integration tests**, formatting and the production build passed. Cell-filter tests cover all populated columns, XHR aliases, exact numeric values, missing metadata, masked secrets, safe quoting, OR/NOT grouping, deduplication and expression limits.
+- The final full Chrome suite passed **all 28 tests in one run**. The new regression uses genuine local XHR and fetch requests: right-click the third row's Type cell, apply its XHR rule, append a method rule, preserve an existing OR expression, double-click with details initially closed, repeat without duplicates, then filter using keyboard cell navigation. Menu accessibility and real screenshots were checked.
+- The first new browser check exposed insufficient selected-row domain contrast; the color was corrected and the same accessibility assertion passed. A later broad run passed 21 scenarios but stopped in the runner fixture before its source request appeared. The unchanged runner scenarios passed separately; fixture setup now starts paused and asserts the current-tab target before emitting its source request, with diagnostics on failure. The final 28-test run passed without skips, retries or relaxed request-count assertions.
+- The final capture benchmark handled 10,000 real requests with fewer than 50 rendered rows; its targeted search took 853 ms. The timed-run regression started 10,000 requests in 60,013.7 ms with zero missed slots and a 32,647-byte report. These are local measurements, not rate guarantees.
+- All **23 website tests** passed for the 0.1.3 download URLs. After adding the cell-filter feature description, the five indexing/responsive/accessibility tests passed again. All package and manifest versions are 0.1.3.
+
+Build: `2026-09-17T09:52:05.178Z`. The ZIP contains 30 verified files and is 1,204,533 bytes. SHA-256: `38752bf8da38c30af5c6622e431e323462f4bd87f3512c1c55fb124293b17a50`. Packaging verified both manifests, every archived byte and 96 source-map entries against the current sources. Extension screenshots: `test-results/visual/cell-filter-context.png` and `cell-filter-applied.png`.
+
+The exact ZIP was extracted into a new folder and loaded by a fresh isolated Chrome profile. Its onboarding test passed: setup appeared, recording remained paused, optional access was absent, response capture defaulted on, and the inspected extension warnings/errors and accessibility checks were clean.
+
 ## Website Chrome menu guide — September 17, 2026
 
 Replaced the clipboard installation step with **How to open extensions**, a dialog explaining Chrome's menu route. A real link click from an HTTPS test origin in installed Google Chrome 152.0.7977.83 remained on the website and logged `Not allowed to load local resource: chrome://extensions/`. This agrees with [Chrome's documented restriction](https://developer.chrome.com/docs/extensions/get-started/tutorial/hello-world#load-unpacked); the website cannot directly open the internal page.

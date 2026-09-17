@@ -26,6 +26,7 @@ describe('request table', () => {
         onToggle={onToggle}
         onToggleAll={vi.fn()}
         onContext={vi.fn()}
+        onAddFilter={vi.fn()}
         columns={defaultColumns}
         onColumns={vi.fn()}
         sort={{ column: 'Timestamp', desc: true }}
