@@ -111,6 +111,11 @@ test.beforeAll(async () => {
   await inspector.getByRole('tab', { name: 'Privacy & storage', exact: true }).click();
   await inspector.getByRole('button', { name: 'Clear all stored data', exact: true }).click();
   await inspector.getByRole('dialog').getByRole('button', { name: 'Delete', exact: true }).click();
+  await expect(inspector.getByRole('dialog')).toHaveCount(0);
+  // Runner tests observe metadata; response-capture defaults are covered separately.
+  const responseCapture = inspector.getByLabel('Capture response bodies');
+  if (await responseCapture.isChecked()) await responseCapture.click();
+  await expect(responseCapture).not.toBeChecked();
   await inspector.getByLabel('Open settings').click();
   await inspector.getByRole('tab', { name: 'Appearance', exact: true }).click();
   await inspector.getByRole('combobox', { name: 'Theme' }).click();
@@ -120,7 +125,9 @@ test.beforeAll(async () => {
   await page.goto(base);
   await page.bringToFront();
   await inspector.bringToFront();
-  await inspector.getByRole('button', { name: 'Start capture', exact: true }).click();
+  if (await inspector.getByRole('button', { name: 'Start capture', exact: true }).count())
+    await inspector.getByRole('button', { name: 'Start capture', exact: true }).click();
+  await expect(inspector.getByRole('button', { name: 'Recording', exact: true })).toBeVisible();
   await page.evaluate(async () => {
     await fetch('/api/json?runner-source=1', {
       method: 'POST',
@@ -470,6 +477,12 @@ test('stops an active run when its source is deleted and never resurrects delete
   const page = await context.newPage();
   await page.goto(base);
   await page.bringToFront();
+  await expect
+    .poll(async () => {
+      const state = await inspector.evaluate(() => chrome.runtime.sendMessage({ type: 'state' }));
+      return state.data.settings.activePageUrl;
+    })
+    .toBe(base + '/');
   await page.evaluate(() =>
     fetch('/api/json?runner-source=2', {
       method: 'POST',

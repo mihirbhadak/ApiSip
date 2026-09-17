@@ -1,10 +1,12 @@
 import { TabBar } from './TabBar';
 import { SearchSelect } from './SearchSelect';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Plus, Trash2 } from 'lucide-react';
-import { fields, operators, type FilterNode } from '../../filters/engine';
+import { operators, type FilterNode } from '../../filters/engine';
 import { parseFilter, printFilter } from '../../filters/parser';
 import { Dialog } from './Dialog';
+import { buildFilterSuggestions, type FilterSuggestions } from '../../filters/suggestions';
+import { listRows, type Scope } from '../../storage/repository';
 const predicate = (): FilterNode => ({
   type: 'predicate',
   field: 'url',
@@ -15,10 +17,14 @@ export function FilterGroup({
   node,
   onChange,
   depth = 0,
+  suggestions = buildFilterSuggestions([]),
+  onApply,
 }: {
   node: FilterNode;
   onChange: (n: FilterNode) => void;
   depth?: number;
+  suggestions?: FilterSuggestions;
+  onApply?: () => void;
 }) {
   if (node.type === 'predicate')
     return (
@@ -29,7 +35,7 @@ export function FilterGroup({
           value={node.field}
           onValueChange={(value) => onChange({ ...node, field: value })}
         >
-          {fields.map((field) => (
+          {suggestions.fields.map((field) => (
             <option key={field}>{field}</option>
           ))}
         </SearchSelect>
@@ -43,12 +49,18 @@ export function FilterGroup({
           ))}
         </SearchSelect>
         {!node.operator.includes('exists') && (
-          <input
+          <SearchSelect
             aria-label="Filter value"
-            placeholder="Value"
+            allowCustom
+            updateCustomWhileTyping
             value={node.value}
-            onChange={(e) => onChange({ ...node, value: e.target.value })}
-          />
+            onValueChange={(value) => onChange({ ...node, value })}
+            onEnter={onApply}
+          >
+            {(suggestions.values.get(node.field) ?? []).map((value) => (
+              <option key={value}>{value}</option>
+            ))}
+          </SearchSelect>
         )}
       </div>
     );
@@ -65,6 +77,8 @@ export function FilterGroup({
           node={node.child}
           onChange={(child) => onChange({ ...node, child })}
           depth={depth + 1}
+          suggestions={suggestions}
+          onApply={onApply}
         />
       </div>
     );
@@ -86,6 +100,8 @@ export function FilterGroup({
           <FilterGroup
             node={child}
             depth={depth + 1}
+            suggestions={suggestions}
+            onApply={onApply}
             onChange={(next) =>
               onChange({
                 ...node,
@@ -148,11 +164,13 @@ export function FilterBuilder({
   onApply,
   onSave,
   onClose,
+  scope,
 }: {
   expression: string;
   onApply: (value: string) => void;
   onSave: (name: string, value: string) => void;
   onClose: () => void;
+  scope?: Scope;
 }) {
   const initial = () => {
     try {
@@ -169,6 +187,26 @@ export function FilterBuilder({
     [tab, setTab] = useState('Visual'),
     [error, setError] = useState(''),
     [name, setName] = useState('');
+  const [suggestions, setSuggestions] = useState(() => buildFilterSuggestions([]));
+  const [suggestionError, setSuggestionError] = useState('');
+  const workspaceId = scope?.workspaceId,
+    sessionId = scope?.sessionId,
+    tabId = scope?.tabId;
+  useEffect(() => {
+    if (!workspaceId && !sessionId && tabId === undefined) return;
+    let active = true;
+    void listRows({ workspaceId, sessionId, tabId })
+      .then((records) => {
+        if (active) setSuggestions(buildFilterSuggestions(records));
+      })
+      .catch(() => {
+        if (active)
+          setSuggestionError('Captured suggestions are unavailable. You can still type any value.');
+      });
+    return () => {
+      active = false;
+    };
+  }, [workspaceId, sessionId, tabId]);
   const value = tab === 'Visual' ? printFilter(node) : raw;
   const validate = (save: boolean) => {
     try {
@@ -207,16 +245,32 @@ export function FilterBuilder({
         ))}
       </TabBar>
       {tab === 'Visual' ? (
-        <FilterGroup node={node} onChange={setNode} />
+        <FilterGroup
+          node={node}
+          onChange={setNode}
+          suggestions={suggestions}
+          onApply={() => validate(false)}
+        />
       ) : (
         <textarea
           className="expression-editor"
           aria-label="Filter expression"
           value={raw}
           onChange={(e) => setRaw(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+              e.preventDefault();
+              validate(false);
+            }
+          }}
           placeholder={'method = POST AND (status >= 400 OR timing.total > 1000)'}
         />
       )}
+      <p className="small muted">
+        Pick a suggestion or type a custom value, then press Enter again to apply. In expression
+        mode, Enter applies; Shift + Enter adds a line. XHR and XMLHttpRequest are equivalent.
+        {suggestionError}
+      </p>
       <p className="small muted">
         Named values: requestHeader.Authorization, queryParam.page, timing.total. Quote strings with
         double quotes. Regex supports a safe subset; invalid patterns are rejected.

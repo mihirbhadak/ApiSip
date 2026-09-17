@@ -1,6 +1,8 @@
 import { uid, type CapturedRequest, type Pair } from '../../shared/model';
 import { header, makeBody, parseUrl, unavailable, bodyType } from '../../shared/parse';
 import { type CaptureContext, type CaptureProvider, serialQueue } from '../types';
+import { CoalescedTask } from '../../shared/coalesced-task';
+import { hasCaptureAccess } from '../../shared/permissions';
 
 const pairs = (headers?: chrome.webRequest.HttpHeader[]): Pair[] =>
   (headers ?? []).map((h) => ({
@@ -12,21 +14,61 @@ export class WebRequestProvider implements CaptureProvider {
   readonly name = 'webRequest';
   private queue;
   private subscriptions: (() => void)[] = [];
+  private refresh = new CoalescedTask(async () => {
+    if (!(await hasCaptureAccess())) {
+      this.unregister();
+      // An upgrade from a build with required webRequest, or external host
+      // revocation, can leave the API granted without its hosts. Repair the pair
+      // so subsequent cold starts do not register against absent host access.
+      if (chrome.webRequest && (await chrome.permissions.contains({ permissions: ['webRequest'] })))
+        await chrome.permissions.remove({ permissions: ['webRequest'] });
+      return;
+    }
+    try {
+      this.attach();
+    } catch (error) {
+      this.unregister();
+      throw error;
+    }
+  });
   constructor(
     private context: CaptureContext,
     private isDebugged: (tabId: number) => boolean,
   ) {
     this.queue = serialQueue((message) => context.report(message, 'error'));
   }
-  async reconcile() {
-    /* Synchronous listeners stay registered throughout the worker lifecycle. */
+  reconcile() {
+    return this.refresh.run();
+  }
+  get subscribed() {
+    return this.subscriptions.length === 6;
+  }
+  register() {
+    // Chrome omits this namespace until the optional webRequest permission is granted.
+    // We request it together with both hosts. Once granted, register synchronously:
+    // waiting on a promise here loses the request that wakes an idle service worker.
+    if (chrome.webRequest) {
+      try {
+        this.attach();
+      } catch {
+        this.unregister();
+        this.context.report('Could not restore passive capture. Review website access.', 'error');
+      }
+    }
+    void this.reconcile().catch(() =>
+      this.context.report('Could not initialize passive capture. Check site access.', 'error'),
+    );
+  }
+  private unregister() {
+    for (const remove of this.subscriptions) remove();
+    this.subscriptions = [];
   }
   private event(id: string, fn: (key: string) => Promise<void>) {
     this.queue(id, async () => fn((await this.context.epoch) + ':wr:' + id));
   }
-  register() {
-    for (const remove of this.subscriptions) remove();
-    this.subscriptions = [];
+  private attach() {
+    if (this.subscriptions.length) return;
+    const api = chrome.webRequest;
     const filter = { urls: ['http://*/*', 'https://*/*'] };
     const onBeforeRequest: Parameters<typeof chrome.webRequest.onBeforeRequest.addListener>[0] = (
       d,
@@ -125,10 +167,8 @@ export class WebRequestProvider implements CaptureProvider {
       });
       return undefined;
     };
-    chrome.webRequest.onBeforeRequest.addListener(onBeforeRequest, filter, ['requestBody']);
-    this.subscriptions.push(() =>
-      chrome.webRequest.onBeforeRequest.removeListener(onBeforeRequest),
-    );
+    api.onBeforeRequest.addListener(onBeforeRequest, filter, ['requestBody']);
+    this.subscriptions.push(() => api.onBeforeRequest.removeListener(onBeforeRequest));
     const onBeforeSendHeaders: Parameters<
       typeof chrome.webRequest.onBeforeSendHeaders.addListener
     >[0] = (d) => {
@@ -158,13 +198,11 @@ export class WebRequestProvider implements CaptureProvider {
       });
       return undefined;
     };
-    chrome.webRequest.onBeforeSendHeaders.addListener(onBeforeSendHeaders, filter, [
+    api.onBeforeSendHeaders.addListener(onBeforeSendHeaders, filter, [
       'requestHeaders',
       'extraHeaders',
     ]);
-    this.subscriptions.push(() =>
-      chrome.webRequest.onBeforeSendHeaders.removeListener(onBeforeSendHeaders),
-    );
+    this.subscriptions.push(() => api.onBeforeSendHeaders.removeListener(onBeforeSendHeaders));
     const onHeadersReceived: Parameters<
       typeof chrome.webRequest.onHeadersReceived.addListener
     >[0] = (d) => {
@@ -193,13 +231,11 @@ export class WebRequestProvider implements CaptureProvider {
       });
       return undefined;
     };
-    chrome.webRequest.onHeadersReceived.addListener(onHeadersReceived, filter, [
+    api.onHeadersReceived.addListener(onHeadersReceived, filter, [
       'responseHeaders',
       'extraHeaders',
     ]);
-    this.subscriptions.push(() =>
-      chrome.webRequest.onHeadersReceived.removeListener(onHeadersReceived),
-    );
+    this.subscriptions.push(() => api.onHeadersReceived.removeListener(onHeadersReceived));
     const onCompleted: Parameters<typeof chrome.webRequest.onCompleted.addListener>[0] = (d) => {
       if (d.tabId < 0) return;
       this.event(d.requestId, async (key) => {
@@ -220,8 +256,8 @@ export class WebRequestProvider implements CaptureProvider {
         );
       });
     };
-    chrome.webRequest.onCompleted.addListener(onCompleted, filter);
-    this.subscriptions.push(() => chrome.webRequest.onCompleted.removeListener(onCompleted));
+    api.onCompleted.addListener(onCompleted, filter);
+    this.subscriptions.push(() => api.onCompleted.removeListener(onCompleted));
     const onBeforeRedirect: Parameters<typeof chrome.webRequest.onBeforeRedirect.addListener>[0] = (
       d,
     ) => {
@@ -238,10 +274,8 @@ export class WebRequestProvider implements CaptureProvider {
         );
       });
     };
-    chrome.webRequest.onBeforeRedirect.addListener(onBeforeRedirect, filter);
-    this.subscriptions.push(() =>
-      chrome.webRequest.onBeforeRedirect.removeListener(onBeforeRedirect),
-    );
+    api.onBeforeRedirect.addListener(onBeforeRedirect, filter);
+    this.subscriptions.push(() => api.onBeforeRedirect.removeListener(onBeforeRedirect));
     const onErrorOccurred: Parameters<typeof chrome.webRequest.onErrorOccurred.addListener>[0] = (
       d,
     ) => {
@@ -258,9 +292,7 @@ export class WebRequestProvider implements CaptureProvider {
         );
       });
     };
-    chrome.webRequest.onErrorOccurred.addListener(onErrorOccurred, filter);
-    this.subscriptions.push(() =>
-      chrome.webRequest.onErrorOccurred.removeListener(onErrorOccurred),
-    );
+    api.onErrorOccurred.addListener(onErrorOccurred, filter);
+    this.subscriptions.push(() => api.onErrorOccurred.removeListener(onErrorOccurred));
   }
 }

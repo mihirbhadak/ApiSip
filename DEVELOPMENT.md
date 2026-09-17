@@ -19,18 +19,21 @@ npx playwright install chromium
 npm run test:authorize
 npm run test:e2e
 npm run format:check
+python scripts/package-extension.py
 npm audit
 ```
 
 `npm run check` runs lint, TypeScript, unit/component/integration tests, then the production build. Browser E2E is a separate step and uses the **current dist build**. Rebuild before running it.
+
+`python scripts/package-extension.py` verifies manifest/HTML assets, source-map source freshness and every ZIP byte, then writes a versioned ZIP and SHA-256 file under `artifacts/`. Requires Python 3.9+. Always build and test first; select the extracted ZIP root in Chrome, not its `assets` subfolder.
 
 The Vite development page helps with UI work; Chrome capture APIs require loading the repository root or `dist` as an unpacked extension after building. There is no popup. The toolbar icon opens or focuses `inspector.html`.
 
 ## Extension workflow
 
 1. Build, load the repository root (or the standalone `dist` folder) through `chrome://extensions`, and pin ApiSip. The root manifest is generated from `public/manifest.json`; edit that source manifest, not a generated manifest.
-2. Open an HTTP(S) page, click the icon, then start capture.
-3. Chrome requests optional HTTP(S) site access. Response capture is a separate opt-in switch.
+2. Review the automatically opened setup page and click **Allow website access** to request optional HTTP(S) access. Continue without capture is also available.
+3. Open an HTTP(S) page, then start capture. New installs default to response capture and Chrome shows a debugger notice; the response switch selects passive mode instead. Alt + Shift + C toggles recording from browser pages (customize at `chrome://extensions/shortcuts`).
 4. Rebuild and reload the extension card after source changes. Reload the inspector too.
 5. Inspect the extension service worker through its extension card for development diagnostics. Do not log bodies or credentials.
 

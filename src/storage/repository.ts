@@ -55,6 +55,35 @@ export function joinRecord(row: RequestRow, body?: BodyRow): CapturedRequest {
     metadata: { ...record.metadata, messages: body?.messages },
   };
 }
+function starterEntities(): Entity[] {
+  const now = Date.now();
+  return [
+    {
+      id: 'default',
+      kind: 'workspace',
+      name: 'My workspace',
+      workspaceId: 'default',
+      createdAt: now,
+      updatedAt: now,
+    },
+    {
+      id: 'initial',
+      kind: 'session',
+      name: 'First session',
+      workspaceId: 'default',
+      createdAt: now,
+      updatedAt: now,
+    },
+    ...presets.map((preset) => ({
+      id: uid(),
+      kind: 'filter' as const,
+      workspaceId: 'default',
+      createdAt: now,
+      updatedAt: now,
+      ...preset,
+    })),
+  ];
+}
 export async function initialize() {
   const db = await getDB();
   const tx = db.transaction(['state', 'entities'], 'readwrite');
@@ -62,32 +91,7 @@ export async function initialize() {
   if (!settings) {
     settings = { ...defaultSettings };
     await tx.objectStore('state').put(settings, 'settings');
-    const now = Date.now();
-    await tx.objectStore('entities').put({
-      id: 'default',
-      kind: 'workspace',
-      name: 'My workspace',
-      workspaceId: 'default',
-      createdAt: now,
-      updatedAt: now,
-    });
-    await tx.objectStore('entities').put({
-      id: 'initial',
-      kind: 'session',
-      name: 'First session',
-      workspaceId: 'default',
-      createdAt: now,
-      updatedAt: now,
-    });
-    for (const preset of presets)
-      await tx.objectStore('entities').put({
-        id: uid(),
-        kind: 'filter',
-        workspaceId: 'default',
-        createdAt: now,
-        updatedAt: now,
-        ...preset,
-      });
+    for (const entity of starterEntities()) await tx.objectStore('entities').put(entity);
   }
   await tx.done;
   return settingsSchema.parse(settings);
@@ -359,10 +363,34 @@ export async function prune(settings: Settings) {
   return ids.size;
 }
 export async function clearDatabase() {
+  return resetDatabase(false);
+}
+export async function clearDatabasePreservingCapture() {
+  return resetDatabase(true);
+}
+async function resetDatabase(preserveCapture: boolean) {
   const db = await getDB(),
     tx = db.transaction(['requests', 'bodies', 'entities', 'state', 'drafts', 'runs'], 'readwrite');
+  const current = settingsSchema.parse(
+    (await tx.objectStore('state').get('settings')) ?? defaultSettings,
+  );
+  const settings = {
+    ...defaultSettings,
+    ...(preserveCapture
+      ? {
+          recording: current.recording,
+          provider: current.provider,
+          scope: current.scope,
+          activeTabId: current.activeTabId,
+          activePageUrl: current.activePageUrl,
+        }
+      : {}),
+  };
   for (const store of ['requests', 'bodies', 'entities', 'state', 'drafts', 'runs'] as const)
     void tx.objectStore(store).clear();
+  // Capture sees either the old destination or the new one, never absent/paused settings.
+  await tx.objectStore('state').put(settings, 'settings');
+  for (const entity of starterEntities()) await tx.objectStore('entities').put(entity);
   await tx.done;
-  return initialize();
+  return settings;
 }

@@ -1,6 +1,8 @@
 import { useTheme } from './use-theme';
 import { openHelp } from './components/HelpButton';
 import { shortcuts } from './shortcuts';
+import { requestCaptureAccess } from '../shared/permissions';
+import { useCaptureShortcut } from './use-capture-shortcut';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { type CapturedRequest, type RequestData, type Settings } from '../shared/model';
 import { sendCommand } from '../shared/messages';
@@ -22,6 +24,7 @@ import type { PaletteCommand } from './components/CommandPalette';
 type Modal =
   'runs' | '' | 'filters' | 'export' | 'settings' | 'commands' | 'columns' | 'collection';
 export function useInspectorController() {
+  const captureShortcut = useCaptureShortcut();
   const [search, setSearch] = useState(''),
     [expression, setExpression] = useState(''),
     [viewSession, setViewSession] = useState('');
@@ -203,15 +206,12 @@ export function useInspectorController() {
     session = entities.find((e) => e.id === (viewSession || settings.sessionId));
   const scopedEntities = entities.filter((e) => e.workspaceId === settings.workspaceId);
   const capture = async () => {
-    if (
-      !settings.recording &&
-      !state.hostsGranted &&
-      !(await chrome.permissions.request({ origins: ['http://*/*', 'https://*/*'] }))
-    )
+    if (!settings.recording && !state.hostsGranted && !(await requestCaptureAccess()))
       throw new Error('Site access was not granted. Capture remains paused.');
     if (!settings.recording && entities.find((e) => e.id === settings.sessionId)?.archived)
       throw new Error('Create or select an unarchived session before recording.');
-    await updateSettings({ recording: !settings.recording });
+    await sendCommand({ type: 'toggle-capture' });
+    await refresh();
   };
   const responseCapture = async () => {
     if (settings.provider !== 'debugger') {
@@ -272,7 +272,7 @@ export function useInspectorController() {
     },
     {
       name: settings.recording ? 'Pause capture' : 'Start capture',
-      shortcut: keyFor('capture'),
+      shortcut: captureShortcut,
       run: () => task(capture),
     },
     { name: 'New session', shortcut: keyFor('session'), run: () => management.create('session') },
@@ -372,6 +372,7 @@ export function useInspectorController() {
       ]
     : [];
   return {
+    captureShortcut,
     search,
     setSearch,
     expression,

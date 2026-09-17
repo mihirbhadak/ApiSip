@@ -168,6 +168,18 @@ export function SettingsDialog({
       )}
       {tab === 'Privacy & storage' && (
         <>
+          <label className="checkbox-label">
+            <input
+              type="checkbox"
+              checked={settings.checkForUpdates}
+              onChange={(event) => setPatch({ ...patch, checkForUpdates: event.target.checked })}
+            />{' '}
+            Check GitHub for extension updates once a day
+          </label>
+          <p className="small muted">
+            Update checks send no captured traffic or identifiers. Disable for fully offline use;
+            manual checking remains available.
+          </p>
           <div className="storage-summary">
             <span>
               <strong>{formatBytes(usage)}</strong> profile storage estimate
@@ -271,6 +283,20 @@ export function SettingsDialog({
             Hold Ctrl / Cmd or Alt alone for one second to reveal shortcuts. Release to dismiss.
           </p>
           <ShortcutList />
+          <p>
+            The recording shortcut works in any Chrome tab, including when the inspector is closed.
+          </p>
+          <button
+            onClick={() =>
+              void chrome.tabs
+                .create({ url: 'chrome://extensions/shortcuts' })
+                .catch(() =>
+                  setError('Open chrome://extensions/shortcuts to configure keyboard shortcuts.'),
+                )
+            }
+          >
+            Customize Chrome shortcuts
+          </button>
         </>
       )}
       {tab === 'Diagnostics' && (
@@ -288,6 +314,7 @@ export function SettingsDialog({
               {state.hostsGranted ? 'HTTP(S) site access granted' : 'Site access not granted'} ·{' '}
               {state.attachedTabs.length} debugger target(s) attached.
             </p>
+            <p>Passive capture: {state.passiveReady ? 'ready' : 'waiting for website access'}.</p>
             <p>
               Passive mode exposes metadata and available upload data. Response mode adds bodies and
               WebSockets where Chrome makes them available. Internal pages, inaccessible child

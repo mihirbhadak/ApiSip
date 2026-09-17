@@ -1,4 +1,5 @@
 import type { CapturedRequest } from '../shared/model';
+import { normalizeResourceType } from '../shared/resource-type';
 export const fields = [
   'method',
   'url',
@@ -150,8 +151,12 @@ export function compileFilter(node: FilterNode): (record: CapturedRequest) => bo
   const regex = operator === 'regex' ? safeRegex(value) : undefined;
   const compare = (item: unknown): boolean => {
     if (item === undefined || item === null) return false;
-    const text = String(item).toLowerCase(),
-      expected = value.toLowerCase();
+    const normalize =
+      field === 'resourceType' && operator !== 'regex'
+        ? normalizeResourceType
+        : (text: string) => text.toLowerCase();
+    const text = normalize(String(item)),
+      expected = normalize(value);
     switch (operator) {
       case '=':
       case '!=':

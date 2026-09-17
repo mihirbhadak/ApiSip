@@ -28,6 +28,8 @@ export function SearchSelect({
   disabled,
   className = '',
   allowCustom = false,
+  onEnter,
+  updateCustomWhileTyping = false,
 }: {
   value: string | number;
   onValueChange: (value: string) => void;
@@ -36,6 +38,9 @@ export function SearchSelect({
   disabled?: boolean;
   className?: string;
   allowCustom?: boolean;
+  /** Optional commit action when Enter is pressed with the value picker closed. */
+  onEnter?: () => void;
+  updateCustomWhileTyping?: boolean;
 }) {
   const id = useId(),
     input = useRef<HTMLInputElement>(null);
@@ -94,6 +99,7 @@ export function SearchSelect({
         onClick={begin}
         onChange={(e) => {
           setQuery(e.target.value);
+          if (allowCustom && updateCustomWhileTyping) onValueChange(e.target.value);
           setIndex(0);
           setOpen(true);
         }}
@@ -106,7 +112,8 @@ export function SearchSelect({
           } else if (e.key === 'Enter') {
             e.preventDefault();
             e.stopPropagation();
-            if (!open) begin();
+            if (!open && onEnter) onEnter();
+            else if (!open) begin();
             else if (active) choose(active);
           } else if (open && e.key === 'Escape') {
             e.preventDefault();

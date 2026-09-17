@@ -21,6 +21,7 @@ it('queues a complete passive lifecycle in event order without waiting between d
   };
   const callbacks = new Map<string, (event: Event) => void>();
   vi.stubGlobal('chrome', {
+    permissions: { contains: vi.fn().mockResolvedValue(true) },
     webRequest: Object.fromEntries(
       [
         'onBeforeRequest',
@@ -50,7 +51,7 @@ it('queues a complete passive lifecycle in event order without waiting between d
     },
     report: vi.fn(),
   };
-  new WebRequestProvider(context, () => false).register();
+  await new WebRequestProvider(context, () => false).reconcile();
   const event: Event = {
     requestId: 'one',
     timeStamp: 1,

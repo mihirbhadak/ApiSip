@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import type { UpdateStatus } from './updates';
 import { runPlanSchema, type RunReport } from '../runner/model';
 import {
   requestSchema,
@@ -10,6 +11,10 @@ import {
 export const commandSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('state') }),
   z.object({ type: z.literal('settings'), patch: settingsSchema.partial() }),
+  z.object({ type: z.literal('toggle-capture') }),
+  z.object({ type: z.literal('update-status') }),
+  z.object({ type: z.literal('check-updates') }),
+  z.object({ type: z.literal('dismiss-update'), version: z.string().max(24) }),
   z.object({ type: z.literal('changed') }),
   z.object({ type: z.literal('open-inspector') }),
   z.object({ type: z.literal('runner-start'), plan: runPlanSchema }),
@@ -35,10 +40,15 @@ export type RuntimeState = {
   attachedTabs: number[];
   diagnostics: Diagnostic[];
   hostsGranted: boolean;
+  passiveReady?: boolean;
 };
 export interface Replies {
   state: RuntimeState;
   settings: Settings;
+  'toggle-capture': Settings;
+  'update-status': UpdateStatus;
+  'check-updates': UpdateStatus;
+  'dismiss-update': UpdateStatus;
   changed: null;
   'open-inspector': null;
   'runner-start': RunReport | null;

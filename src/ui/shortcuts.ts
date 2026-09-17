@@ -61,7 +61,7 @@ export const shortcuts: {
     key: 'c',
     modifier: 'alt',
     shift: true,
-    label: 'Start / pause capture',
+    label: 'Start / stop recording (any browser tab)',
     keys: 'Alt + Shift + C',
   },
   {

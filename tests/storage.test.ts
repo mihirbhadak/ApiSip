@@ -3,6 +3,7 @@ import { fixture } from './fixtures';
 import {
   captureUpdate,
   clearDatabase,
+  clearDatabasePreservingCapture,
   countRows,
   getRecord,
   getSettings,
@@ -25,6 +26,22 @@ describe('IndexedDB repository integration', () => {
     expect((await getRecord('test-1'))!.request.body!.text).toContain('Mihir');
     await updateSettings({ recording: true });
     expect((await getSettings()).recording).toBe(true);
+  });
+  it('never exposes paused or absent settings to concurrent readers while clearing all data', async () => {
+    await updateSettings({ recording: true, scope: 'all', provider: 'debugger', activeTabId: 7 });
+    const reads = Array.from({ length: 50 }, async (_, i) => {
+      if (i % 5 === 0) await clearDatabasePreservingCapture();
+      return getSettings();
+    });
+    for (const state of await Promise.all(reads))
+      expect(state).toMatchObject({
+        recording: true,
+        scope: 'all',
+        provider: 'debugger',
+        activeTabId: 7,
+        sessionId: 'initial',
+        workspaceId: 'default',
+      });
   });
   it('keeps concurrent metadata and replay edits atomic', async () => {
     await saveRecords([fixture()]);

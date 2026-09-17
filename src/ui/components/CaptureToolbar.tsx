@@ -84,6 +84,8 @@ export function CaptureToolbar({ controller }: { controller: InspectorController
           </div>
           <button
             className={'record-button ' + (settings.recording ? 'recording' : '')}
+            title={`Start / stop recording from any browser tab · ${controller.captureShortcut}`}
+            aria-pressed={settings.recording}
             onClick={() => task(capture)}
           >
             {settings.recording ? <Pause size={13} /> : <Play size={13} />}

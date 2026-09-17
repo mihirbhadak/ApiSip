@@ -18,7 +18,9 @@ ApiSip stores captured requests, available bodies, replay history, editor drafts
 
 Editor tabs automatically persist edited URLs, headers, bodies and replay context locally, including unfinished edits and credentials. Their URLs contain only a random draft ID. Drafts have the same unencrypted storage boundary as captured history. They are excluded from exports; Save as new request creates an exportable saved API.
 
-There is no telemetry, analytics service, cloud account, remote logging, sync or remote script. Statistics are computed locally. Installing and using the inspector requires no external API.
+There is no extension telemetry, analytics service, cloud account, remote logging, sync or remote script. Statistics are computed locally. Capture, inspection and local history do not require an external API.
+
+Starting with 0.1.2, automatic update checks request public release metadata from `https://api.github.com/repos/mihirbhadak/ApiSip/releases/latest` at most once a day. GitHub receives ordinary connection metadata (such as IP address); requests omit cookies, referrer and captured API data. Version, release notes, last-check time and reminder preference are cached in `chrome.storage.local`. Disable automatic checks in **Settings → Privacy & storage**; the **Updates** button still permits an explicit check. Offline/API failures do not interrupt capture. No executable code is downloaded or installed automatically.
 
 Creator links, including the optional Buy me a Coffee support link, open an external website only after a click. No payment widget or social tracking script runs in the extension. Those sites have their own privacy policies. Support is optional and does not unlock or limit features.
 
@@ -31,8 +33,9 @@ The added `offscreen` permission hosts a dedicated Web Worker using Chrome's sup
 ## Defaults
 
 - Capture is paused until explicitly started.
-- HTTP(S) host access is optional and requested when starting capture.
-- Debugger attachment and response-body capture are off.
+- HTTP(S) host access is optional and requested by a click in first-install setup or when starting capture. The optional webRequest permission is requested together with these hosts; no listener is installed before the API is granted.
+- Response-body capture is enabled for new installations, but debugger attachment starts only when recording starts. Existing saved preferences are preserved. The switch can disable response capture.
+- Automatic public GitHub release checks are enabled and can be disabled.
 - Displayed sensitive values are masked; exported secrets and cookies are excluded by default.
 - Replay defaults to the source browser tab when available, otherwise the extension context.
 - Retention is 30 days, 10,000 requests and an approximate 500 MB storage budget.
@@ -60,3 +63,5 @@ Browser replay runs a fixed bundled function in an isolated content-script world
 Cleanup runs every five minutes and protects favorites, pins, collection members and editor draft sources; those records can exceed configured limits. Drafts remain until discarded or explicitly removed with their source history. Storage-budget enforcement estimates payload sizes and is not a hard quota guarantee. Chrome can still deny writes when profile storage is exhausted. Failures appear in diagnostics without logging request payloads.
 
 Settings offers confirmed deletion of a session's requests, a workspace's requests, all captured history, or all extension data. Workspace/session deletion removes contained history. These explicit history deletions also remove related editor drafts and run reports, and stop affected runs; open editors show an unavailable state. Active run sources are protected from automatic retention. Discard draft removes only that draft, preserving the original request and replay results. A terminal run report can be deleted separately after confirmation. Collection deletion removes membership, preserving request history. Exported files are never deleted by those actions.
+
+Deleting history keeps recording in its current state. Deleting an active capture destination switches to a valid replacement first. Clear all stored data resets history and preferences while preserving the current recording/provider/scope/target; release-check cache and reminder data are separate small Chrome storage entries.

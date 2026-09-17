@@ -8,7 +8,7 @@ import {
   type Settings,
 } from '../shared/model';
 import {
-  clearDatabase,
+  clearDatabasePreservingCapture,
   deleteEntity,
   deleteRecords,
   getRecord,
@@ -99,25 +99,32 @@ export function useManagement({
           ? 'The collection will be removed. Requests remain in history.'
           : 'Contained requests, bodies, editor drafts and timed run reports will be permanently removed.',
       action: async () => {
-        if (entity.kind === 'workspace' && entity.id === settings.workspaceId)
-          await updateSettings({ recording: false });
-        await deleteEntity(entity.id);
-        const remaining = await listEntities();
         if (entity.kind === 'workspace' && entity.id === settings.workspaceId) {
-          const workspace = remaining.find((e) => e.kind === 'workspace');
-          if (workspace)
-            await updateSettings({
-              workspaceId: workspace.id,
-              sessionId:
-                remaining.find(
-                  (e) => e.kind === 'session' && e.workspaceId === workspace.id && !e.archived,
-                )?.id ?? (await newSession(workspace.id)),
+          const remaining = await listEntities();
+          const workspaceId =
+            remaining.find((e) => e.kind === 'workspace' && e.id !== entity.id)?.id ?? uid();
+          if (!remaining.some((e) => e.id === workspaceId))
+            await saveEntity({
+              id: workspaceId,
+              kind: 'workspace',
+              name: 'My workspace',
+              workspaceId,
+              createdAt: Date.now(),
+              updatedAt: Date.now(),
             });
-          else await clearDatabase();
+          await updateSettings({
+            workspaceId,
+            sessionId:
+              remaining.find(
+                (e) => e.kind === 'session' && e.workspaceId === workspaceId && !e.archived,
+              )?.id ?? (await newSession(workspaceId)),
+          });
         } else if (entity.kind === 'session' && entity.id === settings.sessionId)
           await updateSettings({
             sessionId: await newSession(settings.workspaceId, 'New session'),
           });
+        // Switch capture to its replacement destination before removing the old one.
+        await deleteEntity(entity.id);
         reset();
         await changed();
         notify('Deleted ' + entity.kind);
@@ -182,9 +189,8 @@ export function useManagement({
       description:
         'This permanently deletes captured history, including saved requests and related editor drafts and timed run reports in that scope. Export a backup first if needed.',
       action: async () => {
-        await updateSettings({ recording: false });
         if (scope === 'All stored data') {
-          await clearDatabase();
+          await clearDatabasePreservingCapture();
           localStorage.removeItem('columns');
         } else {
           const rows = await listRows(

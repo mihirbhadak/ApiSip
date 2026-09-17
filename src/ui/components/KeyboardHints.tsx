@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Keyboard } from 'lucide-react';
 import { shortcuts, localShortcuts } from '../shortcuts';
+import { useCaptureShortcut } from '../use-capture-shortcut';
 export function ShortcutList({
   compact = false,
   modifier,
@@ -8,8 +9,11 @@ export function ShortcutList({
   compact?: boolean;
   modifier?: 'primary' | 'alt';
 }) {
+  const captureShortcut = useCaptureShortcut();
   const items = [
-    ...shortcuts.filter((s) => !modifier || s.modifier === modifier),
+    ...shortcuts
+      .filter((s) => !modifier || s.modifier === modifier)
+      .map((s) => (s.action === 'capture' ? { ...s, keys: captureShortcut } : s)),
     ...(!modifier ? localShortcuts : []),
   ];
   return (

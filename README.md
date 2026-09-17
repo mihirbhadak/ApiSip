@@ -38,9 +38,16 @@ npm run build
 2. Enable **Developer mode**.
 3. Choose **Load unpacked** and select **the cloned `ApiSip` folder** (this repository's root). The production build generates a root manifest that points to the built files in `dist`.
    Alternatively, `dist` is a standalone extension folder suitable for packaging. Use one installation path consistently: Chrome assigns separate extension identities and local history to different folders.
-4. Open an HTTP(S) web page, then click the ApiSip icon.
-5. Click **Start capture** and grant the requested site access.
-6. Enable **Response capture** if you want response bodies and WebSocket messages, then repeat the requests.
+4. The first-install setup page explains website access. Click **Allow website access** to open Chrome's permission prompt, or continue without capture.
+5. Open an HTTP(S) web page, then click **Start recording** in setup or **Start capture** in the inspector.
+6. **Response capture is enabled by default on new installations.** Chrome shows a debugging notice while recording. Disable it for passive metadata capture. Existing saved preferences are preserved.
+7. Use **Alt + Shift + C** from a webpage to start/stop recording. Chrome may reserve or reassign shortcuts; Settings shows the actual assignment and links to `chrome://extensions/shortcuts`.
+
+The toolbar icon is teal while recording and gray while paused. Clearing requests does not pause recording; new traffic continues into the active session. Deleting the active workspace/session creates or selects a replacement capture destination. Archiving the active session still pauses it.
+
+### Updates
+
+ApiSip 0.1.2 and later checks the public GitHub Releases API at most once a day and shows a newer stable version's changes and fixes. Use **Updates** for a manual check, or disable automatic checks in **Settings → Privacy & storage**. No captured data is sent. Unpacked extensions cannot update themselves: export a backup, finish active runs, replace the files in the same extension folder with the new ZIP contents, then click **Reload** at `chrome://extensions` and reload inspector tabs. Install 0.1.2 manually once to receive future update notices.
 
 ### Fix "Manifest file is missing or unreadable"
 
@@ -52,7 +59,7 @@ After source changes, build again and click **Reload** on the extension card. `n
 
 - Current-tab and all-tabs capture, pause/resume, persistent sessions and live badge counts.
 - Passive request metadata, available upload bodies, headers, statuses, redirects and errors.
-- Opt-in Chrome debugger/CDP capture for available response bodies, timings, cache information, GraphQL and bounded WebSocket messages.
+- Chrome debugger/CDP capture for available response bodies, timings, cache information, GraphQL and bounded WebSocket messages; enabled by default for new installations after recording is started.
 - Virtualized, sortable request table; configurable columns, pinning, favorites, multi-selection and resizable details.
 - Global search through URLs, headers, query values, bodies, tags and notes in a separate worker.
 - Nested AND/OR/NOT filters, visual builder, expression editor, saved filters and quick filters.
@@ -69,6 +76,7 @@ After source changes, build again and click **Reload** on the extension card. `n
 - Three-dot menus close on outside click, Escape, Tab or after an action. Use arrows and Home/End to navigate; Enter activates an action. Delete and clear actions stay red.
 - The header checkbox selects all matching requests, including rows off screen. A dash means partial selection. Ctrl/Cmd + A selects all when the request list has focus. Deselect clears the entire selection, including requests outside the current filters.
 - Dropdowns support typing to search, arrows to navigate and Enter to choose. Escape cancels; Tab moves on. Field and method pickers accept custom values with Enter.
+- Filters offer common defaults and bounded suggestions from the current capture scope, without loading bodies or suggesting recognized credential values. `XHR` and `XMLHttpRequest` match the same resource type. Enter selects a value, then Enter again applies; in expression mode Enter applies and Shift + Enter adds a line.
 - The ? buttons open a searchable guide covering capture, filters, organization, details, replay, exports, analytics, privacy and settings.
 - Hold Ctrl, Cmd or Alt alone for one second to reveal shortcuts without moving focus. Release the key, press another key or leave the window to dismiss the hints.
 - Section tabs support Left/Right and Home/End. The command palette displays its shortcuts.
@@ -161,16 +169,16 @@ This uses bundled Chrome/Web APIs with no native installation or OS-specific exe
 
 ## Permissions
 
-| Permission                           | Purpose                                                                                                                                |
-| ------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------- |
-| `webRequest`                         | Observe permitted requests without interception or blocking.                                                                           |
-| `debugger`                           | CDP response-body, timing and WebSocket capture. Chrome **does not allow** this permission to be optional; attachment is still opt-in. |
-| `activeTab`                          | Identify the page when the extension icon is clicked.                                                                                  |
-| `scripting`                          | Execute the fixed browser-context replay function in the selected source tab.                                                          |
-| `storage`                            | Keep a browser-lifetime capture identifier in session storage; request data uses IndexedDB.                                            |
-| `alarms`                             | Run periodic local retention cleanup.                                                                                                  |
-| `offscreen`                          | Host the dedicated worker for a user-started timed run, using Chrome's WORKERS reason; close the host when idle.                       |
-| Optional `http://*/*`, `https://*/*` | Observe APIs and initiators across supported sites and perform explicit replay. Requested when capture starts.                         |
+| Permission                           | Purpose                                                                                                                                                                   |
+| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Optional `webRequest`                | Observe permitted requests without interception or blocking.                                                                                                              |
+| `debugger`                           | CDP response-body, timing and WebSocket capture. Chrome **does not allow** this permission to be optional; attachment requires recording and the response-capture switch. |
+| `activeTab`                          | Identify the page when the extension icon is clicked.                                                                                                                     |
+| `scripting`                          | Execute the fixed browser-context replay function in the selected source tab.                                                                                             |
+| `storage`                            | Keep the capture epoch and small update-check cache; request data uses IndexedDB.                                                                                         |
+| `alarms`                             | Run periodic local retention cleanup and optional daily release checks.                                                                                                   |
+| `offscreen`                          | Host the dedicated worker for a user-started timed run, using Chrome's WORKERS reason; close the host when idle.                                                          |
+| Optional `http://*/*`, `https://*/*` | Observe APIs and initiators across supported sites and perform explicit replay. Requested by a click in setup or when capture starts.                                     |
 
 No blocking/interception, cookies API, history API, native messaging, cloud service, remote scripts, telemetry or hidden analytics. Clipboard writing uses the user's click/shortcut and requires no blanket clipboard permission.
 

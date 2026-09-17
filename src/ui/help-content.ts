@@ -18,7 +18,8 @@ export const helpTopics = [
     title: 'Getting started',
     summary: 'From your first capture to a replay.',
     steps: [
-      'Open an HTTP(S) webpage, click ApiSip, then choose Start capture and approve Chrome site access.',
+      'On first installation, ApiSip opens a setup page. Choose Allow website access and approve Chrome’s permission prompt. Granting access alone leaves recording paused; choose Start recording when ready. You can also continue without capture and grant access later.',
+      'Open an HTTP(S) webpage. Press Alt + Shift + C to start or stop recording, or click ApiSip and use Start capture in the inspector. Chrome owns the recording shortcut, so it works with the inspector closed. Customize it at chrome://extensions/shortcuts if another extension or the OS uses those keys.',
       'Browse the webpage or trigger its API calls. Requests appear live. The icon badge counts the configured capture scope.',
       'Select a request to inspect it. Use the search bar or Filters to narrow the list, then open Replay to edit and send it.',
       'Use the ? beside a section for guidance. Hold Ctrl, Cmd or Alt alone for one second to see shortcuts. Release to hide them.',
@@ -31,7 +32,8 @@ export const helpTopics = [
     summary: 'Choose the source and the data Chrome can expose.',
     steps: [
       'Current tab follows your most recently active supported webpage. Opening this inspector preserves that source. All tabs observes permitted web tabs.',
-      'Recording pauses or resumes capture. Enable Response capture for available bodies, detailed timing and WebSocket frames; Chrome shows a debugging notice.',
+      'Recording pauses or resumes capture. The toolbar icon shows a teal pulse while recording and a gray pause symbol when stopped. Its tooltip also names the state; the badge keeps your saved request count. Alt + Shift + C toggles recording from any browser tab.',
+      'Response capture is enabled by default on new installations for available bodies, detailed timing and WebSocket frames; Chrome shows a debugging notice after you start recording. Existing preferences are preserved. Disable the switch for passive metadata capture.',
       'Passive capture includes available request data, headers, status and total timing, but no response bodies. Start response capture before repeating the request.',
       'Settings > Capture controls scope, badge count, body limits and navigation cleanup. Sessions normally continue across reloads and SPA navigation.',
     ],
@@ -48,7 +50,7 @@ export const helpTopics = [
       'Click column labels to sort. Columns lets you hide or reorder fields. Drag dividers to resize, or focus a divider and use Left/Right. Group organizes endpoints without changing their URLs.',
       'Right-click a request or press Shift + F10 in the focused list for actions. Stars save requests; pinning keeps them near the top. Jump to latest preserves your scroll position until you choose to move.',
     ],
-    note: 'Red delete and clear actions require confirmation before stored history is removed.',
+    note: 'Red delete and clear actions require confirmation before stored history is removed. Deleting history does not stop recording; new requests continue to arrive.',
   },
   {
     id: 'filters',
@@ -56,9 +58,9 @@ export const helpTopics = [
     summary: 'Find endpoints with text or compound expressions.',
     steps: [
       'Ctrl/Cmd + K or F focuses search. Search covers URL, method, headers, query, bodies, tags and notes. Quick filters show errors, 4xx, 5xx, slow or large responses.',
-      'Open Filters. Add rules and nested groups: ALL means AND, ANY means OR; NOT reverses a group. Search field/operator dropdowns, then press Enter to choose.',
+      'Open Filters. Add rules and nested groups: ALL means AND, ANY means OR; NOT reverses a group. Search field/operator/value dropdowns, then press Enter to choose. Common values and captured metadata are suggested; recognized secrets are excluded. XHR and XMLHttpRequest are equivalent.',
       'Fields can include a header or query key, such as requestHeader.authorization or queryParam.page. Type a custom field in the field picker and press Enter.',
-      'Expression mode accepts statements such as method = POST AND status >= 400. Save a filter with a name to reuse it from the sidebar.',
+      'After choosing a value, Enter again applies the filter. Expression mode accepts statements such as method = POST AND status >= 400; Enter applies and Shift + Enter adds a line. Save a filter with a name to reuse it from the sidebar.',
     ],
     note: 'Regex syntax is deliberately restricted to avoid slow searches. A missing response body cannot match body content. Invalid expressions explain what to fix.',
   },

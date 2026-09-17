@@ -1,15 +1,12 @@
-let opening: Promise<void> | undefined;
+import { extensionPath } from '../shared/extension-path';
+const opening = new Map<string, Promise<void>>();
 
 /** Discover our own documents without requiring the broad tabs permission. */
-export function openInspector(): Promise<void> {
-  if (opening) return opening;
-  opening = (async () => {
-    const background = chrome.runtime.getManifest().background;
-    const workerPath =
-      background && 'service_worker' in background
-        ? background.service_worker
-        : 'service-worker.js';
-    const url = chrome.runtime.getURL(workerPath.replace(/[^/]+$/, 'inspector.html'));
+function openView(hash: string): Promise<void> {
+  const pending = opening.get(hash);
+  if (pending) return pending;
+  const task = (async () => {
+    const url = chrome.runtime.getURL(extensionPath('inspector.html')) + hash;
     const contexts = await chrome.runtime.getContexts({
       contextTypes: [chrome.runtime.ContextType.TAB],
     });
@@ -24,7 +21,10 @@ export function openInspector(): Promise<void> {
       if (existing.windowId >= 0) await chrome.windows.update(existing.windowId, { focused: true });
     } else await chrome.tabs.create({ url });
   })().finally(() => {
-    opening = undefined;
+    opening.delete(hash);
   });
-  return opening;
+  opening.set(hash, task);
+  return task;
 }
+export const openInspector = () => openView('');
+export const openSetup = () => openView('#/setup');

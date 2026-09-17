@@ -1,20 +1,13 @@
 {
   "manifest_version": 3,
   "name": "ApiSip - Network Inspector",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Capture, inspect, replay and load-test APIs. Advanced filters, analytics and exports. Local-first, with no telemetry.",
   "author": "Mihir Bhadak",
   "homepage_url": "https://github.com/mihirbhadak/ApiSip",
   "minimum_chrome_version": "125",
-  "permissions": [
-    "storage",
-    "webRequest",
-    "activeTab",
-    "scripting",
-    "alarms",
-    "debugger",
-    "offscreen"
-  ],
+  "permissions": ["storage", "activeTab", "scripting", "alarms", "debugger", "offscreen"],
+  "optional_permissions": ["webRequest"],
   "optional_host_permissions": ["http://*/*", "https://*/*"],
   "background": {
     "service_worker": "service-worker.js",
@@ -23,10 +16,10 @@
   "action": {
     "default_title": "Open ApiSip",
     "default_icon": {
-      "16": "icons/16.png",
-      "32": "icons/32.png",
-      "48": "icons/48.png",
-      "128": "icons/128.png"
+      "16": "icons/paused/16.png",
+      "32": "icons/paused/32.png",
+      "48": "icons/paused/48.png",
+      "128": "icons/paused/128.png"
     }
   },
   "icons": {
@@ -39,6 +32,10 @@
     "extension_pages": "script-src 'self'; object-src 'none'; base-uri 'none'; frame-src 'none'"
   },
   "commands": {
+    "toggle-recording": {
+      "suggested_key": { "default": "Alt+Shift+C" },
+      "description": "Start or stop API recording"
+    },
     "_execute_action": {
       "suggested_key": {
         "default": "Alt+Shift+A"

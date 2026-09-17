@@ -16,12 +16,13 @@ import {
   prune,
   updateSettings,
 } from '../storage/repository';
-import { compileFilter, needsBody } from '../filters/engine';
-import { parseFilter } from '../filters/parser';
 import { executeReplay } from '../replay/executor';
 import { Badge } from './badge';
-import { openInspector } from './inspector-tabs';
+import { openInspector, openSetup } from './inspector-tabs';
 import { startRun, runnerStatus, stopRun, releaseRunner, stopOrphanedRun } from './runner';
+import { hasCaptureAccess } from '../shared/permissions';
+import { CaptureControl } from './capture-control';
+import { UpdateChecker } from './updates';
 
 const diagnostics: Diagnostic[] = [];
 let notificationTimer: ReturnType<typeof setTimeout> | undefined;
@@ -82,14 +83,20 @@ const webRequestProvider = new WebRequestProvider(context, (id) =>
   debuggerProvider.attached.has(id),
 );
 const badge = new Badge(settings, (message) => report(message, 'error'));
-// MV3 listeners must be registered before asynchronous initialization resolves.
+// The optional API namespace allows synchronous registration after capture access
+// has been granted, without registering invalid listeners on a fresh installation.
 webRequestProvider.register();
 debuggerProvider.register();
 
 async function reconcile(s?: Settings) {
+  await webRequestProvider.reconcile();
   await debuggerProvider.reconcile(s ?? (await settings()));
   notify();
 }
+const captureControl = new CaptureControl(settings, reconcile, report);
+const updater = new UpdateChecker(settings, () => {
+  void chrome.runtime.sendMessage({ type: 'update-changed' }).catch(() => {});
+});
 async function activeTab(id: number) {
   try {
     const tab = await chrome.tabs.get(id);
@@ -158,7 +165,28 @@ chrome.action.onClicked.addListener((tab) => {
     await openInspector();
   })().catch(() => report('Could not open the inspector.', 'error'));
 });
+chrome.runtime.onInstalled.addListener(({ reason }) => {
+  if (reason === 'install')
+    void openSetup().catch(() => report('Open ApiSip to review website access.', 'error'));
+});
+chrome.commands.onCommand.addListener((command, tab) => {
+  if (command !== 'toggle-recording') return;
+  void (async () => {
+    await ready;
+    if (!(await hasCaptureAccess())) {
+      await openSetup();
+      return;
+    }
+    await captureControl.toggle(tab);
+  })().catch((error: unknown) =>
+    report(error instanceof Error ? error.message : 'Could not change recording state.', 'error'),
+  );
+});
 chrome.alarms.onAlarm.addListener((alarm) => {
+  if (alarm.name === 'updates') {
+    void updater.check().catch(() => report('Update check could not access local preferences.'));
+    return;
+  }
   if (alarm.name !== 'retention') return;
   void settings()
     .then(prune)
@@ -166,7 +194,6 @@ chrome.alarms.onAlarm.addListener((alarm) => {
     .catch(() => report('Retention cleanup could not finish. Check available storage.', 'error'));
 });
 chrome.permissions.onAdded.addListener(() => {
-  webRequestProvider.register();
   void reconcile().catch(() =>
     report('Could not refresh capture after granting site access.', 'error'),
   );
@@ -174,8 +201,10 @@ chrome.permissions.onAdded.addListener(() => {
 chrome.permissions.onRemoved.addListener(() => {
   void (async () => {
     await stopRun('Site access changed. Run stopped; grant access before starting again.');
-    if (!(await chrome.permissions.contains({ origins: ['http://*/*', 'https://*/*'] }))) {
-      await updateSettings({ recording: false });
+    if (!(await hasCaptureAccess())) {
+      await captureControl.change({ recording: false });
+      // Keep the optional API and its hosts paired for the next cold worker start.
+      await chrome.permissions.remove({ permissions: ['webRequest'] });
       report('Site access was removed. Capture is paused.', 'error');
     }
     await reconcile();
@@ -193,6 +222,9 @@ chrome.runtime.onMessage.addListener((raw: unknown, sender, respond) => {
   const cmd = parsed.data;
   const run = async (): Promise<Replies[keyof Replies]> => {
     await ready;
+    if (cmd.type === 'update-status') return updater.status();
+    if (cmd.type === 'check-updates') return updater.check(true);
+    if (cmd.type === 'dismiss-update') return updater.dismiss(cmd.version);
     if (cmd.type === 'runner-start') return startRun(cmd.plan);
     if (cmd.type === 'runner-status') return runnerStatus();
     if (cmd.type === 'runner-stop') return stopRun();
@@ -210,7 +242,7 @@ chrome.runtime.onMessage.addListener((raw: unknown, sender, respond) => {
         countRows(),
         s.activeTabId === undefined ? 0 : countRows({ tabId: s.activeTabId }),
         countRows({ sessionId: s.sessionId }),
-        chrome.permissions.contains({ origins: ['http://*/*', 'https://*/*'] }),
+        hasCaptureAccess(),
       ]);
       return {
         buildId: __BUILD_ID__,
@@ -222,35 +254,11 @@ chrome.runtime.onMessage.addListener((raw: unknown, sender, respond) => {
         attachedTabs: [...debuggerProvider.attached],
         diagnostics: [...diagnostics],
         hostsGranted,
+        passiveReady: webRequestProvider.subscribed,
       };
     }
-    if (cmd.type === 'settings') {
-      if (cmd.patch.badgeFilter !== undefined) {
-        const ast = parseFilter(cmd.patch.badgeFilter);
-        compileFilter(ast);
-        if (needsBody(ast)) throw new Error('Badge filters support metadata only.');
-      }
-      if (
-        cmd.patch.recording &&
-        !(await chrome.permissions.contains({ origins: ['http://*/*', 'https://*/*'] }))
-      )
-        throw new Error('Grant site access before starting capture.');
-      if (cmd.patch.recording) webRequestProvider.register();
-      let s = await updateSettings(cmd.patch);
-      if (s.recording && s.activeTabId === undefined) {
-        const tabs = (await chrome.tabs.query({})).filter(
-          (tab) => tab.id !== undefined && /^https?:/.test(tab.url ?? ''),
-        );
-        const target =
-          tabs.find((tab) => tab.active) ??
-          tabs.sort((a, b) => (b.lastAccessed ?? 0) - (a.lastAccessed ?? 0))[0];
-        if (target?.id !== undefined)
-          s = await updateSettings({ activeTabId: target.id, activePageUrl: target.url });
-        else report('No supported web tab is available. Open a web page to begin capturing.');
-      }
-      await reconcile(s);
-      return s;
-    }
+    if (cmd.type === 'settings') return captureControl.change(cmd.patch);
+    if (cmd.type === 'toggle-capture') return captureControl.toggle();
     if (cmd.type === 'retry-debugger') {
       debuggerProvider.retry();
       await reconcile();
@@ -258,7 +266,7 @@ chrome.runtime.onMessage.addListener((raw: unknown, sender, respond) => {
     }
     if (cmd.type === 'changed') {
       await stopOrphanedRun();
-      await reconcile();
+      await captureControl.change({});
       return null;
     }
     if (replaying.has(cmd.id)) throw new Error('This request is already being replayed.');
@@ -299,9 +307,11 @@ chrome.runtime.onMessage.addListener((raw: unknown, sender, respond) => {
 void ready
   .then(async () => {
     await chrome.alarms.create('retention', { periodInMinutes: 5 });
+    await chrome.alarms.create('updates', { periodInMinutes: 24 * 60 });
+    void updater.check().catch(() => report('Update check could not access local preferences.'));
     const [tab] = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
     if (tab?.id !== undefined && /^https?:/.test(tab.url ?? '')) await activeTab(tab.id);
-    else await reconcile();
+    else await captureControl.change({});
   })
   .catch(() =>
     report(

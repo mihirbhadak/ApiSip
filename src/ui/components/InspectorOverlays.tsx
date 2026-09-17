@@ -73,6 +73,11 @@ export function InspectorOverlays({ controller }: { controller: InspectorControl
       {modal === 'filters' && (
         <FilterBuilder
           expression={expression}
+          scope={
+            controller.viewSession === 'all'
+              ? { workspaceId: settings.workspaceId }
+              : { sessionId: controller.viewSession || settings.sessionId }
+          }
           onClose={() => setModal('')}
           onApply={(e) => {
             setExpression(e);

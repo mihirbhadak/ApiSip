@@ -12,7 +12,10 @@ try {
   await page.goto('chrome-extension://' + new URL(worker.url()).host + '/inspector.html');
   await page.getByRole('heading', { name: 'Network requests' }).waitFor();
   const granted = await page.evaluate(() =>
-    globalThis.chrome.permissions.contains({ origins: ['http://*/*', 'https://*/*'] }),
+    globalThis.chrome.permissions.contains({
+      permissions: ['webRequest'],
+      origins: ['http://*/*', 'https://*/*'],
+    }),
   );
   if (!granted) {
     console.log(
@@ -20,7 +23,11 @@ try {
     );
     await page.getByRole('button', { name: 'Start capture', exact: true }).click();
     await page.waitForFunction(
-      () => globalThis.chrome.permissions.contains({ origins: ['http://*/*', 'https://*/*'] }),
+      () =>
+        globalThis.chrome.permissions.contains({
+          permissions: ['webRequest'],
+          origins: ['http://*/*', 'https://*/*'],
+        }),
       null,
       { timeout: 0 },
     );

@@ -30,6 +30,9 @@ test('loads the project root as an unpacked extension and opens the built inspec
     const { targetInfos } = await session.send('Target.getTargets', { filter: [{ type: 'tab' }] });
     const target = targetInfos.find((item) => item.url === page.url());
     expect(target).toBeDefined();
+    await expect
+      .poll(() => context.pages().some((page) => page.url().endsWith('#/setup')))
+      .toBe(true);
     // Registry.enabled precedes initial worker/listener registration. Wait for the
     // actual installation to finish before dispatching Chrome's automated action.
     await expect

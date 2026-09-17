@@ -151,10 +151,11 @@ export const exportPreferencesSchema = z.object({
 });
 export const defaultExportPreferences = exportPreferencesSchema.parse({});
 export const settingsSchema = z.object({
+  checkForUpdates: z.boolean().default(true),
   exportDefaults: exportPreferencesSchema.default(defaultExportPreferences),
   recording: z.boolean().default(false),
   scope: z.enum(['current', 'all']).default('current'),
-  provider: z.enum(['webRequest', 'debugger']).default('webRequest'),
+  provider: z.enum(['webRequest', 'debugger']).default('debugger'),
   activeTabId: z.number().optional(),
   activePageUrl: z.string().optional(),
   workspaceId: z.string().default('default'),

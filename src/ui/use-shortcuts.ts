@@ -21,6 +21,13 @@ export function useShortcuts(actions: Record<ShortcutAction | 'delete' | 'close'
             : e.altKey && !e.ctrlKey && !e.metaKey),
       );
       if (shortcut) {
+        // Chrome owns this accelerator, including on extension pages. Handling it
+        // here too could toggle twice; the command also works with the inspector closed.
+        if (
+          shortcut.action === 'capture' &&
+          typeof globalThis.chrome?.commands?.getAll === 'function'
+        )
+          return;
         e.preventDefault();
         current.current[shortcut.action]();
       } else if (e.key === '?' && !editable) {

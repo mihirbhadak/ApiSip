@@ -145,12 +145,25 @@ test.beforeAll(async () => {
   const build = JSON.parse(await readFile('dist/build-info.json', 'utf8')) as { buildId: string };
   expect((await state()).buildId).toBe(build.buildId);
   console.log('Verified extension build', build.buildId);
+  // The authorized baseline can contain a recording session. Clearing data now
+  // deliberately preserves recording, so establish this suite's paused starting state.
+  if ((await state()).settings.recording) {
+    await inspector.getByRole('button', { name: 'Recording', exact: true }).click();
+    await expect(
+      inspector.getByRole('button', { name: 'Start capture', exact: true }),
+    ).toBeVisible();
+  }
   await inspector.getByLabel('Open settings').click();
   await inspector.getByRole('tab', { name: 'Privacy & storage', exact: true }).click();
   await inspector.getByRole('button', { name: 'Clear all stored data', exact: true }).click();
   await inspector.getByRole('dialog').getByRole('button', { name: 'Delete', exact: true }).click();
+  await expect(inspector.getByRole('dialog')).toHaveCount(0);
   await expect.poll(async () => (await state()).count).toBe(0);
   await expect(inspector.getByRole('button', { name: 'First session', exact: true })).toBeVisible();
+  // This suite intentionally begins with passive capture; new profiles default to response capture.
+  const responseCapture = inspector.getByLabel('Capture response bodies');
+  if (await responseCapture.isChecked()) await responseCapture.click();
+  await expect(responseCapture).not.toBeChecked();
 });
 test.afterEach(async ({ browserName }, info) => {
   void browserName;
@@ -652,7 +665,7 @@ test('captures across tabs, restores passive capture after worker restart, and h
   ]);
   await expect.poll(async () => (await state()).count).toBe(before + 2);
   await stopExtensionWorker(context, extensionId);
-  await expect.poll(async () => (await state()).settings.recording).toBe(true);
+  // Do not wake the worker through a UI/state message before the request under test.
   await request('/api/users?after=restart');
   await expect
     .poll(async () => (await records()).some((r) => r.request.url.includes('after=restart')))

@@ -3,12 +3,14 @@ import { countRows, listRows } from '../storage/repository';
 import { compileFilter, needsBody } from '../filters/engine';
 import { parseFilter } from '../filters/parser';
 import type { Settings } from '../shared/model';
+import { extensionPath } from '../shared/extension-path';
 export const badgeText = (count: number) => (count > 999 ? '999+' : String(count));
 export class Badge {
   private refresh = new CoalescedTask(() =>
     this.update().catch(() => this.report('Could not update the extension badge.')),
   );
   private timer?: ReturnType<typeof setTimeout>;
+  private iconRecording?: boolean;
   constructor(
     private settings: () => Promise<Settings>,
     private report: (message: string) => void,
@@ -34,6 +36,17 @@ export class Badge {
     }
     await chrome.action.setBadgeText({ text: badgeText(count) });
     await chrome.action.setBadgeBackgroundColor({ color: s.recording ? '#0d766e' : '#64748b' });
+    if (this.iconRecording !== s.recording) {
+      await chrome.action.setIcon({
+        path: Object.fromEntries(
+          [16, 32, 48, 128].map((size) => [
+            size,
+            extensionPath(`icons/${s.recording ? '' : 'paused/'}${size}.png`),
+          ]),
+        ),
+      });
+      this.iconRecording = s.recording;
+    }
     await chrome.action.setTitle({
       title: 'ApiSip · ' + count + ' requests · ' + (s.recording ? 'Recording' : 'Paused'),
     });
