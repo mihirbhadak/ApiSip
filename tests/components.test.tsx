@@ -136,6 +136,7 @@ it('edits URL/query/body, sends via shortcut, and reports replay errors', async 
   expect(onSend).toHaveBeenCalledWith(
     expect.objectContaining({ url: 'https://example.com/new?q=2' }),
     'auto',
+    undefined,
   );
 });
 it('executes command palette actions using the keyboard', async () => {
@@ -260,10 +261,12 @@ it('opens current editor changes in a new tab and restores an initial draft with
       query: [{ name: 'page', value: '2' }],
     }),
     'extension',
+    undefined,
   );
   expect(change).toHaveBeenLastCalledWith(
     expect.objectContaining({ url: 'https://example.com/edited?page=2' }),
     'extension',
+    undefined,
   );
   expect(await screen.findByRole('status')).toHaveTextContent('Editor opened');
 });

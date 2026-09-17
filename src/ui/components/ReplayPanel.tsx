@@ -1,4 +1,5 @@
-import type { CapturedRequest, RequestData, ReplayResult, Settings } from '../../shared/model';
+import type { CapturedRequest, RequestData, Settings } from '../../shared/model';
+import type { ReplaySender } from '../../replay/context';
 import { RequestEditor } from './RequestEditor';
 import { ReplayResults } from './ReplayResults';
 import { openEditorTab } from '../editor-actions';
@@ -14,7 +15,7 @@ export function ReplayPanel({
   r: CapturedRequest;
   settings: Settings;
   copy: (text: string) => void;
-  onSend: (request: RequestData, context: Settings['replayContext']) => Promise<ReplayResult>;
+  onSend: ReplaySender;
   onSave: (request: RequestData) => void;
 }) {
   return (
@@ -25,7 +26,9 @@ export function ReplayPanel({
         context={settings.replayContext}
         onSend={onSend}
         onSave={onSave}
-        onOpenInTab={(request, context) => openEditorTab(record, request, context)}
+        onOpenInTab={(request, context, cookies) =>
+          openEditorTab(record, request, context, cookies)
+        }
       />
       <hr />
       <ReplayResults r={r} copy={copy} />

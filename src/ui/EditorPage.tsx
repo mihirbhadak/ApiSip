@@ -103,6 +103,7 @@ export default function EditorPage({ id }: { id: string }) {
               record={record}
               initialRequest={draft.request}
               context={draft.context}
+              initialCookies={draft.cookies}
               onDraftChange={editor.change}
               onSend={editor.send}
               onSave={editor.save}
@@ -135,7 +136,7 @@ export default function EditorPage({ id }: { id: string }) {
             request={runRequest}
             onRequestChange={(request) => {
               setRunRequest(request);
-              editor.change(request, draft.context);
+              editor.change(request, draft.context, draft.cookies);
               setEditorRevision((revision) => revision + 1);
             }}
           />

@@ -79,7 +79,21 @@ Lab data is outside general capture backups and workspace duplication. Export im
 
 Binary, incomplete and multipart request bodies must be replaced with a complete text definition before sending. Responses are processed one step at a time and discarded after checks; no concurrent response backlog is retained. A network stream chunk can temporarily exceed the retained byte limit. No whole-computer CPU/RAM guarantee is made. Large suites are read individually on selection; the library keeps summaries.
 
-## Troubleshooting
+## Response baselines
+
+Under a step, expand **Response baseline**. **Read captured response** uses the original stored response, if still available. Otherwise paste a complete JSON example and choose **Preview sample structure**. Review its paths/types and click **Use this baseline**, then name it and save the suite. These controls send no network request.
+
+The check detects missing fields, extra fields and changed JSON types. Scalar values are deliberately ignored, so timestamps/IDs can change without failing. Arrays use exact indices: counts and per-index types matter. A sample is an observation, not a formal schema or a guarantee about unseen array item types.
+
+Add **Ignored JSON paths**, one exact JSON Pointer per line, to skip entire branches. For example `/debug` ignores the debug object and its children; `/user/id` does not ignore `/user/identity`. No wildcards are supported. **Allow additional fields / array items** ignores newly added fields while still requiring the saved fields. You cannot ignore the whole root. Invalid pointers are rejected before sending.
+
+Baselines retain only paths and types, up to 2,000 fields, 32 levels and 2,048 characters per path; JSON input is limited to 1 MB. Malformed, truncated, missing or oversized responses are inconclusive and fail the step. Reports show at most 20 structural differences, without response values. Field names may still be private.
+
+Baseline suites export as schema version **2**; older extension versions reject them instead of dropping this check. Versions 1 and 2 can be imported by this release. Environments are excluded, source capture IDs are removed, and imports never send requests. A saved baseline continues working even if its source capture is later deleted.
+
+## Authentication and troubleshooting
+
+Test lab omits ambient browser cookies. The single-replay editor's cookie option does not affect suites. For cookie-based interactive login use the editor; for token-based suites use enabled auth headers or a login step and scalar token extraction. See [Replay context guide](REPLAY-CONTEXT.md).
 
 - **Grant website access:** return to the inspector's setup/permissions controls, grant access, then review again. There is no automatic retry.
 - **Unknown variable:** define an environment value or an extraction on an earlier step. Check spelling and field-eye state.

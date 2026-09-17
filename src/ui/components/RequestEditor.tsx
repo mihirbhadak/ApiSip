@@ -2,7 +2,9 @@ import { TabBar } from './TabBar';
 import { SearchSelect } from './SearchSelect';
 import { useState } from 'react';
 import { Play, RotateCcw, Save, ExternalLink } from 'lucide-react';
-import type { CapturedRequest, ReplayResult, RequestData, Settings } from '../../shared/model';
+import type { CapturedRequest, ReplayCookies, RequestData, Settings } from '../../shared/model';
+import type { ReplaySender } from '../../replay/context';
+import { ReplayContext } from './ReplayContext';
 import { requestSchema } from '../../shared/model';
 import { header, parseUrl } from '../../shared/parse';
 import { isHttpPseudoHeader, redactUrl } from '../../shared/security';
@@ -14,16 +16,26 @@ export function RequestEditor({
   onSend,
   onSave,
   initialRequest,
+  initialCookies,
   onDraftChange,
   onOpenInTab,
 }: {
   record: CapturedRequest;
   context: Settings['replayContext'];
-  onSend: (request: RequestData, context: Settings['replayContext']) => Promise<ReplayResult>;
+  onSend: ReplaySender;
   onSave: (request: RequestData) => void | Promise<void>;
   initialRequest?: RequestData;
-  onDraftChange?: (request: RequestData, context: Settings['replayContext']) => void;
-  onOpenInTab?: (request: RequestData, context: Settings['replayContext']) => Promise<void>;
+  initialCookies?: ReplayCookies;
+  onDraftChange?: (
+    request: RequestData,
+    context: Settings['replayContext'],
+    cookies?: ReplayCookies,
+  ) => void;
+  onOpenInTab?: (
+    request: RequestData,
+    context: Settings['replayContext'],
+    cookies?: ReplayCookies,
+  ) => Promise<void>;
 }) {
   const [draft, setDraftState] = useState<RequestData>(() =>
     structuredClone(initialRequest ?? record.request),
@@ -34,13 +46,14 @@ export function RequestEditor({
   const [busy, setBusy] = useState(false),
     [message, setMessage] = useState(''),
     [error, setError] = useState('');
+  const [cookies, setCookies] = useState(initialCookies);
   const setDraft = (request: RequestData) => {
     setDraftState(request);
-    onDraftChange?.(request, context);
+    onDraftChange?.(request, context, cookies);
   };
   const setContext = (next: Settings['replayContext']) => {
     setContextState(next);
-    onDraftChange?.(draft, next);
+    onDraftChange?.(draft, next, cookies);
   };
   const [opening, setOpening] = useState(false);
   const openTab = async () => {
@@ -48,7 +61,7 @@ export function RequestEditor({
     setOpening(true);
     setError('');
     try {
-      await onOpenInTab(draft, context);
+      await onOpenInTab(draft, context, cookies);
       setMessage('Editor opened in a new tab');
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not open the editor tab.');
@@ -81,7 +94,7 @@ export function RequestEditor({
     try {
       if (!requestSchema.safeParse(draft).success)
         throw new Error('Enter a valid request URL, method and headers before sending.');
-      const result = await onSend(draft, context);
+      const result = await onSend(draft, context, cookies);
       if (result.error) setError(result.error);
       else
         setMessage(
@@ -163,10 +176,16 @@ export function RequestEditor({
           {busy ? 'Sending…' : 'Send'}
         </button>
       </div>
-      <p className="small muted">
-        Browser uses the source tab’s cookies and CORS rules. Extension omits ambient cookies.
-        Chrome controls Cookie, Origin, Host and other restricted headers.
-      </p>
+      <ReplayContext
+        record={record}
+        url={draft.url}
+        context={context}
+        cookies={cookies}
+        onChange={(next) => {
+          setCookies(next);
+          onDraftChange?.(draft, context, next);
+        }}
+      />
       {draft.headers.some((h) => isHttpPseudoHeader(h.name)) && (
         <p className="notice small">
           Captured HTTP/2 and HTTP/3 pseudo-headers (such as :authority, :method, :path and :scheme)

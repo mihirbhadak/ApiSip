@@ -3,6 +3,7 @@ import type { UpdateStatus } from './updates';
 import { runPlanSchema, type RunReport } from '../runner/model';
 import {
   requestSchema,
+  replayCookiesSchema,
   settingsSchema,
   type Diagnostic,
   type ReplayResult,
@@ -27,6 +28,7 @@ export const commandSchema = z.discriminatedUnion('type', [
     id: z.string(),
     request: requestSchema,
     context: z.enum(['auto', 'browser', 'extension']),
+    cookies: replayCookiesSchema.optional(),
   }),
 ]);
 export type Command = z.infer<typeof commandSchema>;

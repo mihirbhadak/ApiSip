@@ -277,7 +277,13 @@ chrome.runtime.onMessage.addListener((raw: unknown, sender, respond) => {
       const original = await getRecord(cmd.id);
       if (!original) throw new Error('The selected request was deleted.');
       const s = await settings(),
-        result = await executeReplay(original, cmd.request, cmd.context, s.maxBodyBytes);
+        result = await executeReplay(
+          original,
+          cmd.request,
+          cmd.context,
+          s.maxBodyBytes,
+          cmd.cookies,
+        );
       await mutateRecord(cmd.id, (r) => ({
         ...r,
         replayHistory: [...(r.replayHistory ?? []), result].slice(-30),

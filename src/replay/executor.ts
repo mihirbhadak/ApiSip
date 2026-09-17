@@ -4,17 +4,20 @@ import {
   type ReplayResult,
   type RequestData,
   type Settings,
+  type ReplayCookies,
 } from '../shared/model';
 import { makeBody, parseUrl } from '../shared/parse';
 import { prepareHeaders, safeHttpUrl } from '../shared/security';
 import { fetchInContext, type FetchInput } from './fetch';
 import { materializeRequest } from '../shared/request-fields';
+import { replayCredentials, resolveReplayContext } from './context';
 
 export async function executeReplay(
   original: CapturedRequest,
   draft: RequestData,
   context: Settings['replayContext'],
   maxBytes: number,
+  cookies?: ReplayCookies,
 ): Promise<ReplayResult> {
   draft = materializeRequest(draft);
   safeHttpUrl(draft.url);
@@ -33,8 +36,8 @@ export async function executeReplay(
   const omitBody = ['GET', 'HEAD'].includes(draft.method.toUpperCase());
   if (omitBody && draft.body?.text)
     prepared.warnings.push('Chrome fetch omits bodies for GET and HEAD requests.');
-  const selected =
-    context === 'auto' ? (original.tabId !== undefined ? 'browser' : 'extension') : context;
+  const selected = resolveReplayContext(original, context);
+  const credentials = replayCredentials(selected, draft.url, cookies);
   const request = {
     ...draft,
     method: draft.method.toUpperCase(),
@@ -47,6 +50,7 @@ export async function executeReplay(
     id: uid(),
     timestamp: Date.now(),
     context: selected,
+    credentials,
     request,
     duration: 0,
     warnings: prepared.warnings,
@@ -57,7 +61,8 @@ export async function executeReplay(
     headers: request.headers,
     body: request.body?.text,
     maxBytes,
-    credentials: selected === 'browser' ? 'include' : 'omit',
+    credentials,
+    redirect: selected === 'extension' && credentials === 'include' ? 'error' : 'follow',
   };
   const start = performance.now();
   try {
@@ -91,7 +96,9 @@ export async function executeReplay(
         );
       output = await fetchInContext(input);
       result.warnings.push(
-        'Extension replay omits ambient cookies. Redirect destinations still require host access.',
+        credentials === 'include'
+          ? 'Eligible browser cookies requested for this origin. Cookie rules and partitioning still apply; redirects are blocked. This does not copy page localStorage or add CSRF / Authorization headers.'
+          : 'Extension replay omits ambient cookies. Use Browser context for a page login, or explicitly choose Use eligible browser cookies. Token APIs need an enabled Authorization / API-key header.',
       );
     }
     const body = makeBody(output.text, output.contentType, maxBytes, output.binary);
@@ -114,6 +121,9 @@ export async function executeReplay(
     result.error = error instanceof Error ? error.message : 'Replay failed.';
     if (/fetch|abort/i.test(result.error))
       result.error += ' Check CORS, connectivity, permissions and the 25-second timeout.';
+    if (input.redirect === 'error')
+      result.error +=
+        ' Redirects are blocked when extension replay includes browser cookies. Use the final URL directly.';
     result.duration = performance.now() - start;
   }
   return result;

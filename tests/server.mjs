@@ -37,6 +37,41 @@ const server = http.createServer(async (request, response) => {
     'cache-control': 'no-store',
     'x-test-server': 'api-catcher',
   };
+  if (url.pathname === '/api/auth/login') {
+    response.writeHead(200, {
+      ...headers,
+      'set-cookie': 'apisip_test_login=fixture-session; HttpOnly; SameSite=Lax; Path=/',
+    });
+    response.end('{"loggedIn":true}');
+    return;
+  }
+  if (url.pathname === '/api/auth/me') {
+    const cookie = /(?:^|; )apisip_test_login=fixture-session(?:;|$)/.test(
+      request.headers.cookie ?? '',
+    );
+    const token = request.headers.authorization === 'Bearer fixture-test-token';
+    response.writeHead(cookie || token ? 200 : 401, headers);
+    response.end(
+      JSON.stringify({
+        loggedIn: cookie || token,
+        cookieReceived: cookie,
+        tokenReceived: token,
+        message: cookie || token ? 'Authenticated' : 'You are not logged in',
+      }),
+    );
+    return;
+  }
+  if (url.pathname === '/api/baseline') {
+    response.writeHead(200, headers);
+    response.end(
+      JSON.stringify({
+        user: { id: url.searchParams.has('changed') ? '42' : 42, name: 'Fixture user' },
+        generatedAt: Date.now(),
+        ...(url.searchParams.has('changed') ? { debug: true } : {}),
+      }),
+    );
+    return;
+  }
   if (url.pathname === '/api/load-stats') {
     const run = loadRuns.get(url.searchParams.get('id'));
     response.writeHead(200, headers);

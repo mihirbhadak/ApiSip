@@ -4,6 +4,7 @@ import {
   type CapturedRequest,
   type RequestData,
   type Settings,
+  type ReplayCookies,
 } from '../shared/model';
 import type { EditorDraft } from '../shared/editor';
 import { sendCommand } from '../shared/messages';
@@ -119,10 +120,14 @@ export function useEditorPage(id: string) {
     if (!writer.current) throw new Error('The editor is still loading.');
     await writer.current.flush();
   };
-  const send = async (request: RequestData, context: Settings['replayContext']) => {
+  const send = async (
+    request: RequestData,
+    context: Settings['replayContext'],
+    cookies?: ReplayCookies,
+  ) => {
     await flush();
     if (!record) throw new Error('The source request is unavailable.');
-    const result = await sendCommand({ type: 'replay', id: record.id, request, context });
+    const result = await sendCommand({ type: 'replay', id: record.id, request, context, cookies });
     const updated = await getRecord(record.id);
     if (updated) setRecord(updated);
     return result;
@@ -160,9 +165,9 @@ export function useEditorPage(id: string) {
       if (!current) throw new Error('This draft was deleted.');
       return current.request;
     },
-    change: (request: RequestData, context: Settings['replayContext']) => {
-      setDraft((previous) => previous && { ...previous, request, context });
-      writer.current?.change(request, context);
+    change: (request: RequestData, context: Settings['replayContext'], cookies?: ReplayCookies) => {
+      setDraft((previous) => previous && { ...previous, request, context, cookies });
+      writer.current?.change(request, context, cookies);
     },
     copy: (text: string) =>
       task(async () => {

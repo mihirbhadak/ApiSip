@@ -66,7 +66,9 @@ Import supports validated schema-version-1 JSON and a documented HAR subset, wit
 
 The extension observes permitted traffic without intercepting or modifying it. Chrome's debugger permission must be declared at installation because Chrome does not support making it optional. The UI only attaches when response capture is enabled. Revoking host access pauses capture.
 
-Browser replay runs a fixed bundled function in an isolated content-script world and follows page-origin/CORS/cookie rules. Extension replay requires host access and omits ambient cookies. Neither context bypasses forbidden fetch headers. There is no automatic fallback or automatic retry that could duplicate a side effect. A click on Send may modify the remote API just like the same request from another API client.
+Browser replay runs a fixed bundled function in an isolated content-script world and follows page-origin/CORS/cookie rules. Extension replay requires host access and omits ambient cookies by default. The single-replay editor offers an explicit, origin-bound cookie choice saved with its draft. Extension cookie inclusion blocks redirects and lets Chrome attach eligible cookies without reading/copying the Cookie string; response cookies may update the browser's eligible cookie store. Header eyes do not suppress Chrome-managed cookies. Neither context bypasses forbidden fetch headers. There is no automatic fallback or automatic retry that could duplicate a side effect. A click on Send may modify the remote API just like the same request from another API client. Timed runs and Test lab continue to omit ambient cookies.
+
+Response baselines store JSON field paths and types, not sample values. Field names themselves may be private. Pasted samples stay in the current component's memory until converted/closed; only the resulting shape is saved with a suite. Suite exports with baselines use schema version 2 so older versions reject unsupported checks instead of silently dropping them. Inspect exported field names before sharing.
 
 ## Retention and deletion
 

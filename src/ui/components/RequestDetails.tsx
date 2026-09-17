@@ -4,7 +4,8 @@ import { SearchSelect } from './SearchSelect';
 import { useState } from 'react';
 import { Copy, Eye, X, ExternalLink } from 'lucide-react';
 import { openEditorTab } from '../editor-actions';
-import type { CapturedRequest, ReplayResult, RequestData, Settings } from '../../shared/model';
+import type { CapturedRequest, RequestData, Settings } from '../../shared/model';
+import type { ReplaySender } from '../../replay/context';
 import { formatBytes, formatTime, rawRequest, rawResponse } from '../../shared/parse';
 import { redactRecord } from '../../shared/security';
 import { generateCode, languages, type Language } from '../../export/generators';
@@ -32,7 +33,7 @@ export function RequestDetails({
   setTab: (t: string) => void;
   onClose: () => void;
   onUpdate: (patch: Partial<CapturedRequest>) => void;
-  onSend: (request: RequestData, context: Settings['replayContext']) => Promise<ReplayResult>;
+  onSend: ReplaySender;
   onSave: (r: RequestData) => void;
 }) {
   const [reveal, setReveal] = useState(false),

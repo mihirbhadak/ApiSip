@@ -6,13 +6,15 @@ import { suiteSchema, type SuiteReport, type TestSuite } from './model';
 export function exportSuite(suite: TestSuite) {
   return JSON.stringify(
     {
-      schemaVersion: 1,
+      schemaVersion: suite.steps.some((s) => s.baseline) ? 2 : 1,
       kind: 'apisip-suite',
       suite: {
         ...suite,
         name: redactText(suite.name),
         steps: suite.steps.map((s) => ({
           ...s,
+          sourceId: undefined,
+          baseline: s.baseline && { ...s.baseline, name: redactText(s.baseline.name) },
           name: redactText(s.name),
           request: redactRequest(s.request),
           assertions: s.assertions.map((a) => ({
@@ -35,11 +37,15 @@ export function importSuite(text: string, workspaceId: string): TestSuite {
     throw new Error('This file is not valid JSON.');
   }
   const input = z
-    .object({ schemaVersion: z.literal(1), kind: z.literal('apisip-suite'), suite: suiteSchema })
+    .object({
+      schemaVersion: z.union([z.literal(1), z.literal(2)]),
+      kind: z.literal('apisip-suite'),
+      suite: suiteSchema,
+    })
     .safeParse(parsed);
   if (!input.success)
     throw new Error(
-      'Expected an ApiSip suite export (schema version 1). Check its fields and limits.',
+      'Expected an ApiSip suite export (schema version 1 or 2). Check its fields and limits.',
     );
   return {
     ...input.data.suite,
@@ -49,6 +55,7 @@ export function importSuite(text: string, workspaceId: string): TestSuite {
     updatedAt: Date.now(),
     steps: input.data.suite.steps.map((step) => ({
       ...step,
+      sourceId: undefined,
       id: uid(),
       assertions: step.assertions.map((a) => ({ ...a, id: uid() })),
     })),

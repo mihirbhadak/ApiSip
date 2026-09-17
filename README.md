@@ -112,7 +112,11 @@ Neither mode captures literally all browser networking. Chrome-internal pages, o
 
 **Browser** runs a bundled fetch function in the source tab's isolated content-script world. It uses that tab's cookie/CORS context and refuses a changed source origin. Closed tabs and CORS restrictions produce a recorded error.
 
-**Extension** fetches from the extension worker with granted host access. It omits ambient cookies. It is useful for cross-origin API calls but does not reproduce the source page's identity automatically.
+**Extension** fetches from the extension worker with granted host access. It omits ambient cookies **by default**. It is useful for cross-origin API calls but does not reproduce the source page's identity automatically.
+
+**Why Browser works with every header hidden:** the eyes exclude captured header rows, not Chrome-generated cookies. A logged-in page can therefore still authenticate. Use **Browser cookies → Do not send browser cookies** and exclude credential headers/URL/body fields to test anonymously. Enabled Authorization/API-key headers remain independent of cookie policy.
+
+For a cookie-based login in Extension, explicitly choose **Use eligible browser cookies**. Consent is saved with the editor draft and bound to the target origin. Changing scheme, host or port requires choosing again; redirects are blocked in this mode. Chrome decides which cookies are eligible. Cookie partitioning/settings, page-origin checks, CSRF protection and session expiry can still prevent login. ApiSip does not read page localStorage, invent tokens, copy raw Cookie headers, or automatically retry. See [REPLAY-CONTEXT.md](REPLAY-CONTEXT.md) for the full guide and official references. Timed runs and Test lab do not inherit this single-replay choice.
 
 Automatic selection prefers the browser context when a source tab exists. Requests are never automatically retried in another context. Fetch controls forbidden headers such as Cookie, Origin, Referer, Host, Content-Length and Sec-*. The inspector lists omitted headers. Response headers may be filtered by fetch, especially Set-Cookie. Replays time out after 25 seconds and retain the latest 30 results per request.
 
@@ -131,6 +135,7 @@ Each click opens an independent draft. Duplicating an existing browser tab share
 Open **Test lab** from the sidebar, or choose **Create test** on a captured request, its context menu, or an editor draft. The command palette also finds these actions. The lab opens in a separate tab with an independent request copy.
 
 1. Add checks for status, response headers, JSON values, response text or duration. For JSON, use a pointer such as `/users/0/id`. Missing/truncated/unparseable bodies produce **inconclusive**, never a false pass.
+   **Response baseline** adds a named structural check from the captured response or a pasted JSON sample. Preview before saving; only field paths/types are stored. Ignore exact JSON Pointer branches and optionally allow additional fields. Scalar value changes are ignored; arrays use exact indices. This is an observed example, not a formal API specification.
 2. Extract a scalar value into a name such as `userId`. Use `{{userId}}` in a later URL/header or a quoted JSON placeholder: `{"id":"{{userId}}"}`. A complete JSON placeholder preserves the extracted number/boolean/null type.
 3. Optionally create a local environment for text variables and a staging-origin override. Review credential headers before changing destinations. Environments are stored locally, unencrypted.
 4. **Save suite** (Ctrl/Cmd + S), then **Review suite** (Ctrl/Cmd + Enter). Review sends nothing; **Start suite** sends the sequential requests to the listed destinations. Tests default to stopping at the first failed/inconclusive step.

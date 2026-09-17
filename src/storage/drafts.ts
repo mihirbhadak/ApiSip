@@ -1,5 +1,5 @@
 import type { IDBPObjectStore, StoreNames } from 'idb';
-import { uid, type RequestData, type Settings } from '../shared/model';
+import { uid, type RequestData, type Settings, type ReplayCookies } from '../shared/model';
 import type { EditorDraft } from '../shared/editor';
 import { getDB, type InspectorDB } from './database';
 
@@ -7,6 +7,7 @@ export async function createDraft(
   sourceId: string,
   request: RequestData,
   context: Settings['replayContext'],
+  cookies?: ReplayCookies,
 ) {
   const db = await getDB(),
     tx = db.transaction(['requests', 'drafts'], 'readwrite');
@@ -19,6 +20,7 @@ export async function createDraft(
     sourceId,
     request,
     context,
+    cookies,
     revision: 0,
     updatedAt: Date.now(),
   };
@@ -34,6 +36,7 @@ export async function updateDraft(
   revision: number,
   request: RequestData,
   context: Settings['replayContext'],
+  cookies?: ReplayCookies,
 ) {
   const db = await getDB(),
     tx = db.transaction(['requests', 'drafts'], 'readwrite');
@@ -51,6 +54,7 @@ export async function updateDraft(
     ...current,
     request,
     context,
+    cookies,
     revision: revision + 1,
     updatedAt: Date.now(),
   };
