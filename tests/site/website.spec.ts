@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 import { mkdir } from 'node:fs/promises';
 
-const release = 'https://github.com/mihirbhadak/ApiSip/releases/download/v0.1.4/apisip-0.1.4.zip';
+const release = 'https://github.com/mihirbhadak/ApiSip/releases/download/v0.1.5/apisip-0.1.5.zip';
 const coffee = 'https://buymeacoffee.com/mihir_bhadak/apisip';
 
 test('loads indexable content, local screenshots and working internal links without page errors', async ({
