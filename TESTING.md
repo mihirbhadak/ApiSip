@@ -1,5 +1,11 @@
 # Verification report
 
+## Website Chrome menu guide — September 17, 2026
+
+Replaced the clipboard installation step with **How to open extensions**, a dialog explaining Chrome's menu route. A real link click from an HTTPS test origin in installed Google Chrome 152.0.7977.83 remained on the website and logged `Not allowed to load local resource: chrome://extensions/`. This agrees with [Chrome's documented restriction](https://developer.chrome.com/docs/extensions/get-started/tutorial/hello-world#load-unpacked); the website cannot directly open the internal page.
+
+All **23 website browser tests**, lint, strict typecheck, changed-file formatting and the static production build passed. The new guide is checked at 1440 and 320 pixels for keyboard activation, focus restoration, Escape/outside/button dismissal, no overflow, no clipboard dependency and no axe violations. Menu instructions remain available without JavaScript. Existing downloads, support popups, feedback, analytics privacy and responsive checks passed. Screenshots were visually reviewed at both guide sizes. The new `install_menu_guide` event measures help opens, not completed installations. This website-only change does not rebuild or modify the extension ZIP.
+
 ## 0.1.2 capture and usability fixes — September 17, 2026
 
 - Lint, strict TypeScript, all **180 unit/component/integration tests**, production build and formatting passed. Tests cover optional API absence before approval, synchronous subscription after approval, permission changes, serialized recording toggles, icon paths, XHR aliases, bounded/redacted suggestions, Enter submission, update caching/dismissal and inert release-note rendering.

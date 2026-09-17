@@ -151,28 +151,11 @@ document.getElementById('expand-screenshot').addEventListener('click', () => {
   document.getElementById('screenshot-dialog').showModal();
 });
 
-let toastTimeout;
-function toast(message) {
-  const element = document.getElementById('toast');
-  element.textContent = message;
-  element.classList.add('visible');
-  clearTimeout(toastTimeout);
-  toastTimeout = setTimeout(() => element.classList.remove('visible'), 4500);
-}
-document.getElementById('copy-extensions').addEventListener('click', async () => {
-  try {
-    await navigator.clipboard.writeText('chrome://extensions');
-    track('install_copy');
-    toast('Address copied. Paste it into Chrome’s address bar.');
-  } catch {
-    const code = document.querySelector('.copy-field code');
-    const selection = window.getSelection();
-    const range = document.createRange();
-    range.selectNodeContents(code);
-    selection?.removeAllRanges();
-    selection?.addRange(range);
-    toast('Copy wasn’t available. Select and copy the highlighted address.');
-  }
+const extensionsGuide = document.getElementById('show-extensions-guide');
+extensionsGuide.hidden = false;
+extensionsGuide.addEventListener('click', () => {
+  document.getElementById('extensions-guide-dialog').showModal();
+  track('install_menu_guide');
 });
 
 document

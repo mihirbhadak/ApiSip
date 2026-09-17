@@ -1068,20 +1068,42 @@ details[open] summary > span {
   color: #c6e3cf;
   font-size: 0.8125rem;
 }
-.copy-field {
-  background: #0b120e;
-  border: 1px solid #3e5946;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  border-radius: 6px;
-  padding: 4px 6px 4px 15px;
+.extensions-guide-trigger {
   margin-top: 15px;
-  gap: 10px;
+  text-align: left;
 }
-.copy-field code {
+.extensions-guide-dialog .dialog-shell {
+  text-align: left;
+  padding: 42px 28px 28px;
+}
+.extensions-guide-dialog .dialog-shell h2 {
+  font-size: 1.65rem;
+}
+.extensions-menu-steps {
+  padding-left: 22px;
+  margin: 22px 0;
+}
+.extensions-menu-steps li {
+  margin-bottom: 14px;
+  padding-left: 5px;
+}
+.extensions-menu-steps li::marker {
+  color: var(--mint);
+}
+.extensions-guide-dialog code {
+  overflow-wrap: anywhere;
   font-size: 0.875rem;
   color: var(--mint);
+}
+#extensions-guide-description,
+.extensions-guide-note {
+  color: var(--muted);
+  font-size: 0.875rem;
+}
+.extensions-guide-note + .extensions-guide-note {
+  border-top: 1px solid var(--line);
+  padding-top: 16px;
+  margin-top: 16px;
 }
 .faq-section {
   display: grid;
@@ -1237,7 +1259,8 @@ dialog::backdrop {
   background: #020906dd;
   backdrop-filter: blur(6px);
 }
-.download-dialog {
+.download-dialog,
+.extensions-guide-dialog {
   width: min(490px, calc(100% - 32px));
 }
 .dialog-shell {
@@ -1337,30 +1360,6 @@ dialog::backdrop {
   text-align: center;
   margin: 10px;
   font-size: 0.75rem;
-}
-.toast {
-  position: fixed;
-  z-index: 50;
-  bottom: 24px;
-  left: 50%;
-  transform: translate(-50%, 15px);
-  opacity: 0;
-  pointer-events: none;
-  padding: 12px 18px;
-  border: 1px solid #52705b;
-  border-radius: 6px;
-  background: #1c3023;
-  color: #ddf8e7;
-  font-size: 0.875rem;
-  transition:
-    opacity 0.2s,
-    transform 0.2s;
-  max-width: calc(100% - 32px);
-  text-align: center;
-}
-.toast.visible {
-  opacity: 1;
-  transform: translate(-50%, 0);
 }
 .motion-ready [data-reveal] {
   opacity: 0;

@@ -14,6 +14,10 @@ Public site: <https://mihirbhadak.github.io/ApiSip/>. Publisher: [Mihir Bhadak](
 
 The website and extension are separate privacy boundaries. Nothing in this integration reads extension traffic, headers, bodies, saved requests or local history. The extension remains free of telemetry.
 
+### Opening Chrome's extensions page
+
+The installation page offers **How to open extensions**, with a keyboard-accessible guide to **Chrome menu (⋮) → Extensions → Manage Extensions**. The menu instructions remain visible without JavaScript. No clipboard access is required. Chrome deliberately prevents normal websites from linking to `chrome://extensions`, so a website button cannot open it directly; see [Google's unpacked installation instructions](https://developer.chrome.com/docs/extensions/get-started/tutorial/hello-world#load-unpacked). The guide does not attempt blocked navigation or create an empty tab.
+
 ## 1. View and manage website analytics
 
 **Your endpoint is configured:** `https://mihirbhadak.goatcounter.com/count`. Sign in at [mihirbhadak.goatcounter.com](https://mihirbhadak.goatcounter.com/) to view the private dashboard. No password or API secret belongs in this repository. The public website sends metrics; the Chrome extension does not.
@@ -49,7 +53,7 @@ The endpoint comes from your GoatCounter embed snippet. Do not add that script t
 | `download_retry`                                                       | Visitor clicked the retry link in the popup                                                    |
 | `install_open`                                                         | Installation link clicked                                                                      |
 | `install_view`                                                         | Installation section exposed in the viewport, once per page load; the download modal is closed |
-| `install_copy`                                                         | Copying `chrome://extensions` succeeded                                                        |
+| `install_menu_guide`                                                   | Visitor opened the Chrome menu instructions; not proof the extensions page opened              |
 | `feedback_open`                                                        | Feedback link clicked                                                                          |
 | `feedback_continue`                                                    | Visitor continued to a GitHub draft; **not proof an issue was submitted**                      |
 | `coffee_click`                                                         | Support link clicked; **not a payment**                                                        |

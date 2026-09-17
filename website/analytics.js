@@ -71,7 +71,7 @@ function send(event) {
 export function track(name) {
   // No field values, full URLs, query strings, emails or request data can become events.
   const allowed =
-    /^(download_(nav|hero|install|footer|retry)|install_view|install_open|install_copy|feedback_open|feedback_continue|coffee_click|social_(github|linkedin|instagram))$/;
+    /^(download_(nav|hero|install|footer|retry)|install_view|install_open|install_menu_guide|feedback_open|feedback_continue|coffee_click|social_(github|linkedin|instagram))$/;
   if (!allowed.test(name) || !enabled) return;
   const event = { path: name, title: name.replaceAll('_', ' '), event: true, no_session: true };
   if (ready) send(event);

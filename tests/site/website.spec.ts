@@ -139,25 +139,62 @@ test('every download CTA targets the release and opens an optional accessible cr
   await expect(page.getByRole('dialog')).toBeHidden();
 });
 
-test('copy installation address succeeds and provides a useful fallback when denied', async ({
-  page,
-  context,
-}) => {
-  await context.grantPermissions(['clipboard-read', 'clipboard-write']);
-  await page.goto('./');
-  await page.getByRole('button', { name: 'Copy Chrome extensions address' }).click();
-  await expect(page.locator('#toast')).toContainText('Address copied');
-  expect(await page.evaluate(() => navigator.clipboard.readText())).toBe('chrome://extensions');
-  await page.evaluate(() =>
-    Object.defineProperty(navigator.clipboard, 'writeText', {
-      value: () => Promise.reject(new Error('Denied')),
-      configurable: true,
-    }),
-  );
-  await page.getByRole('button', { name: 'Copy Chrome extensions address' }).click();
-  await expect(page.locator('#toast')).toContainText('Copy wasn’t available');
-  expect(await page.evaluate(() => window.getSelection()?.toString())).toBe('chrome://extensions');
-});
+for (const width of [1440, 320]) {
+  test(`Chrome menu guide works without clipboard access and is accessible at ${width}px`, async ({
+    page,
+    context,
+  }) => {
+    const errors: string[] = [];
+    page.on('pageerror', (error) => errors.push(error.message));
+    await page.setViewportSize({ width, height: 844 });
+    await page.goto('./#install');
+    // Installation must work even when the clipboard API is unavailable.
+    await page.evaluate(() =>
+      Object.defineProperty(navigator, 'clipboard', {
+        get: () => {
+          throw new Error('Clipboard is unavailable');
+        },
+      }),
+    );
+    const trigger = page.getByRole('button', { name: 'How to open extensions' });
+    await trigger.focus();
+    await page.keyboard.press('Enter');
+    const dialog = page.getByRole('dialog', { name: 'Open Chrome extensions', exact: true });
+    const close = dialog.getByRole('button', { name: 'Close extensions guide' });
+    await expect(dialog).toBeVisible();
+    await expect(close).toBeFocused();
+    await expect(dialog).toContainText('Manage Extensions');
+    await expect(dialog).toContainText(
+      'Chrome prevents websites from opening its internal pages directly.',
+    );
+    await expect(dialog.getByRole('listitem')).toHaveCount(4);
+    const accessibility = await new AxeBuilder({ page })
+      .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
+      .analyze();
+    expect(accessibility.violations).toEqual([]);
+    expect(await dialog.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(
+      true,
+    );
+    await mkdir('test-results/site/visual', { recursive: true });
+    await page.screenshot({ path: `test-results/site/visual/extensions-guide-${width}.png` });
+    await page.keyboard.press('Tab');
+    await expect(dialog.getByRole('link', { name: "Google's installation guide" })).toBeFocused();
+    await page.keyboard.press('Escape');
+    await expect(dialog).toBeHidden();
+    await expect(trigger).toBeFocused();
+    await trigger.click();
+    await page.mouse.click(2, 2);
+    await expect(dialog).toBeHidden();
+    await expect(trigger).toBeFocused();
+    await trigger.click();
+    await close.click();
+    await expect(dialog).toBeHidden();
+    await expect(trigger).toBeFocused();
+    await expect(page).toHaveURL(/#install$/);
+    expect(context.pages()).toHaveLength(1);
+    expect(errors).toEqual([]);
+  });
+}
 
 test('mobile navigation dismisses outside and with Escape and preserves accessible content', async ({
   page,
@@ -245,6 +282,8 @@ test('essential content and downloads remain available without JavaScript', asyn
     await expect(
       page.getByRole('navigation').getByRole('link', { name: 'Install', exact: true }),
     ).toBeVisible();
+    await expect(page.locator('.install-steps')).toContainText('Extensions → Manage Extensions');
+    await expect(page.locator('#show-extensions-guide')).toBeHidden();
     await page.getByText('Is ApiSip free? Do I need an account?').click();
     await expect(page.getByText('All included features are free', { exact: false })).toBeVisible();
   } finally {

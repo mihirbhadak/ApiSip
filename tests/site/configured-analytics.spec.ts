@@ -74,6 +74,14 @@ test('built website uses the owner endpoint, counts each download once and prese
   await expect
     .poll(() => measured.filter(({ url }) => url.searchParams.get('p') === 'install_view').length)
     .toBe(1);
+  await page.getByRole('button', { name: 'How to open extensions' }).click();
+  await expect(page.getByRole('dialog', { name: 'Open Chrome extensions' })).toBeVisible();
+  await expect
+    .poll(
+      () => measured.filter(({ url }) => url.searchParams.get('p') === 'install_menu_guide').length,
+    )
+    .toBe(1);
+  await page.keyboard.press('Escape');
   // Consume the response too: an unconsumed fetch can remain pending in Chrome,
   // despite returning HTTP 200, and prevent network-idle/performance checks finishing.
   await expect.poll(() => finished.length).toBe(measured.length);
