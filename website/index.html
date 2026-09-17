@@ -40,9 +40,9 @@
         "applicationCategory": "DeveloperApplication",
         "operatingSystem": "Chrome 125+",
         "browserRequirements": "Requires Chrome 125 or newer with extension support",
-        "softwareVersion": "0.1.6",
+        "softwareVersion": "0.2.0",
         "url": "https://mihirbhadak.github.io/ApiSip/",
-        "downloadUrl": "https://github.com/mihirbhadak/ApiSip/releases/download/v0.1.6/apisip-0.1.6.zip",
+        "downloadUrl": "https://github.com/mihirbhadak/ApiSip/releases/download/v0.2.0/apisip-0.2.0.zip",
         "description": "A local-first Chrome extension to capture, inspect, replay and load-test APIs.",
         "offers": {
           "@type": "Offer",
@@ -213,10 +213,10 @@
           <a
             class="button button-small button-primary"
             data-download="nav"
-            href="https://github.com/mihirbhadak/ApiSip/releases/download/v0.1.6/apisip-0.1.6.zip"
+            href="https://github.com/mihirbhadak/ApiSip/releases/download/v0.2.0/apisip-0.2.0.zip"
             target="_blank"
             rel="noopener noreferrer"
-            title="Download the ApiSip 0.1.6 extension ZIP for Chrome"
+            title="Download the ApiSip 0.2.0 extension ZIP for Chrome"
             >Download <svg class="icon" aria-hidden="true"><use href="#i-download"></use></svg
           ></a>
         </div>
@@ -228,7 +228,7 @@
         <div class="hero-grid" aria-hidden="true"></div>
         <div class="eyebrow hero-eyebrow">
           <span class="status-dot"></span> YOUR BROWSER'S API WORKSPACE
-          <span class="version-pill">v0.1.6</span>
+          <span class="version-pill">v0.2.0</span>
         </div>
         <h1 id="hero-title">
           Your APIs.<br /><span class="focus-text">In full focus<span class="cursor">.</span></span>
@@ -241,10 +241,10 @@
           <a
             class="button button-primary"
             data-download="hero"
-            href="https://github.com/mihirbhadak/ApiSip/releases/download/v0.1.6/apisip-0.1.6.zip"
+            href="https://github.com/mihirbhadak/ApiSip/releases/download/v0.2.0/apisip-0.2.0.zip"
             target="_blank"
             rel="noopener noreferrer"
-            title="Download the ApiSip 0.1.6 extension ZIP for Chrome"
+            title="Download the ApiSip 0.2.0 extension ZIP for Chrome"
             ><svg class="icon" aria-hidden="true"><use href="#i-download"></use></svg> Download for
             Chrome <span class="button-note">FREE</span></a
           >
@@ -303,6 +303,16 @@
               data-shot="runner"
             >
               <span>03</span> Test &amp; measure
+            </button>
+            <button
+              id="tab-lab"
+              role="tab"
+              aria-selected="false"
+              aria-controls="showcase-panel"
+              tabindex="-1"
+              data-shot="lab"
+            >
+              <span>04</span> Build test suites
             </button>
           </div>
           <div id="showcase-panel" role="tabpanel" aria-labelledby="tab-capture">
@@ -472,6 +482,69 @@
               <li>Validated JSON/HAR import; masked exports</li>
             </ul>
             <span class="shortcut-line"><kbd>Ctrl / ⌘</kbd><kbd>⇧</kbd><kbd>C</kbd> Copy cURL</span>
+          </article>
+        </div>
+        <div class="feature-grid">
+          <article class="feature" data-reveal="">
+            <div class="feature-top">
+              <svg class="icon" aria-hidden="true"><use href="#i-replay"></use></svg
+              ><span>07 — VERIFY</span>
+            </div>
+            <h3>Turn captures into tests.</h3>
+            <p>
+              Choose Create test on a request. Add status, header, JSON, text and duration checks,
+              then chain values into the next step.
+            </p>
+            <ul>
+              <li>Reusable suites &amp; local environments</li>
+              <li>Review destinations before sending</li>
+              <li>Stop-on-failure, JSON &amp; JUnit reports</li>
+            </ul>
+            <a
+              href="https://github.com/mihirbhadak/ApiSip/blob/main/TEST-LAB.md"
+              target="_blank"
+              rel="noopener noreferrer"
+              title="Read the Test lab guide and local two-step example"
+              >Build your first suite <span aria-hidden="true">↗</span></a
+            >
+          </article>
+          <article class="feature" data-reveal="">
+            <div class="feature-top">
+              <svg class="icon" aria-hidden="true"><use href="#i-shield"></use></svg
+              ><span>08 — REVIEW</span>
+            </div>
+            <h3>Spot evidence worth checking.</h3>
+            <p>
+              The Security tab flags HTTP, credential-like URL fields, exposed cookie attributes,
+              CORS conflicts and possible error disclosures.
+            </p>
+            <ul>
+              <li>Passive review of captured evidence</li>
+              <li>No probes or automatic security scans</li>
+              <li>Guidance, without a false security score</li>
+            </ul>
+            <span class="feature-footnote"
+              >Findings need context; they are not proof of a vulnerability.</span
+            >
+          </article>
+          <article class="feature" data-reveal="">
+            <div class="feature-top">
+              <svg class="icon" aria-hidden="true"><use href="#i-code"></use></svg
+              ><span>09 — EXPLAIN</span>
+            </div>
+            <h3>Share context deliberately.</h3>
+            <p>
+              Prepare an editable, redacted request summary for a bug report or your preferred AI
+              tool. Review it before copying.
+            </p>
+            <ul>
+              <li>Known secrets masked by default</li>
+              <li>Bounded evidence with timing and errors</li>
+              <li>No live AI connection or remote upload</li>
+            </ul>
+            <span class="feature-footnote"
+              >Custom secret formats may still need manual removal.</span
+            >
           </article>
         </div>
         <div class="everyday-strip" data-reveal="">
@@ -803,15 +876,15 @@
             <a
               class="button button-primary"
               data-download="install"
-              href="https://github.com/mihirbhadak/ApiSip/releases/download/v0.1.6/apisip-0.1.6.zip"
+              href="https://github.com/mihirbhadak/ApiSip/releases/download/v0.2.0/apisip-0.2.0.zip"
               target="_blank"
               rel="noopener noreferrer"
-              title="Download the ApiSip 0.1.6 extension ZIP for Chrome"
+              title="Download the ApiSip 0.2.0 extension ZIP for Chrome"
               >Download ApiSip
               <svg class="icon" aria-hidden="true"><use href="#i-download"></use></svg
             ></a>
             <p class="fine-print">
-              v0.1.6 · Chrome 125+ · ZIP download<br />Keep the extracted folder in a permanent
+              v0.2.0 · Chrome 125+ · ZIP download<br />Keep the extracted folder in a permanent
               location.
             </p>
             <a
@@ -1137,10 +1210,10 @@
         <a
           class="button button-primary"
           data-download="footer"
-          href="https://github.com/mihirbhadak/ApiSip/releases/download/v0.1.6/apisip-0.1.6.zip"
+          href="https://github.com/mihirbhadak/ApiSip/releases/download/v0.2.0/apisip-0.2.0.zip"
           target="_blank"
           rel="noopener noreferrer"
-          title="Download the ApiSip 0.1.6 extension ZIP for Chrome"
+          title="Download the ApiSip 0.2.0 extension ZIP for Chrome"
           >Get ApiSip for Chrome
           <svg class="icon" aria-hidden="true"><use href="#i-download"></use></svg
         ></a>
@@ -1305,16 +1378,16 @@
         <p class="download-fallback">
           Didn't start?
           <a
-            href="https://github.com/mihirbhadak/ApiSip/releases/download/v0.1.6/apisip-0.1.6.zip"
+            href="https://github.com/mihirbhadak/ApiSip/releases/download/v0.2.0/apisip-0.2.0.zip"
             target="_blank"
             rel="noopener noreferrer"
             data-event="download_retry"
-            title="Download the ApiSip 0.1.6 extension ZIP for Chrome"
+            title="Download the ApiSip 0.2.0 extension ZIP for Chrome"
             >Download again</a
           >
           or
           <a
-            href="https://github.com/mihirbhadak/ApiSip/releases/tag/v0.1.6"
+            href="https://github.com/mihirbhadak/ApiSip/releases/tag/v0.2.0"
             target="_blank"
             rel="noopener noreferrer"
             title="view the release (opens a new tab)"

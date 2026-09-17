@@ -32,6 +32,7 @@ for (const [key, name] of Object.entries({
   capture: 'response-light',
   editor: 'editor-dark',
   runner: 'runner-dark',
+  lab: 'test-lab-overview',
 })) {
   const variants = [];
   for (const width of [480, 960, 1512]) {

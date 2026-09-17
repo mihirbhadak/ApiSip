@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 import { mkdir } from 'node:fs/promises';
 
-const release = 'https://github.com/mihirbhadak/ApiSip/releases/download/v0.1.6/apisip-0.1.6.zip';
+const release = 'https://github.com/mihirbhadak/ApiSip/releases/download/v0.2.0/apisip-0.2.0.zip';
 const coffee = 'https://buymeacoffee.com/mihir_bhadak/apisip';
 
 test('loads indexable content, local screenshots and working internal links without page errors', async ({
@@ -67,6 +67,12 @@ test('screenshot tabs work with arrows and enlarged images close with Escape and
     /assets\/web-editor-960\.[a-f0-9]+\.webp$/,
   );
   await page.keyboard.press('End');
+  await expect(page.getByRole('tab', { name: '04 Build test suites' })).toBeFocused();
+  await expect(page.locator('#showcase-image')).toHaveAttribute(
+    'src',
+    /web-lab-960\.[a-f0-9]+\.webp$/,
+  );
+  await page.keyboard.press('ArrowLeft');
   await expect(page.getByRole('tab', { name: '03 Test & measure' })).toBeFocused();
   await page.getByRole('button', { name: 'Take a closer look at the current screenshot' }).click();
   await expect(page.getByRole('dialog', { name: 'Expanded ApiSip screenshot' })).toBeVisible();

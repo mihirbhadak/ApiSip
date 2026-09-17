@@ -103,6 +103,11 @@ const screenshots = {
     alt: 'ApiSip timed-run analytics in dark mode using synthetic data from the local test server',
     caption: 'Set the pace. Follow the timings, outcomes and delays in one local report.',
   },
+  lab: {
+    ...APISIP_SCREENSHOTS.lab,
+    alt: 'ApiSip Test lab with a saved two-step workflow using only the local demo API, response checks and variable extraction',
+    caption: 'Capture once. Save a suite, check responses and pass values into the next request.',
+  },
 };
 const tabs = [...document.querySelectorAll('[data-shot]')];
 const showcaseImage = document.getElementById('showcase-image');
