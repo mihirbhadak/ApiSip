@@ -29,6 +29,8 @@ A final inspection of GoatCounter's upstream script found its implicit `q=locati
 
 Local artifacts: `artifacts/site-audit/lighthouse-after.report.*`, `html-live-after.txt`, `css-live-after.txt`, `pagespeed-api-after.json`, `visual/*`, and `artifacts/site-qa/real-download.json`. Scores and measurements are one lab run, not a guarantee for every visitor.
 
+The final analytics-transport revision deployed successfully in [run 35125536444](https://github.com/mihirbhadak/ApiSip/actions/runs/35125536444). A fresh live Lighthouse run at **2026-09-17 04:30 UTC** scored **99 performance / 100 accessibility / 100 best practices / 100 SEO**, with FCP 1.3 s, LCP 1.4 s, TBT 0 ms, CLS 0.05 and Speed Index 2.5 s (`artifacts/site-audit/lighthouse-final.report.*`). This later result is retained alongside the earlier 100-performance run rather than selecting only the higher score. The final repeat call to Nu encountered a Cloudflare human-verification page; the earlier successful public validation with zero messages remains the last completed Nu result. The intervening generated HTML change only switched the hashed JavaScript filename.
+
 ## Reproduce
 
 ```sh
