@@ -1,6 +1,6 @@
 {
   "name": "apisip",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "private": true,
   "type": "module",
   "description": "Privacy-first Chrome extension to capture, inspect, replay and load-test APIs.",

@@ -1,5 +1,13 @@
 # Verification report
 
+## 0.1.4 website URL — September 17, 2026
+
+The extension homepage now uses `https://mihirbhadak.github.io/ApiSip/`, matching the repository website field, package homepage, README and page canonical URL. Verified HTTP 200 from the public site. The source, root build, standalone build and packaged manifests all contain this URL and version 0.1.4.
+
+Lint, strict typecheck/production build, changed-file formatting, **23 website tests**, and fresh Chrome onboarding from the exact extracted ZIP passed. This metadata-only patch does not change the extension application logic tested in 0.1.3; that full unit/E2E suite was not repeated for a URL edit.
+
+Build: `2026-09-17T10:14:26.217Z`. ZIP: 30 files, 1,204,537 bytes; SHA-256 `f9f03c9dca75cdb605eeba90ace97ed868d6c3e7378caca655737be2bebdfe6c`. Packaging verified every archived byte and 96 source-map entries against source.
+
 ## 0.1.3 cell filtering — September 17, 2026
 
 - Lint, strict TypeScript, **191 unit/component/integration tests**, formatting and the production build passed. Cell-filter tests cover all populated columns, XHR aliases, exact numeric values, missing metadata, masked secrets, safe quoting, OR/NOT grouping, deduplication and expression limits.
