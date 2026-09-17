@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 
 const site = 'https://mihirbhadak.github.io/ApiSip/';
 const endpoint = 'https://mihirbhadak.goatcounter.com/count';
-const release = 'https://github.com/mihirbhadak/ApiSip/releases/download/v0.1.5/apisip-0.1.5.zip';
+const release = 'https://github.com/mihirbhadak/ApiSip/releases/download/v0.1.6/apisip-0.1.6.zip';
 
 async function serveBuiltWebsite(context: BrowserContext) {
   const measured: { url: URL; headers: Record<string, string> }[] = [];
