@@ -54,12 +54,16 @@ function send(event) {
     }
     if (navigator.webdriver) url.searchParams.set('b', '153');
     void fetch(url, {
-      mode: 'no-cors',
+      mode: 'cors',
       credentials: 'omit',
       referrerPolicy: 'no-referrer',
       cache: 'no-store',
       keepalive: true,
-    }).catch(() => {});
+    })
+      // /count allows CORS and returns a 43-byte GIF. Drain the response so Chrome
+      // can finish the request; leaving its body unread can keep it pending.
+      .then((response) => response.arrayBuffer())
+      .catch(() => {});
   } catch {
     /* Metrics must never affect the site. */
   }

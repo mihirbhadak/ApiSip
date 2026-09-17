@@ -32,7 +32,11 @@ test('configured analytics queues safe events, strips sensitive URL data and sup
   await page.route('https://apisip-test-fixture.goatcounter.com/count**', (route) => {
     measured.push(new URL(route.request().url()));
     headers.push(route.request().headers());
-    return route.fulfill({ contentType: 'image/gif', body: 'Transport fixture' });
+    return route.fulfill({
+      contentType: 'image/gif',
+      headers: { 'Access-Control-Allow-Origin': '*' },
+      body: 'Transport fixture',
+    });
   });
   await page.goto(
     'https://mihirbhadak.github.io/ApiSip/?utm_source=linkedin&utm_campaign=launch&token=do-not-send',

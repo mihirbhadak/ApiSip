@@ -38,6 +38,8 @@ Update the status in `PRIVACY.md` and this guide, then commit the configuration,
 
 The bundled integration sends small asynchronous requests to GoatCounter's [documented counting endpoint](https://www.goatcounter.com/help/pixel) after initial page work; it loads no third-party script. It sends a fixed page path and allowlisted event names, not form contents, arbitrary URL parameters, hash fragments, API data or emails. Referral URLs are reduced to their origin. The service still receives normal connection information such as an IP address; see [GoatCounter's privacy policy](https://www.goatcounter.com/help/privacy) for its processing and aggregation. This is not a promise of zero network metadata or perfect counting.
 
+The endpoint comes from your GoatCounter embed snippet. Do not add that script tag alongside the bundled integration: it would create a second page counter and send the stock script's raw query-string field. The current integration uses the supported counting protocol directly so the website's privacy filtering remains in control.
+
 ### Events you will see
 
 | Event                                                                  | Meaning                                                                                        |

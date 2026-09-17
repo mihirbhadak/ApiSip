@@ -16,7 +16,11 @@ async function serveBuiltWebsite(context: BrowserContext) {
   });
   await context.route(`${endpoint}**`, (route) => {
     measured.push({ url: new URL(route.request().url()), headers: route.request().headers() });
-    return route.fulfill({ contentType: 'image/gif', body: 'Analytics transport fixture' });
+    return route.fulfill({
+      contentType: 'image/gif',
+      headers: { 'Access-Control-Allow-Origin': '*' },
+      body: 'Analytics transport fixture',
+    });
   });
   await context.route(release, (route) =>
     route.fulfill({
@@ -39,7 +43,11 @@ test('built website uses the owner endpoint, counts each download once and prese
   const measured = await serveBuiltWebsite(context);
   const errors: string[] = [];
   const scripts: string[] = [];
+  const finished: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
+  page.on('requestfinished', (request) => {
+    if (request.url().startsWith(endpoint)) finished.push(request.url());
+  });
   page.on('request', (request) => {
     if (request.resourceType() === 'script') scripts.push(request.url());
   });
@@ -66,6 +74,9 @@ test('built website uses the owner endpoint, counts each download once and prese
   await expect
     .poll(() => measured.filter(({ url }) => url.searchParams.get('p') === 'install_view').length)
     .toBe(1);
+  // Consume the response too: an unconsumed fetch can remain pending in Chrome,
+  // despite returning HTTP 200, and prevent network-idle/performance checks finishing.
+  await expect.poll(() => finished.length).toBe(measured.length);
   for (const { url, headers } of measured) {
     expect(`${url.origin}${url.pathname}`).toBe(endpoint);
     expect(url.searchParams.get('r')).toBe('campaign:linkedin/launch');
