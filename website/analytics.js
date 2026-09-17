@@ -119,6 +119,7 @@ export function initializeAnalytics() {
   window.addEventListener('storage', () => {
     enabled = canMeasure();
     if (!enabled) queue.length = 0;
+    else begin();
     update();
   });
   update();

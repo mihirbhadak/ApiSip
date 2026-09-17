@@ -4,33 +4,37 @@ Public site: <https://mihirbhadak.github.io/ApiSip/>. Publisher: [Mihir Bhadak](
 
 ## What is working, and what needs your account
 
-| Feature                                                              | Status                                                                      | Where to see it                                                                                                         |
-| -------------------------------------------------------------------- | --------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
-| Real GitHub ZIP download counters                                    | Collected now; daily GitHub Actions snapshot configured                     | [JSON history](stats/downloads.json), [CSV history](stats/downloads.csv), repository Actions → Record release downloads |
-| Website feedback                                                     | Working, with public GitHub drafts and issue templates                      | [ApiSip issues](https://github.com/mihirbhadak/ApiSip/issues)                                                           |
-| Page views, sources, countries, click events                         | Integration prepared; **off until you configure your own GoatCounter site** | Your GoatCounter dashboard after setup                                                                                  |
-| Google impressions, search queries, clicks, CTR and average position | Requires your Search Console ownership verification                         | Your Search Console property                                                                                            |
-| Completed Chrome installations or extension usage                    | Not tracked                                                                 | Unpacked installation has no reliable website-side installation callback                                                |
+| Feature                                                              | Status                                                            | Where to see it                                                                                                         |
+| -------------------------------------------------------------------- | ----------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| Real GitHub ZIP download counters                                    | Collected now; daily GitHub Actions snapshot configured           | [JSON history](stats/downloads.json), [CSV history](stats/downloads.csv), repository Actions → Record release downloads |
+| Website feedback                                                     | Working, with public GitHub drafts and issue templates            | [ApiSip issues](https://github.com/mihirbhadak/ApiSip/issues)                                                           |
+| Page views, sources, countries, click events                         | Enabled September 17, 2026; browser privacy preferences respected | [Your GoatCounter dashboard](https://mihirbhadak.goatcounter.com/) (sign-in required)                                   |
+| Google impressions, search queries, clicks, CTR and average position | Requires your Search Console ownership verification               | Your Search Console property                                                                                            |
+| Completed Chrome installations or extension usage                    | Not tracked                                                       | Unpacked installation has no reliable website-side installation callback                                                |
 
 The website and extension are separate privacy boundaries. Nothing in this integration reads extension traffic, headers, bodies, saved requests or local history. The extension remains free of telemetry.
 
-## 1. Enable the lightweight website analytics
+## 1. View and manage website analytics
 
-1. Create your own site at [GoatCounter](https://www.goatcounter.com/). Its hosted service is currently free for reasonable public usage; see the provider's current terms. Choose a site code and keep the dashboard private unless you want the aggregate data public. No API secret belongs in this repository.
-2. Copy the **public counting endpoint**, such as `https://YOUR-SITE-CODE.goatcounter.com/count`. This example is not an existing ApiSip account.
-3. Edit [website/config.json](website/config.json). Put that endpoint in `analyticsEndpoint`. Leave the other fields intact.
-4. Run:
+**Your endpoint is configured:** `https://mihirbhadak.goatcounter.com/count`. Sign in at [mihirbhadak.goatcounter.com](https://mihirbhadak.goatcounter.com/) to view the private dashboard. No password or API secret belongs in this repository. The public website sends metrics; the Chrome extension does not.
 
-   ```sh
-   npm ci
-   npm run site:build
-   npm run test:site
-   ```
+1. Open the public site in a normal browser tab with JavaScript enabled. Click Download once and look for `/ApiSip/` and `download_hero` or `download_nav` in your dashboard. Allow time for the provider to process the requests and check the dashboard date range/time zone. These manual verification clicks affect counters.
+2. Use the pages/events, referring sites, browsers and location reports. Campaign labels such as `campaign:linkedin/launch` appear under **referrers**, not the automatic campaign widget. See the exact event names below.
+3. Test **Turn off website metrics** in the footer. The preference is saved locally and applies across open tabs. Do Not Track and Global Privacy Control also prevent analytics requests. Blocking the analytics service must never block downloads or feedback.
+4. Keep collection of individual pageview records off in GoatCounter settings if you only need aggregate reporting. Select only the dimensions you actually need. Review the provider's privacy terms for your audience.
 
-5. Update the website-metrics status in `PRIVACY.md`, then commit `website/config.json`, the privacy update and the generated `docs` changes and push `main`. GitHub Pages serves the committed `docs` output; editing source alone does not update the deployed page.
-6. Open the public site in a fresh normal browser tab. Click Download once and look for the page and `download_hero` or `download_nav` event in your GoatCounter dashboard. Localhost visits are deliberately ignored. These manual verification clicks also affect counters.
-7. Test **Turn off website metrics** in the footer. The preference is saved locally. Do Not Track and Global Privacy Control also prevent analytics requests. Blocking the analytics service must never block downloads or feedback.
-8. In GoatCounter settings, keep collection of individual pageview records off if you only need aggregate reporting. Select only the dimensions you actually need. Review the provider's privacy terms for your audience.
+Automated browser checks identify themselves to GoatCounter as WebDriver traffic. They verify actual endpoint responses but may be excluded from ordinary visitor totals. A successful counting request alone does not prove dashboard ingestion. Localhost visits are deliberately ignored. The private dashboard requires your sign-in to confirm visible statistics; never share account credentials for this check.
+
+### Change or disable the endpoint later
+
+Edit `analyticsEndpoint` in [website/config.json](website/config.json); set it to an empty string to disable collection for everyone. Leave the other fields intact, then run:
+
+```sh
+npm run site:build
+npm run test:site
+```
+
+Update the status in `PRIVACY.md` and this guide, then commit the configuration, documentation and generated `docs` changes and push `main`. GitHub Pages serves the committed `docs` output; editing source alone does not update the deployed page.
 
 The bundled integration sends small asynchronous requests to GoatCounter's [documented counting endpoint](https://www.goatcounter.com/help/pixel) after initial page work; it loads no third-party script. It sends a fixed page path and allowlisted event names, not form contents, arbitrary URL parameters, hash fragments, API data or emails. Referral URLs are reduced to their origin. The service still receives normal connection information such as an IP address; see [GoatCounter's privacy policy](https://www.goatcounter.com/help/privacy) for its processing and aggregation. This is not a promise of zero network metadata or perfect counting.
 

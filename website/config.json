@@ -1,5 +1,5 @@
 {
-  "analyticsEndpoint": "",
+  "analyticsEndpoint": "https://mihirbhadak.goatcounter.com/count",
   "searchConsoleVerification": "",
   "allowedCampaigns": ["launch", "profile", "release-0-1-1"]
 }

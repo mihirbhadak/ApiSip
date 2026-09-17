@@ -1,6 +1,6 @@
 # ApiSip website
 
-The public landing page is a static site published by GitHub Pages from `main:/docs` at <https://mihirbhadak.github.io/ApiSip/>. Authoring files live in `website`; a small build step produces indexable HTML, inline minified CSS, a deferred script and responsive optimized images. No frontend framework or remote fonts are shipped. GoatCounter integration is prepared but remains off until the owner adds an endpoint. The extension has no telemetry.
+The public landing page is a static site published by GitHub Pages from `main:/docs` at <https://mihirbhadak.github.io/ApiSip/>. Authoring files live in `website`; a small build step produces indexable HTML, inline minified CSS, a deferred script and responsive optimized images. No frontend framework or remote fonts are shipped. Optional website metrics use the owner's [GoatCounter account](https://mihirbhadak.goatcounter.com/) with footer opt-out and browser privacy controls. The extension has no telemetry.
 
 **Hosting status, September 16, 2026:** the site is live over HTTPS, with automatic HTTP-to-HTTPS redirects. The inherited obsolete custom domain was removed with the owner's approval. Screenshots, responsive layouts, accessibility and the real release download were checked on the public site; see [the verification report](../TESTING.md#hosting-verification).
 

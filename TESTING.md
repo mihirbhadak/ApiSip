@@ -1,5 +1,16 @@
 # Verification report
 
+## GoatCounter activation, September 17, 2026
+
+Configured the owner's supplied endpoint, `https://mihirbhadak.goatcounter.com/count`, for the public website only. The generated footer now discloses GoatCounter and exposes the persistent opt-out control. No analytics script or endpoint was added to the Chrome extension.
+
+- `npm run test:site`: **22 browser tests passed**. Two additional tests exercise the actual generated website at its production origin, substituting only provider/download transports. They verify the real configured endpoint, one pageview, one event per download CTA, installation scrolling, privacy-safe outgoing fields, persistent opt-out and opt-in/opt-out synchronization across tabs.
+- The cross-tab regression first failed: opting in updated the second tab's button but did not start its previously disabled collector. The storage-event handler now starts it, and the regression passes without a reload.
+- `npm run check`: lint, strict TypeScript, **151 unit/component/integration tests**, and the production extension build passed. `npm run test:site-tools`: **3 tests passed**. `npm run format:check` and `git diff --check` passed.
+- Site build: **82,119 bytes HTML**, including **28,987 bytes inline CSS**, and **9,125 bytes deferred JavaScript**, before compression. No third-party JavaScript is loaded. Existing website tests cover responsive layouts, accessibility, feedback drafts, metadata, downloads and blocked analytics.
+
+The counting transport in automated regression tests is intentionally intercepted, so these test totals are not evidence of live account ingestion. The private dashboard redirects unauthenticated visitors to sign-in; account statistics require the owner's authenticated review. Real deployment verification is recorded separately below.
+
 ## Website metadata, delivery, feedback and measurement update
 
 Verified September 16, 2026. The extension source and downloadable 0.1.1 release are unchanged by this website update.
@@ -14,7 +25,7 @@ Verified September 16, 2026. The extension source and downloadable 0.1.1 release
 - The requested WMTips analyzer presented a Cloudflare human-verification screen. It was not bypassed, and no WMTips score is claimed. A separate local visible-text count is saved in `artifacts/site-audit/keyword-local.json` and is explicitly not that service's result.
 - Visual review covered the feedback section, desktop/mobile support dialog, social icons and the installation guide after dismissal. No live feedback issue or payment was submitted.
 
-GoatCounter integration is prepared but **not active**: the owner chose a setup guide and has not supplied an endpoint. Tests substitute the provider transport and cannot prove an unconfigured analytics account receives data. The guide explains this activation boundary, privacy controls, Search Console ownership verification, GitHub cache-header limitations and the distinction between click events, release download counters and installs.
+At the time of this initial audit, GoatCounter integration was prepared but **not active**: the owner had chosen a setup guide and had not yet supplied an endpoint. That historical status is superseded by the September 17 activation verification below. Tests for the initial audit substituted the provider transport and could not prove an unconfigured analytics account received data. The guide explains privacy controls, Search Console ownership verification, GitHub cache-header limitations and the distinction between click events, release download counters and installs.
 
 A final inspection of GoatCounter's upstream script found its implicit `q=location.search` field. Before activation, the integration was changed to use the documented `/count` protocol directly, without loading the third-party script. The regression test now inspects actual outgoing browser request URLs and headers at a stubbed endpoint, ensuring the query string, arbitrary event values, Referer header and cookies are absent. The pre-initialization queue stays bounded at 20 events; blocked requests are contained. All 20 site scenarios, lint and strict TypeScript passed again after this change.
 
