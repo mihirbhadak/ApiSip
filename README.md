@@ -126,6 +126,14 @@ Each click opens an independent draft. Duplicating an existing browser tab share
 
 ## Timed API testing
 
+### Choose which fields to send
+
+In the request editor, an **open eye includes** the header or body field; a **closed eye excludes** it from replay and timed runs and blurs its saved value. Duplicate headers and form rows have separate controls. JSON supports nested properties, whole groups and array items (excluded array items are removed, not replaced by `null`). The body eye omits the entire body, including unsupported body formats. Re-enable fields to edit the blurred raw body. Reset restores the captured request.
+
+Selections persist in editor drafts and saved requests and are respected by code generators. They do not change the original capture. **Lock/Reveal is display-only secret masking** and does not change what is sent. Chrome still controls or generates some headers. Individual body controls show up to 300 fields/32 levels for JSON and URL-encoded form bodies up to 1 MB; other formats use the whole-body toggle. Local values are retained, and blur is not encryption.
+
+### Configure a run
+
 1. Select an API, choose **Replay → Open in new tab**, and edit its URL, headers and body.
 2. Choose **Timed run**. Enter **Requests to schedule** and a **Start window** in seconds or minutes. For example, **10,000 / 1 minute** plans an average of **166.67 starts/second**.
 3. Set maximum concurrency and a per-request timeout. Optional advanced controls add linear ramp-up, acceptable status codes, a latency budget, a response read limit and automatic stopping on consecutive failures or HTTP 429.
@@ -144,7 +152,9 @@ Header: X-Test-Request: {{uuid}}
 Body:   {"userId":"{{userId}}","name":"{{name}}","attempt":"{{index}}"}
 ```
 
-Under **Variables & data rows**, add custom constants or JSON rows such as:
+Under **Variables & data rows**, the guided field selector uses included, nonsecret values from your actual body, headers and query. **Insert placeholder & define value** updates the draft and adds the current value as an editable example. Numbers, booleans and `null` receive typed data rows so their JSON types are preserved. The first three requests preview shows substitutions and exclusions with secrets masked, without sending traffic. Back to editor keeps the run form in memory; reloading/closing the tab clears variable values and rows, while the draft retains its placeholders.
+
+For manual setup, add custom constants or JSON rows such as:
 
 ```json
 [

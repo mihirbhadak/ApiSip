@@ -1,8 +1,11 @@
 import type { RunPlan } from './model';
 import { prepareHeaders, safeHttpUrl } from '../shared/security';
+import { materializeRequest } from '../shared/request-fields';
 
 const token = /\{\{\s*([A-Za-z][A-Za-z0-9_]*)\s*\}\}/g;
 const builtinNames = new Set(['index', 'uuid', 'timestamp', 'randomInt']);
+const decodePlaceholders = (text: string) =>
+  text.replace(/%7B%7B(.*?)%7D%7D/gi, (_, name: string) => '{{' + decodeURIComponent(name) + '}}');
 type Value = string | number | boolean | null;
 type Json = Value | Json[] | { [key: string]: Json };
 type Values = Map<string, Value>;
@@ -49,7 +52,7 @@ function seededInt(seed: number, index: number) {
   return ((value ^ (value >>> 15)) >>> 0) % 1_000_000;
 }
 export function compileRunRequest(plan: RunPlan) {
-  const request = plan.request;
+  const request = materializeRequest(plan.request);
   const urlTemplate = request.url.replace(
     /%7B%7B(.*?)%7D%7D/gi,
     (_, name: string) => '{{' + decodeURIComponent(name) + '}}',
@@ -92,7 +95,12 @@ export function compileRunRequest(plan: RunPlan) {
       throw new Error('Data rows allow 100 named values; built-in names are reserved.');
   }
   let json: Json | undefined;
-  const text = request.body?.text;
+  const text =
+    request.body?.text === undefined
+      ? undefined
+      : request.body.type === 'form'
+        ? decodePlaceholders(request.body.text)
+        : request.body.text;
   if (text && (request.body?.type === 'json' || request.body?.type === 'graphql')) {
     try {
       json = JSON.parse(text) as Json;

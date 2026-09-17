@@ -17,6 +17,8 @@ export default function EditorPage({ id }: { id: string }) {
   const [confirm, setConfirm] = useState(false),
     [reveal, setReveal] = useState(false);
   const [runRequest, setRunRequest] = useState<RequestData>();
+  const [showRunner, setShowRunner] = useState(false),
+    [editorRevision, setEditorRevision] = useState(0);
   const safe = useMemo(
     () => record && (settings.maskSecrets && !reveal ? redactRecord(record) : record),
     [record, settings.maskSecrets, reveal],
@@ -41,12 +43,15 @@ export default function EditorPage({ id }: { id: string }) {
           {!fatal && draft && (
             <button
               onClick={() =>
-                runRequest
-                  ? setRunRequest(undefined)
-                  : task(async () => setRunRequest(await editor.prepareRun()))
+                showRunner
+                  ? setShowRunner(false)
+                  : task(async () => {
+                      setRunRequest(await editor.prepareRun());
+                      setShowRunner(true);
+                    })
               }
             >
-              {runRequest ? 'Back to editor' : 'Timed run'}
+              {showRunner ? 'Back to editor' : 'Timed run'}
             </button>
           )}
           <button onClick={() => task(focusInspector)}>
@@ -71,7 +76,7 @@ export default function EditorPage({ id }: { id: string }) {
           Loading editor draft...
         </main>
       ) : (
-        <main className="editor-page-content" hidden={!!runRequest}>
+        <main className="editor-page-content" hidden={showRunner}>
           <section className="editor-workspace" aria-label="Request draft">
             <div
               className={'draft-status ' + (saveError ? 'error-text' : 'muted')}
@@ -81,7 +86,7 @@ export default function EditorPage({ id }: { id: string }) {
               {saveError && <button onClick={() => location.reload()}>Reload draft</button>}
             </div>
             <RequestEditor
-              key={draft.id}
+              key={draft.id + ':' + editorRevision}
               record={record}
               initialRequest={draft.request}
               context={draft.context}
@@ -110,7 +115,19 @@ export default function EditorPage({ id }: { id: string }) {
           </section>
         </main>
       )}
-      {!fatal && record && runRequest && <RunnerPanel sourceId={record.id} request={runRequest} />}
+      {!fatal && record && draft && runRequest && (
+        <div hidden={!showRunner}>
+          <RunnerPanel
+            sourceId={record.id}
+            request={runRequest}
+            onRequestChange={(request) => {
+              setRunRequest(request);
+              editor.change(request, draft.context);
+              setEditorRevision((revision) => revision + 1);
+            }}
+          />
+        </div>
+      )}
       {error && (
         <div className="editor-page-error error-banner" role="alert">
           {error}

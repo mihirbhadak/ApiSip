@@ -12,7 +12,15 @@ import { RunResults } from './RunResults';
 import { RunToolbar } from './RunToolbar';
 import { useRunner } from './use-runner';
 
-export function RunnerPanel({ sourceId, request }: { sourceId: string; request: RequestData }) {
+export function RunnerPanel({
+  sourceId,
+  request,
+  onRequestChange,
+}: {
+  sourceId: string;
+  request: RequestData;
+  onRequestChange: (request: RequestData) => void;
+}) {
   const state = useRunner(sourceId);
   const [config, setConfig] = useState(defaultRunConfig);
   const [variables, setVariables] = useState<Pair[]>([]),
@@ -133,6 +141,8 @@ export function RunnerPanel({ sourceId, request }: { sourceId: string; request: 
           </p>
         )}
         <RunForm
+          request={request}
+          onRequestChange={onRequestChange}
           config={config}
           setConfig={setConfig}
           variables={variables}

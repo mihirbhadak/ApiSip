@@ -8,6 +8,7 @@ import {
 import { makeBody, parseUrl } from '../shared/parse';
 import { prepareHeaders, safeHttpUrl } from '../shared/security';
 import { fetchInContext, type FetchInput } from './fetch';
+import { materializeRequest } from '../shared/request-fields';
 
 export async function executeReplay(
   original: CapturedRequest,
@@ -15,6 +16,7 @@ export async function executeReplay(
   context: Settings['replayContext'],
   maxBytes: number,
 ): Promise<ReplayResult> {
+  draft = materializeRequest(draft);
   safeHttpUrl(draft.url);
   if (['CONNECT', 'TRACE', 'TRACK'].includes(draft.method.toUpperCase()))
     throw new Error('Chrome fetch does not support this HTTP method.');

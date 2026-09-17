@@ -1,4 +1,5 @@
 import type { RequestData } from '../shared/model';
+import { materializeRequest } from '../shared/request-fields';
 import { redactRequest, safeHttpUrl, prepareHeaders, isHttpPseudoHeader } from '../shared/security';
 export const languages = [
   'cURL',
@@ -286,6 +287,7 @@ export function generateCode(
   request: RequestData,
   includeSecrets = false,
 ): string {
+  request = materializeRequest(request);
   safeHttpUrl(request.url);
   prepareHeaders(request.headers); // Validate names and control characters for every target.
   if (

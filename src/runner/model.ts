@@ -48,13 +48,14 @@ export const defaultRunConfig: RunConfig = {
   stopOn429: true,
 };
 const scalar = z.union([z.string().max(10000), z.number().finite(), z.boolean(), z.null()]);
+export const runRowsSchema = z.array(z.record(scalar)).max(1000);
 export const runPlanSchema = z
   .object({
     sourceId: z.string().min(1).max(300),
     request: requestSchema,
     config: runConfigSchema,
     variables: z.array(pairSchema).max(100),
-    rows: z.array(z.record(scalar)).max(1000),
+    rows: runRowsSchema,
     seed: z.number().int().min(0).max(0xffffffff),
   })
   .refine((plan) => JSON.stringify(plan).length <= 1_500_000, 'Run definition exceeds 1.5 MB.');

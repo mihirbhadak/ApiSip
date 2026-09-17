@@ -69,6 +69,7 @@ export function redactUrl(value: string): string {
 }
 export const redactPairs = (pairs: Pair[]) =>
   pairs.map((p) => ({
+    ...p,
     name: p.name,
     value: sensitiveName(p.name) ? MASK : redactText(p.value),
   }));
@@ -156,6 +157,7 @@ export function prepareHeaders(headers: Pair[]) {
   const omitted: string[] = [];
   const pseudo: string[] = [];
   const permitted = headers.filter((h) => {
+    if (h.enabled === false) return false;
     if (/\r|\n|\0/.test(h.name + h.value))
       throw new Error('Header names and values cannot contain line breaks.');
     if (isHttpPseudoHeader(h.name)) {

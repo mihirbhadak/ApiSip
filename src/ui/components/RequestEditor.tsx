@@ -4,9 +4,10 @@ import { useState } from 'react';
 import { Play, RotateCcw, Save, ExternalLink } from 'lucide-react';
 import type { CapturedRequest, ReplayResult, RequestData, Settings } from '../../shared/model';
 import { requestSchema } from '../../shared/model';
-import { header, makeBody, parseUrl, prettyJson } from '../../shared/parse';
-import { isHttpPseudoHeader, redactBody, redactUrl } from '../../shared/security';
+import { header, parseUrl } from '../../shared/parse';
+import { isHttpPseudoHeader, redactUrl } from '../../shared/security';
 import { PairEditor } from './PairEditor';
+import { RequestBodyEditor } from './RequestBodyEditor';
 export function RequestEditor({
   record,
   context: initialContext,
@@ -63,9 +64,6 @@ export function RequestEditor({
       setError(e instanceof Error ? e.message : 'Could not save this request.');
     }
   };
-  const body = draft.body?.text ?? '',
-    masked = redactBody(body, draft.body?.type),
-    protectedBody = !reveal && body !== masked;
   const maskedUrl = redactUrl(draft.url),
     protectedUrl = !reveal && maskedUrl !== draft.url;
   const updateUrl = (url: string) => {
@@ -191,6 +189,7 @@ export function RequestEditor({
       {tab === 'Headers' && (
         <PairEditor
           label="Request headers"
+          inclusionControls
           pairs={draft.headers}
           onChange={(headers) => setDraft({ ...draft, headers })}
         />
@@ -214,66 +213,14 @@ export function RequestEditor({
         </>
       )}
       {tab === 'Body' && (
-        <>
-          <div className="button-row">
-            <button
-              onClick={() => {
-                try {
-                  setDraft({ ...draft, body: makeBody(prettyJson(body), 'application/json') });
-                  setMessage('JSON formatted');
-                } catch {
-                  setError('Body is not valid JSON.');
-                }
-              }}
-            >
-              Format JSON
-            </button>
-            <button
-              onClick={() => {
-                try {
-                  JSON.parse(body);
-                  setMessage('Valid JSON');
-                  setError('');
-                } catch {
-                  setError('Body is not valid JSON.');
-                }
-              }}
-            >
-              Validate
-            </button>
-            <button onClick={() => setReveal(!reveal)}>
-              {reveal ? 'Mask secrets' : 'Reveal secrets'}
-            </button>
-            <button
-              onClick={() => {
-                setDraft({ ...draft, body: undefined });
-                setMessage('Body removed');
-              }}
-            >
-              Remove body
-            </button>
-          </div>
-          {protectedBody && (
-            <p className="small muted">
-              Reveal secrets to edit this body. Sending preserves the original values.
-            </p>
-          )}
-          <textarea
-            aria-label="Request body"
-            className="body-editor"
-            readOnly={protectedBody}
-            value={protectedBody ? masked : body}
-            spellCheck={false}
-            onChange={(e) =>
-              setDraft({
-                ...draft,
-                body: makeBody(e.target.value, header(draft.headers, 'content-type')),
-              })
-            }
-          />
-        </>
+        <RequestBodyEditor
+          body={draft.body}
+          contentType={header(draft.headers, 'content-type') ?? ''}
+          onChange={(body) => setDraft({ ...draft, body })}
+        />
       )}
       {draft.body &&
+        draft.body.enabled !== false &&
         (!draft.body.available ||
           draft.body.truncated ||
           draft.body.encoding === 'base64' ||

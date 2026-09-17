@@ -1242,6 +1242,96 @@ kbd {
     monospace;
   padding: 6px;
 }
+.with-send-toggles .pair-labels,
+.with-send-toggles .pair-edit-row {
+  grid-template-columns: 28px minmax(70px, 1fr) minmax(90px, 1.5fr) 28px;
+}
+.excluded-value {
+  filter: blur(4px);
+  user-select: none;
+}
+.send-toggle.included {
+  color: var(--accent-text);
+}
+.send-toggle.excluded {
+  color: var(--muted);
+}
+.body-send-heading {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.body-field-controls {
+  margin: 12px 0;
+}
+.body-field-controls summary {
+  cursor: pointer;
+  padding: 8px 0;
+  font-weight: 600;
+}
+.body-field-list {
+  max-height: 260px;
+  overflow: auto;
+  border-block: 1px solid var(--border);
+  padding: 6px 0;
+}
+.body-field-row {
+  display: grid;
+  grid-template-columns: 28px minmax(90px, 1fr) minmax(90px, 1.2fr);
+  gap: 6px;
+  align-items: center;
+  margin-bottom: 5px;
+}
+.body-field-row code {
+  overflow-wrap: anywhere;
+  font-size: 11px;
+}
+.body-field-row input {
+  width: 100%;
+  min-width: 0;
+  font:
+    11px Consolas,
+    monospace;
+}
+.variable-guide {
+  margin: 12px 0;
+}
+.variable-guide ol {
+  padding-left: 20px;
+  line-height: 1.8;
+}
+.variable-guide .variable-example {
+  margin: 10px 0;
+  padding: 10px;
+  border-left: 2px solid var(--accent-text);
+  background: var(--surface);
+}
+.variable-guide pre,
+.slot-preview pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-size: 11px;
+  max-height: 220px;
+  overflow: auto;
+}
+.variable-example label {
+  margin: 10px 0;
+}
+.variable-builtins {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 6px 12px;
+  font-size: 12px;
+}
+.variable-builtins dt,
+.variable-builtins dd {
+  margin: 0;
+}
+.slot-preview {
+  margin-top: 12px;
+  border-top: 1px solid var(--border);
+  padding-top: 10px;
+}
 .body-editor {
   width: 100%;
   min-height: 190px;

@@ -1,5 +1,19 @@
 # Verification report
 
+## 0.1.6 request field controls and timed-variable guide — September 17, 2026
+
+Header eyes, JSON/form field eyes and the whole-body eye now control what is sent, while retaining the original values in the saved editor draft. Excluded values are blurred. One shared outbound projection applies exclusions to browser replay, extension replay, timed runs and all 16 executable code generators. Display masking remains a separate lock control. Individual field controls are bounded to 300 fields, 32 levels and 1 MB; other body formats support whole-body exclusion.
+
+- **246 unit/component/integration tests** passed, together with lint, strict TypeScript, formatting and the production build. New cases cover duplicate headers/form names, nested object and array exclusions, prototype-like keys, invalid JSON, persisted drafts, all code generators, secret-free suggestions, typed data rows and encoded form placeholders.
+- The full real-extension Chrome suite passed **all 30 scenarios in one run**, using `API_CATCHER_HEADLESS=1`. The new regression captures a real local request, toggles eyes by keyboard, checks blur and saved choices after reload, and verifies the server receives only included fields in both replay contexts. It also verifies whole-body omission.
+- The guided workflow inserts a placeholder from an actual field, previews the first requests without sending traffic, retains run configuration when returning to the editor and starts a three-request run with the actual server receiving the expected Ada/Lin/Ada values. Excluded headers and nested body fields remain absent throughout.
+- An initial accessibility check found that scrollable preview content could not receive keyboard focus. The preview/example blocks and field list now accept focus; the unchanged axe assertions then passed. Light/dark guide screenshots, the editor controls and the 640-pixel layout were visually inspected. No page errors or horizontal overflow were observed in the checked states. Evidence is retained locally in `artifacts/extension-qa/`.
+- The existing 10,000-request timed test started all 10,000 requests in 60,002.5 ms with zero missed slots, a 19.287 ms P95 and a 32,622-byte report. The independent 10,000-capture search completed in 1,347 ms. These loopback measurements are not rate guarantees or whole-computer CPU/memory measurements.
+- All **23 website tests** passed with the 0.1.6 links and updated feature descriptions, including responsive layouts, accessibility, download/support interactions and analytics privacy checks.
+- The exact release ZIP was extracted into a new folder and passed fresh-profile Chrome onboarding: real manifest loading, permission/default states, response capture defaults and the inspected Chrome error/accessibility checks were clean.
+
+Build: `2026-09-17T11:22:45.281Z`. ZIP: 30 files, 1,229,023 bytes; SHA-256 `a57abfaf3b1905587cc0fa3ac83eb2fdefc0accdab876972ef4c317a1cde6da1`. Packaging verified every archived byte, both manifest layouts and 102 source-map entries against source. No new permissions or runtime dependencies were added. Timed-run variables/data rows remain in memory for the editor tab; placeholders and inclusion choices are saved in its draft.
+
 ## 0.1.5 HTTP/2 replay headers — September 17, 2026
 
 Fixed `Invalid header name: :authority` at the shared outbound-header boundary. Captured protocol fields are retained in history/drafts but omitted from replay, timed runs and all 16 code generators. Ordinary invalid names and CR/LF/NUL injection still fail validation; warning text never includes header values. Existing editor drafts work without a data migration or recapture.

@@ -1,8 +1,11 @@
-import { useState } from 'react';
-import type { Pair } from '../../shared/model';
+import { useMemo, useState } from 'react';
+import type { Pair, RequestData } from '../../shared/model';
 import type { RunConfig } from '../../runner/model';
 import { SearchSelect } from '../components/SearchSelect';
 import { PairEditor } from '../components/PairEditor';
+import { RunVariableGuide } from './RunVariableGuide';
+import { RunVariablePreview } from './RunVariablePreview';
+import { variableFields } from '../../runner/variable-guide';
 
 export function RunForm({
   config,
@@ -15,6 +18,8 @@ export function RunForm({
   setSeed,
   disabled,
   onReview,
+  request,
+  onRequestChange,
 }: {
   config: RunConfig;
   setConfig: (value: RunConfig) => void;
@@ -26,8 +31,11 @@ export function RunForm({
   setSeed: (value: number) => void;
   disabled: boolean;
   onReview: () => void;
+  request: RequestData;
+  onRequestChange: (request: RequestData) => void;
 }) {
   const [unit, setUnit] = useState('seconds');
+  const example = useMemo(() => variableFields(request)[0], [request]);
   const change = (key: keyof RunConfig, value: number | boolean) =>
     setConfig({ ...config, [key]: value });
   const numeric = (label: string, key: keyof RunConfig, min: number, max: number, step = 1) => (
@@ -129,12 +137,23 @@ export function RunForm({
         </details>
         <details className="run-options">
           <summary>Variables & data rows</summary>
-          <p className="small">
-            Use <code>{'{{index}}'}</code>, <code>{'{{uuid}}'}</code>,{' '}
-            <code>{'{{timestamp}}'}</code> or <code>{'{{randomInt}}'}</code> in the request editor.
-            Index starts at 1 and refers to the scheduled slot, so missed slots leave gaps.
-          </p>
-          <PairEditor label="Run variables" pairs={variables} onChange={setVariables} />
+          <RunVariableGuide
+            request={request}
+            variables={variables}
+            rows={rows}
+            onApply={(next, vars, data) => {
+              onRequestChange(next);
+              setVariables(vars);
+              setRows(data);
+            }}
+          />
+          <PairEditor
+            label="Run variables"
+            pairs={variables}
+            onChange={setVariables}
+            keyPlaceholder={example?.name ?? 'customerName'}
+            valuePlaceholder={String(example ? example.value : 'Mihir')}
+          />
           <label>
             Data rows (JSON array)
             <textarea
@@ -142,7 +161,11 @@ export function RunForm({
               rows={5}
               value={rows}
               onChange={(event) => setRows(event.target.value)}
-              placeholder={'[{"userId":1,"name":"Mihir"},{"userId":2,"name":"Ada"}]'}
+              placeholder={JSON.stringify(
+                [{ [example?.name ?? 'customerName']: example ? example.value : 'Mihir' }],
+                null,
+                2,
+              )}
               spellCheck={false}
             />
           </label>
@@ -163,6 +186,13 @@ export function RunForm({
             values are encoded. Headers and plain text use literal values. The origin stays fixed.
             Variables and rows remain only in memory for this run.
           </p>
+          <RunVariablePreview
+            request={request}
+            variables={variables}
+            rows={rows}
+            seed={seed}
+            config={config}
+          />
         </details>
         <button className="primary run-start" type="button" onClick={onReview}>
           Review run

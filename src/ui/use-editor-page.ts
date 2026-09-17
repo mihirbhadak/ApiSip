@@ -160,8 +160,10 @@ export function useEditorPage(id: string) {
       if (!current) throw new Error('This draft was deleted.');
       return current.request;
     },
-    change: (request: RequestData, context: Settings['replayContext']) =>
-      writer.current?.change(request, context),
+    change: (request: RequestData, context: Settings['replayContext']) => {
+      setDraft((previous) => previous && { ...previous, request, context });
+      writer.current?.change(request, context);
+    },
     copy: (text: string) =>
       task(async () => {
         await navigator.clipboard.writeText(text);

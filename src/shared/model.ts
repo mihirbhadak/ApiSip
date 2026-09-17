@@ -1,8 +1,19 @@
 import { z } from 'zod';
 
-export const pairSchema = z.object({ name: z.string(), value: z.string() });
+export const pairSchema = z.object({
+  name: z.string(),
+  value: z.string(),
+  enabled: z.boolean().optional(),
+});
 export type Pair = z.infer<typeof pairSchema>;
+export const bodyPathSchema = z
+  .array(z.union([z.string(), z.number().int().nonnegative()]))
+  .min(1)
+  .max(32);
+export type BodyPath = z.infer<typeof bodyPathSchema>;
 export const bodySchema = z.object({
+  enabled: z.boolean().optional(),
+  excludedPaths: z.array(bodyPathSchema).max(2000).optional(),
   type: z.enum([
     'json',
     'graphql',

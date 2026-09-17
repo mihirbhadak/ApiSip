@@ -23,6 +23,8 @@ it('supports searchable units and variable rows without accidentally submitting 
       [variables, setVariables] = useState<Pair[]>([]);
     return (
       <RunForm
+        request={fixture().request}
+        onRequestChange={vi.fn()}
         config={config}
         setConfig={setConfig}
         variables={variables}
@@ -55,7 +57,7 @@ it('previews a concrete plan and requires Start run before sending traffic', asy
   }));
   vi.stubGlobal('chrome', { runtime: { id: 'test', sendMessage: send } });
   const user = userEvent.setup();
-  render(<RunnerPanel sourceId="test-1" request={fixture().request} />);
+  render(<RunnerPanel sourceId="test-1" request={fixture().request} onRequestChange={vi.fn()} />);
   await waitFor(() => expect(screen.getByRole('button', { name: 'Review run' })).toBeEnabled());
   expect(screen.getByText('No timed runs yet')).toBeVisible();
   await user.click(screen.getByRole('button', { name: 'Review run' }));
