@@ -185,10 +185,9 @@ export function TrafficPanes({ controller }: { controller: InspectorController }
                     onClose={() => setRecordId(undefined)}
                     onUpdate={updateRecord}
                     onSave={saveDraft}
-                    onSend={async (request, context, cookies) => {
+                    onSend={async (request, context) => {
                       const result = await sendCommand({
                         type: 'replay',
-                        cookies,
                         id: record.id,
                         request,
                         context,

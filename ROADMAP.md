@@ -9,11 +9,10 @@ This separates implemented features from proposed work. Planned features are not
 - **0.2.0 Test lab:** response assertions, reusable suites, sequential workflows, scalar extraction, local environments, review-before-send, checkpoint recovery, JSON/JUnit reports and suite import/export.
 - Passive captured-evidence security checks and reviewed/redacted context copying for a bug report or an external AI tool. No AI provider connection.
 - Searchable help, command-palette/context-menu entry points, searchable dropdowns, keyboard actions and light/dark themes.
-- **0.3.0:** explicit origin-bound single-replay cookie policy, context/authentication guidance, 401/403 troubleshooting and named structural response baselines with ignored JSON paths. Arrays use exact indices; baselines are observed shapes, not imported contracts.
 
 ## Next: deeper API testing
 
-1. Broader baseline modes: formal schema contracts, array-item schemas and configurable value comparisons. The shipped structural baseline deliberately does not infer these guarantees from a sample.
+1. Named baselines and structural contract comparisons, with explicit ignored paths and volatile-field handling.
 2. OpenAPI import and JSON Schema validation; distinguish imported contracts from inferred examples.
 3. Reusable dataset-driven suite runs, per-step auth profiles and token-refresh flows with explicit storage/privacy choices.
 4. Export runnable Playwright/k6/CI artifacts; test the generated programs against real fixture APIs.

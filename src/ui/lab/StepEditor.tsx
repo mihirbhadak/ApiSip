@@ -6,7 +6,6 @@ import { PairEditor } from '../components/PairEditor';
 import { RequestBodyEditor } from '../components/RequestBodyEditor';
 import { SearchSelect } from '../components/SearchSelect';
 import { CheckEditor } from './CheckEditor';
-import { BaselineEditor } from './BaselineEditor';
 export function StepEditor({
   step,
   onChange,
@@ -71,7 +70,6 @@ export function StepEditor({
         />
       </details>
       <CheckEditor step={step} onChange={onChange} />
-      <BaselineEditor step={step} onChange={onChange} />
     </section>
   );
 }

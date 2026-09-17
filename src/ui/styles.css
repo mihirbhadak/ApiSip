@@ -3083,56 +3083,6 @@ button.danger-outline {
 .lab-check legend {
   font-size: 12px;
 }
-.replay-context {
-  border-block: 1px solid var(--border);
-  padding: 12px 0;
-  margin: 12px 0;
-  overflow-wrap: anywhere;
-}
-.replay-context .section-heading {
-  flex-wrap: wrap;
-  gap: 10px;
-}
-.replay-context .context-label {
-  flex-wrap: wrap;
-  max-width: 100%;
-}
-.replay-context .search-select {
-  width: 250px;
-  max-width: 100%;
-}
-.replay-context summary {
-  cursor: pointer;
-  font-size: 12px;
-}
-.context-guide {
-  font-size: 12px;
-  line-height: 1.6;
-}
-.context-guide dt {
-  font-weight: 600;
-  margin-top: 12px;
-}
-.context-guide dd {
-  margin: 2px 0 0;
-  color: var(--muted);
-}
-.baseline-editor > label {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  margin: 12px 0;
-}
-.baseline-editor > .checkbox-label {
-  flex-direction: row;
-}
-.baseline-editor pre {
-  max-height: 220px;
-  overflow: auto;
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
-  font-size: 12px;
-}
 .lab-check > input {
   min-width: 120px;
   flex: 1;

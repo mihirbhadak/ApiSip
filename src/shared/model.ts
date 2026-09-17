@@ -77,24 +77,10 @@ export const timingSchema = z.object({
   total: z.number().nonnegative().optional(),
 });
 export type TimingData = z.infer<typeof timingSchema>;
-// Explicit cookie consent is scoped to a target origin, never a global preference.
-export const replayCookiesSchema = z.object({
-  mode: z.enum(['include', 'omit']),
-  origin: z
-    .string()
-    .max(2000)
-    .url()
-    .refine((value) => {
-      const url = new URL(value);
-      return /^https?:$/.test(url.protocol) && url.origin === value;
-    }, 'Cookie preference requires an HTTP(S) origin.'),
-});
-export type ReplayCookies = z.infer<typeof replayCookiesSchema>;
 export const replaySchema = z.object({
   id: z.string(),
   timestamp: z.number(),
   context: z.enum(['browser', 'extension']),
-  credentials: z.enum(['include', 'omit']).optional(),
   request: requestSchema,
   response: responseSchema.optional(),
   duration: z.number().nonnegative(),

@@ -5,7 +5,6 @@ import { safeHttpUrl, sensitiveName } from '../shared/security';
 import { materializeRequest } from '../shared/request-fields';
 import { compileRunRequest } from '../runner/templates';
 import { defaultRunConfig } from '../runner/model';
-import { compareBaseline } from './baseline';
 import {
   environmentSchema,
   suiteSchema,
@@ -158,28 +157,6 @@ export async function runSuite(
       result.duration = output.duration;
       result.status = output.response.status;
       result.checks = evaluateAssertions(step.assertions, output.response, output.duration);
-      if (step.baseline) {
-        try {
-          const comparison = compareBaseline(step.baseline, output.response);
-          result.checks.push({
-            id: 'baseline:' + step.id,
-            state: comparison.count ? 'failed' : 'passed',
-            message: comparison.count
-              ? `Baseline: ${comparison.count} structural change(s). ${comparison.changes.join('; ')}${comparison.count > 20 ? '; showing first 20' : ''}`.slice(
-                  0,
-                  10000,
-                )
-              : 'Baseline: JSON structure matches. Scalar values are not compared.',
-          });
-        } catch {
-          result.checks.push({
-            id: 'baseline:' + step.id,
-            state: 'inconclusive',
-            message:
-              'Baseline inconclusive: a complete JSON response within the 1 MB / 2,000 field / 32 level limits is required.',
-          });
-        }
-      }
       result.state = result.checks.every((check) => check.state === 'passed') ? 'passed' : 'failed';
       if (result.state === 'passed') {
         const read = responseReader(output.response);

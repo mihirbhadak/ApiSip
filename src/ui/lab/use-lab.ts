@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ZodError } from 'zod';
-import { getRecord, getSettings, initialize, listRows } from '../../storage/repository';
+import { getRecord, initialize, listRows } from '../../storage/repository';
 import {
   deleteLabItem,
   getSuite,
@@ -44,32 +44,6 @@ export function useLab(initialId?: string) {
   const saveLock = useRef(false);
   const environment = data.environments.find((e) => e.id === environmentId);
   useTheme(settings.theme);
-  useEffect(() => {
-    let alive = true;
-    const refreshTheme = () => {
-      void getSettings()
-        .then((next) => {
-          // A lab keeps its own workspace and unsaved definition when global settings change.
-          if (alive)
-            setSettings((current) =>
-              current.theme === next.theme ? current : { ...current, theme: next.theme },
-            );
-        })
-        .catch(() => {
-          if (alive) setError('Could not refresh appearance settings.');
-        });
-    };
-    const message = (value: { type?: string }) => {
-      if (value.type === 'database-changed') refreshTheme();
-    };
-    globalThis.chrome?.runtime?.onMessage?.addListener(message);
-    window.addEventListener('focus', refreshTheme);
-    return () => {
-      alive = false;
-      globalThis.chrome?.runtime?.onMessage?.removeListener(message);
-      window.removeEventListener('focus', refreshTheme);
-    };
-  }, []);
   const task = useCallback((fn: () => Promise<void>) => {
     setError('');
     setMessage('');

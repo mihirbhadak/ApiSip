@@ -1,11 +1,10 @@
-import type { RequestData, Settings, ReplayCookies } from './model';
+import type { RequestData, Settings } from './model';
 
 export type EditorDraft = {
   id: string;
   sourceId: string;
   request: RequestData;
   context: Settings['replayContext'];
-  cookies?: ReplayCookies;
   revision: number;
   updatedAt: number;
 };

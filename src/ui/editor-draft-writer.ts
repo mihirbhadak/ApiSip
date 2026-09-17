@@ -1,12 +1,10 @@
 import type { EditorDraft } from '../shared/editor';
-import type { RequestData, Settings, ReplayCookies } from '../shared/model';
+import type { RequestData, Settings } from '../shared/model';
 import { updateDraft } from '../storage/drafts';
 
 /** Coalesce keystrokes, serialize commits, and reject edits based on a stale revision. */
 export class EditorDraftWriter {
-  private next:
-    | { request: RequestData; context: Settings['replayContext']; cookies?: ReplayCookies }
-    | undefined;
+  private next: { request: RequestData; context: Settings['replayContext'] } | undefined;
   private timer: ReturnType<typeof setTimeout> | undefined;
   private running: Promise<void> | undefined;
   private failure: unknown;
@@ -17,8 +15,8 @@ export class EditorDraftWriter {
   get dirty() {
     return !!this.next || !!this.running;
   }
-  change(request: RequestData, context: Settings['replayContext'], cookies?: ReplayCookies) {
-    this.next = { request, context, cookies };
+  change(request: RequestData, context: Settings['replayContext']) {
+    this.next = { request, context };
     clearTimeout(this.timer);
     if (this.failure) return;
     this.status('Unsaved changes');
@@ -46,7 +44,6 @@ export class EditorDraftWriter {
             this.draft.revision,
             next.request,
             next.context,
-            next.cookies,
           );
         } catch (error) {
           this.next ??= next;

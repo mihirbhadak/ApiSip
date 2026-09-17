@@ -5,7 +5,6 @@ import { formatTime } from '../../shared/parse';
 import { compareReplay } from '../../shared/diff';
 import { BodyViewer } from './BodyViewer';
 import { Headers } from './Headers';
-import { authenticationHint } from '../../replay/context';
 export function ReplayResults({ r, copy }: { r: CapturedRequest; copy: (text: string) => void }) {
   const [history, setHistory] = useState(-1);
   const replay = r.replayHistory?.[history < 0 ? (r.replayHistory?.length ?? 1) - 1 : history];
@@ -38,16 +37,6 @@ export function ReplayResults({ r, copy }: { r: CapturedRequest; copy: (text: st
           {replay.error && (
             <p className="error-text" role="alert">
               {replay.error}
-            </p>
-          )}
-          <p className="small muted">
-            Browser cookies:{' '}
-            {replay.credentials ?? (replay.context === 'browser' ? 'include' : 'omit')} · Header
-            exclusion does not control Chrome-managed headers.
-          </p>
-          {authenticationHint(replay) && (
-            <p className="notice warning" role="status">
-              {authenticationHint(replay)}
             </p>
           )}
           {replay.warnings.map((w, i) => (

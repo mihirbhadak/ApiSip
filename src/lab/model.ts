@@ -1,6 +1,5 @@
 import { z } from 'zod';
 import { requestSchema, uid, type CapturedRequest } from '../shared/model';
-import { baselineSchema } from './baseline';
 
 export const variableName = z
   .string()
@@ -46,8 +45,6 @@ export const stepSchema = z.object({
   request: requestSchema,
   assertions: z.array(assertionSchema).min(1).max(50),
   extract: z.array(extractionSchema).max(20),
-  sourceId: z.string().max(300).optional(),
-  baseline: baselineSchema.optional(),
 });
 export type TestStep = z.infer<typeof stepSchema>;
 export const suiteSchema = z
@@ -132,7 +129,6 @@ export type SuiteReport = {
 export function stepFromCapture(record: CapturedRequest): TestStep {
   return {
     id: uid(),
-    sourceId: record.id,
     name: record.request.method + ' ' + new URL(record.request.url).pathname.slice(0, 90),
     request: structuredClone(record.request),
     assertions: [

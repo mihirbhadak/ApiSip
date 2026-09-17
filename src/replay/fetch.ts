@@ -6,7 +6,6 @@ export type FetchInput = {
   body?: string;
   maxBytes: number;
   credentials: 'include' | 'omit';
-  redirect?: 'follow' | 'error';
   expectedOrigin?: string;
 };
 export type FetchOutput = {
@@ -39,7 +38,7 @@ export async function fetchInContext(input: FetchInput): Promise<FetchOutput> {
       body: ['GET', 'HEAD'].includes(input.method) ? undefined : input.body,
       credentials: input.credentials,
       signal: controller.signal,
-      redirect: input.redirect ?? 'follow',
+      redirect: 'follow',
     });
     const reader = response.body?.getReader();
     const chunks: Uint8Array[] = [];
