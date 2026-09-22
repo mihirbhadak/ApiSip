@@ -265,6 +265,59 @@
           "count": 2
         }
       ]
+    },
+    {
+      "observedAt": "2026-09-22T05:05:58.000Z",
+      "assets": [
+        {
+          "id": 567388763,
+          "release": "v0.1.0",
+          "name": "apisip-0.1.0.zip",
+          "count": 1
+        },
+        {
+          "id": 567431254,
+          "release": "v0.1.1",
+          "name": "apisip-0.1.1.zip",
+          "count": 16
+        },
+        {
+          "id": 569634956,
+          "release": "v0.1.2",
+          "name": "apisip-0.1.2.zip",
+          "count": 5
+        },
+        {
+          "id": 569992570,
+          "release": "v0.1.3",
+          "name": "apisip-0.1.3.zip",
+          "count": 2
+        },
+        {
+          "id": 570007131,
+          "release": "v0.1.4",
+          "name": "apisip-0.1.4.zip",
+          "count": 1
+        },
+        {
+          "id": 570047680,
+          "release": "v0.1.5",
+          "name": "apisip-0.1.5.zip",
+          "count": 2
+        },
+        {
+          "id": 570175210,
+          "release": "v0.1.6",
+          "name": "apisip-0.1.6.zip",
+          "count": 1
+        },
+        {
+          "id": 570358892,
+          "release": "v0.2.0",
+          "name": "apisip-0.2.0.zip",
+          "count": 2
+        }
+      ]
     }
   ]
 }
